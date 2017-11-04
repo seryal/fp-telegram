@@ -18,6 +18,8 @@ type
   TTelegramUpdateObj = class;
   TTelegramMessageObj = class;
   TTelegramMessageEntityObj = class;
+  TTelegramInlineQueryObj = class;
+  TTelegramUserObj = class;
   TTelegramUpdateObjList = specialize TFPGObjectList<TTelegramMessageEntityObj>;
 
   { TTelegramObj }
@@ -36,12 +38,14 @@ type
 
   TTelegramUpdateObj = class(TTelegramObj)
   private
+    FInlineQuery: TTelegramInlineQueryObj;
     fUpdateId: Integer;
     fMessage: TTelegramMessageObj;
   public
     constructor Create(JSONObject: TJSONObject); override;
     property UpdateId: Integer read fUpdateId;
     property Message: TTelegramMessageObj read fMessage;
+    property InlineQuery: TTelegramInlineQueryObj read FInlineQuery;
   end;
 
   { TTelegramMessageObj }
@@ -75,6 +79,43 @@ type
     property Length: Integer read fLength;
   end;
 
+  { TTelegramInlineQueryObj }
+
+  TTelegramInlineQueryObj = class(TTelegramObj)
+  private
+    FFrom: TTelegramUserObj;
+    FID: String;
+//    FLocation: TTelegramLocation;
+    FOffset: String;
+    FQuery: String;
+  public
+    constructor Create(JSONObject: TJSONObject); override;
+    property ID: String read FID;
+    property From: TTelegramUserObj read FFrom;
+//    property Location: TTelegramLocation read FLocation;
+    property Query: String read FQuery;
+    property Offset: String read FOffset;
+  end;
+
+  { TTelegramUserObj }
+
+  TTelegramUserObj = class(TTelegramObj)
+  private
+    FFirst_name: String;
+    FID: Integer;
+    FIs_bot: Boolean;
+    FLanguage_code: String;
+    FLast_name: String;
+    FUsername: String;
+  public
+    constructor Create(JSONObject: TJSONObject); override;
+    property ID: Integer read FID;
+    property Is_bot: Boolean read FIs_bot;
+    property First_name: String read FFirst_name;
+    property Last_name: String read FLast_name;
+    property Username: String read FUsername;
+    property Language_code: String read FLanguage_code;
+  end;
 
   { TTGQueueRequestsThread }
 
@@ -110,6 +151,32 @@ const
 
 implementation
 
+{ TTelegramUserObj }
+
+constructor TTelegramUserObj.Create(JSONObject: TJSONObject);
+begin
+  inherited Create(JSONObject);
+  FID := fJSON.Integers['id'];
+  FIs_bot := fJSON.Booleans['is_bot'];
+  FFirst_name:=fJSON.Strings['first_name'];
+
+  FLast_name:=fJSON.Get('last_name', '');
+  FUsername:=fJSON.Get('username', '');
+  FLanguage_code:=fJSON.Get('language_code', '');
+end;
+
+{ TTelegramInlineQueryObj }
+
+constructor TTelegramInlineQueryObj.Create(JSONObject: TJSONObject);
+begin
+  inherited Create(JSONObject);
+  FID := fJSON.Strings['id'];
+  FQuery:=fJSON.Get('query', '');
+  FOffset:=fJSON.Get('offset', '');
+
+  FFrom:=TTelegramUserObj.CreateFromJSONObject(fJSON.Find('from', jtObject) as TJSONObject) as TTelegramUserObj;
+end;
+
 { TTelegramObj }
 
 constructor TTelegramObj.Create(JSONObject: TJSONObject);
@@ -136,7 +203,10 @@ begin
   inherited Create(JSONObject);
   fUpdateId := fJSON.Integers['update_id'];
   // объекты - не нашли?! - nil
-  fMessage := TTelegramMessageObj.CreateFromJSONObject(fJSON.Find('message', jtObject) as TJSONObject) as TTelegramMessageObj;
+  fMessage := TTelegramMessageObj.CreateFromJSONObject(
+    fJSON.Find('message', jtObject) as TJSONObject) as TTelegramMessageObj;
+  FInlineQuery:=TTelegramInlineQueryObj.CreateFromJSONObject(
+    fJSON.Find('inline_query', jtObject) as TJSONObject) as TTelegramInlineQueryObj;
 end;
 
 { TTelegramMessageObj }
@@ -183,7 +253,7 @@ var
   lMessageEntityObj: TTelegramMessageEntityObj;
   lHTTPClient: TFPHTTPClient;
   lCommand: string;
-begin
+begin {
   lHTTPClient := TFPHTTPClient.Create(nil);
   try
     while not Terminated do
@@ -205,7 +275,7 @@ begin
       end;
   finally
     lHTTPClient.Free;
-  end;
+  end;   }
 end;
 
 constructor TTGQueneProcessorThread.Create(const aToken: string; aPower : NativeInt);
