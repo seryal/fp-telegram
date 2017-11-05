@@ -28,7 +28,7 @@ type
     procedure ErrorMessage(const Msg: String);
     procedure InfoMessage(const Msg: String);
     function HTTPPostJSON(const Method: String): Boolean;
-    function SendMethod(const Method: String; MethodParameters: array of const): Boolean;
+    function SendMethod(MethodParameters: array of const): Boolean;
     procedure SetRequestBody(AValue: String);
     procedure SetWebhookRequest(AValue: Boolean);
   public
@@ -107,29 +107,31 @@ begin
   FWebhookRequest:=AValue;
 end;
 
-function TTelegramSender.SendMethod(const Method: String;
-  MethodParameters: array of const): Boolean;
+function TTelegramSender.SendMethod(MethodParameters: array of const): Boolean;
 var
   sendObj: TJSONObject;
+  js: TJSONData;
+  Method: String;
+
 begin
   if not FWebhookRequest then
   begin
     sendObj:=TJSONObject.Create(MethodParameters);
+    Method:=sendObj.Strings['method'];
+    sendObj.Delete(1);  // Имя метода присутствует в адресе API. См. HTTPPostJSON
     RequestBody:=sendObj.AsJSON;
     DebugMessage('Request: '+FRequestBody);
     Result:=HTTPPostJson(Method);
+    DebugMessage('Response: '+FResponse);
   end
   else
   begin
     sendObj:=TJSONObject.Create(MethodParameters);
-    sendObj.Add('method', Method);
     RequestBody:=sendObj.AsJSON;
-    Result:=True;
     DebugMessage('Request in HTTP reply: '+FRequestBody);
+    Result:=True;
   end;
-  if Result then
-    DebugMessage('Response: '+FResponse)
-  else
+  if not Result then
     ErrorMessage('It is not succesful request to API! Request body: '+FRequestBody);
 end;
 
@@ -151,22 +153,22 @@ end;
 function TTelegramSender.sendMessage(chat_id: Int64; const AMessage: String;
   ParseMode: TParseMode = pmMarkdown): Boolean;
 begin
-  Result:=SendMethod(s_sendMessage,
-    ['chat_id', chat_id, 'parse_mode', ParseModes[ParseMode], 'text', AMessage]);
+  Result:=SendMethod(
+    ['method', s_sendMessage, 'chat_id', chat_id, 'text', AMessage, 'parse_mode', ParseModes[ParseMode]]);
 end;
 
 { https://core.telegram.org/bots/api#sendphoto }
 function TTelegramSender.sendPhoto(chat_id: Int64; const APhoto: String;
   const ACaption: String): Boolean;
 begin
-  Result:=SendMethod(s_sendPhoto, ['chat_id', chat_id, 'photo', APhoto, 'caption', ACaption]);
+  Result:=SendMethod(['method', s_sendPhoto, 'chat_id', chat_id, 'photo', APhoto, 'caption', ACaption]);
 end;
 
 { https://core.telegram.org/bots/api#sendvideo }
 function TTelegramSender.sendVideo(chat_id: Int64; const AVideo: String;
   const ACaption: String): Boolean;
 begin
-  Result:=SendMethod(s_sendVideo, ['chat_id', chat_id, 'video', AVideo, 'caption', ACaption]);
+  Result:=SendMethod(['method', s_sendVideo, 'chat_id', chat_id, 'video', AVideo, 'caption', ACaption]);
 end;
 
 end.
