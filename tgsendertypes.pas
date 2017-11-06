@@ -18,7 +18,6 @@ type
 
   TTelegramSender = class
   private
-    FHTTP: TFPHTTPClient;
     FOnLogMessage: TLogMessageEvent;
     FResponse: String;
     FRequestBody: String;
@@ -33,7 +32,6 @@ type
     procedure SetWebhookRequest(AValue: Boolean);
   public
     constructor Create(const AToken: String);
-    destructor Destroy; override;
     function sendMessage(chat_id: Int64; const AMessage: String;
       ParseMode: TParseMode = pmMarkdown): Boolean;
     function sendPhoto(chat_id: Int64; const APhoto: String; const ACaption: String = ''): Boolean;
@@ -83,16 +81,23 @@ begin
 end;
 
 function TTelegramSender.HTTPPostJSON(const Method: String): Boolean;
+var
+  HTTP: TFPHTTPClient;
 begin
-  Result:=False;
-  FHTTP.RequestBody:=TStringStream.Create(FRequestBody);
+  HTTP:=TFPHTTPClient.Create(nil);
   try
-    FHTTP.AddHeader('Content-Type','application/json');
-    FResponse:=FHTTP.Post(API_URL+FToken+'/'+Method);
+    HTTP.RequestBody:=TStringStream.Create(FRequestBody);
+    try
+      HTTP.AddHeader('Content-Type','application/json');
+      FResponse:=HTTP.Post(API_URL+FToken+'/'+Method);
+    finally
+      HTTP.RequestBody.Free;
+    end;
     Result:=True;
-  finally
-    FHTTP.RequestBody.Free;
+  except
+    Result:=False;
   end;
+  HTTP.Free;
 end;
 
 procedure TTelegramSender.SetRequestBody(AValue: String);
@@ -110,7 +115,6 @@ end;
 function TTelegramSender.SendMethod(MethodParameters: array of const): Boolean;
 var
   sendObj: TJSONObject;
-  js: TJSONData;
   Method: String;
 
 begin
@@ -118,7 +122,7 @@ begin
   begin
     sendObj:=TJSONObject.Create(MethodParameters);
     Method:=sendObj.Strings['method'];
-    sendObj.Delete(1);  // Имя метода присутствует в адресе API. См. HTTPPostJSON
+    sendObj.Delete(0);  // Имя метода присутствует в адресе API. См. HTTPPostJSON
     RequestBody:=sendObj.AsJSON;
     DebugMessage('Request: '+FRequestBody);
     Result:=HTTPPostJson(Method);
@@ -140,13 +144,6 @@ begin
   inherited Create;
   FToken:=AToken;
   FWebhookRequest:=False;
-  FHTTP:=TFPHTTPClient.Create(nil);
-end;
-
-destructor TTelegramSender.Destroy;
-begin
-  FHTTP.Free;
-  inherited Destroy;
 end;
 
 {  https://core.telegram.org/bots/api#sendmessage  }
