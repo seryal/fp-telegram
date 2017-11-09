@@ -257,7 +257,7 @@ begin
       Method:=sendObj.Strings['method'];
       sendObj.Delete(0);  // Имя метода присутствует в адресе API. См. HTTPPostJSON
       RequestBody:=sendObj.AsJSON;
-      DebugMessage('Request: '+FRequestBody);
+      DebugMessage('Request for method "'+Method+'": '+FRequestBody);
       Result:=HTTPPostJson(Method);
       DebugMessage('Response: '+FResponse);
     end
@@ -286,11 +286,8 @@ function TTelegramSender.sendMessage(chat_id: Int64; const AMessage: String;
   ParseMode: TParseMode = pmMarkdown; ReplyMarkup: TReplyMarkup = nil): Boolean;
 begin
   if Assigned(ReplyMarkup) then
-  begin
-
     Result:=SendMethod([s_Method, s_sendMessage, s_ChatId, chat_id, s_text, AMessage,
       s_ParseMode, ParseModes[ParseMode], s_ReplyMarkup, ReplyMarkup.Clone])
-  end
   else
     Result:=SendMethod([s_Method, s_sendMessage, s_ChatId, chat_id, s_text, AMessage,
       s_ParseMode, ParseModes[ParseMode]]);

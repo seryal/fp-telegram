@@ -13,6 +13,7 @@ type
   TTelegramMessageEntityObj = class;
   TTelegramInlineQueryObj = class;
   TTelegramUserObj = class;
+  TCallbackQueryObj = class;
   TTelegramUpdateObjList = specialize TFPGObjectList<TTelegramMessageEntityObj>;
 
   { TTelegramObj }
@@ -32,6 +33,7 @@ type
 
   TTelegramUpdateObj = class(TTelegramObj)
   private
+    FCallbackQuery: TCallbackQueryObj;
     FInlineQuery: TTelegramInlineQueryObj;
     fUpdateId: Integer;
     fMessage: TTelegramMessageObj;
@@ -40,6 +42,7 @@ type
     destructor Destroy; override;
     property UpdateId: Integer read fUpdateId;
     property Message: TTelegramMessageObj read fMessage;
+    property CallbackQuery: TCallbackQueryObj read FCallbackQuery write FCallbackQuery;
     property InlineQuery: TTelegramInlineQueryObj read FInlineQuery;
   end;
 
@@ -72,6 +75,25 @@ type
     property TypeEntity: string read fTypeEntity;
     property Offset: Integer read fOffset;
     property Length: Integer read fLength;
+  end;
+
+  { TCallbackQueryObj }
+
+  TCallbackQueryObj = class(TTelegramObj)
+  private
+    FChatInstance: String;
+    FData: String;
+    FFrom: TTelegramUserObj;
+    FID: String;
+    FMessage: TTelegramMessageObj;
+  public
+    constructor Create(JSONObject: TJSONObject); override;
+    destructor Destroy; override;
+    property ID: String read FID;
+    property From: TTelegramUserObj read FFrom;
+    property Message: TTelegramMessageObj read FMessage;
+    property ChatInstance: String read FChatInstance;
+    property Data: String read FData;  // optional
   end;
 
   { TTelegramInlineQueryObj }
@@ -116,6 +138,28 @@ type
     TELEGRAM_REQUEST_GETUPDATES = 'getUpdates';
 
 implementation
+
+{ TCallbackQueryObj }
+
+constructor TCallbackQueryObj.Create(JSONObject: TJSONObject);
+begin
+  inherited Create(JSONObject);
+  FID := fJSON.Strings['id'];
+  FFrom:=TTelegramUserObj.CreateFromJSONObject(fJSON.Find('from', jtObject) as TJSONObject) as TTelegramUserObj;
+  FMessage := TTelegramMessageObj.CreateFromJSONObject(
+      fJSON.Find('message', jtObject) as TJSONObject) as TTelegramMessageObj;
+  FChatInstance:= fJSON.Strings['chat_instance'];
+  FData:=fJSON.Get('data', '');
+end;
+
+destructor TCallbackQueryObj.Destroy;
+begin
+  if Assigned(FMessage) then
+    FMessage.Free;
+  if Assigned(FFrom) then
+    FFrom.Free;
+  inherited Destroy;
+end;
 
 { TTelegramUserObj }
 
@@ -177,6 +221,8 @@ begin
   // объекты - не нашли?! - nil
   fMessage := TTelegramMessageObj.CreateFromJSONObject(
     fJSON.Find('message', jtObject) as TJSONObject) as TTelegramMessageObj;
+  FCallbackQuery:=TCallbackQueryObj.CreateFromJSONObject(
+    fJSON.Find('callback_query', jtObject) as TJSONObject) as TCallbackQueryObj;
   FInlineQuery:=TTelegramInlineQueryObj.CreateFromJSONObject(
     fJSON.Find('inline_query', jtObject) as TJSONObject) as TTelegramInlineQueryObj;
 end;
@@ -185,6 +231,8 @@ destructor TTelegramUpdateObj.Destroy;
 begin
   if Assigned(fMessage) then
     fMessage.Free;
+  if Assigned(FCallbackQuery) then
+    FCallbackQuery.Free;
   if Assigned(FInlineQuery) then
     FInlineQuery.Free;
   inherited Destroy;
