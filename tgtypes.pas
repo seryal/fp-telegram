@@ -21,7 +21,8 @@ type
   private
     fJSON: TJSONObject;
   public
-    constructor Create(JSONObject: TJSONObject); virtual;
+    constructor Create(JSONObject: TJSONObject); virtual;  // Caution! The JSONObject must be released separately
+    destructor Destroy; override;
     class function CreateFromJSONObject(JSONObject: TJSONObject): TTelegramObj;
   end;
 
@@ -36,6 +37,7 @@ type
     fMessage: TTelegramMessageObj;
   public
     constructor Create(JSONObject: TJSONObject); override;
+    destructor Destroy; override;
     property UpdateId: Integer read fUpdateId;
     property Message: TTelegramMessageObj read fMessage;
     property InlineQuery: TTelegramInlineQueryObj read FInlineQuery;
@@ -148,11 +150,17 @@ begin
   fJSON := JSONObject.Clone as TJSONObject;
 end;
 
+destructor TTelegramObj.Destroy;
+begin
+  fJSON.Free;
+  inherited Destroy;
+end;
+
 class function TTelegramObj.CreateFromJSONObject(JSONObject: TJSONObject): TTelegramObj;
 begin
   try
     if Assigned(JSONObject) then
-      Result := Self.Create(JSONObject)
+      Result := Create(JSONObject)
     else
       Result := nil;
   except
@@ -171,6 +179,15 @@ begin
     fJSON.Find('message', jtObject) as TJSONObject) as TTelegramMessageObj;
   FInlineQuery:=TTelegramInlineQueryObj.CreateFromJSONObject(
     fJSON.Find('inline_query', jtObject) as TJSONObject) as TTelegramInlineQueryObj;
+end;
+
+destructor TTelegramUpdateObj.Destroy;
+begin
+  if Assigned(fMessage) then
+    fMessage.Free;
+  if Assigned(FInlineQuery) then
+    FInlineQuery.Free;
+  inherited Destroy;
 end;
 
 { TTelegramMessageObj }
