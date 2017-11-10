@@ -8,7 +8,7 @@ uses
   Classes, SysUtils, fphttpclient, fpjson;
 
 type
-  TParseMode = (pmMarkdown, pmHTML);
+  TParseMode = (pmDefault, pmMarkdown, pmHTML);
   TLogMessageEvent = procedure(Sender: TObject; LogType: TEventType; const Msg: String) of object;
   TInlineKeyboardButton = class;
 
@@ -48,8 +48,6 @@ type
       write Setswitch_inline_query_current_chat;
   end;
 
-// to-do сделать классы для отправки сообщений в телеграм
-
   { TTelegramSender }
 
   TTelegramSender = class
@@ -63,13 +61,14 @@ type
     procedure ErrorMessage(const Msg: String);
     procedure InfoMessage(const Msg: String);
     function HTTPPostJSON(const Method: String): Boolean;
-    function SendMethod(MethodParameters: array of const): Boolean;
+    function SendMethod(const Method: String; MethodParameters: array of const): Boolean;
+    function SendMethod(const Method: String; MethodParameters: TJSONObject): Boolean; overload;
     procedure SetRequestBody(AValue: String);
     procedure SetWebhookRequest(AValue: Boolean);
   public
     constructor Create(const AToken: String);
-    function sendMessage(chat_id: Int64; const AMessage: String;
-      ParseMode: TParseMode = pmMarkdown; ReplyMarkup: TReplyMarkup = nil): Boolean;
+    function sendMessage(chat_id: Int64; const AMessage: String; ParseMode: TParseMode = pmDefault;
+      DisableWebPagePreview: Boolean=False; ReplyMarkup: TReplyMarkup = nil): Boolean;
     function sendPhoto(chat_id: Int64; const APhoto: String; const ACaption: String = ''): Boolean;
     function sendVideo(chat_id: Int64; const AVideo: String; const ACaption: String = ''): Boolean;
     { Пусть пользователь сам решит какого типа логирование он будет использовать }
@@ -85,6 +84,8 @@ type
 implementation
 
 const
+//  API names constants
+
   s_sendMessage='sendMessage';
   s_sendPhoto='sendPhoto';
   s_sendVideo='sendVideo';
@@ -95,12 +96,13 @@ const
   s_ChatId = 'chat_id';
   s_ParseMode = 'parse_mode';
   s_ReplyMarkup = 'reply_markup';
+  s_DsblWbpgPrvw = 'disable_web_page_preview';
   s_InlineKeyboard = 'inline_keyboard';
   s_SwitchInlineQuery = 'switch_inline_query';
   s_CallbackData = 'callback_data';
   s_SwitchInlineQueryCurrentChat = 's_switch_inline_query_current_chat';
 
-  ParseModes: array[TParseMode] of PChar = ('Markdown', 'HTML');
+  ParseModes: array[TParseMode] of PChar = ('Markdown', 'Markdown', 'HTML');
 
   API_URL='https://api.telegram.org/bot';
 
@@ -244,33 +246,36 @@ begin
   FWebhookRequest:=AValue;
 end;
 
-function TTelegramSender.SendMethod(MethodParameters: array of const): Boolean;
+function TTelegramSender.SendMethod(const Method: String;
+  MethodParameters: array of const): Boolean;
 var
   sendObj: TJSONObject;
-  Method: String;
-
 begin
   sendObj:=TJSONObject.Create(MethodParameters);
-  try
-    if not FWebhookRequest then
-    begin
-      Method:=sendObj.Strings['method'];
-      sendObj.Delete(0);  // Имя метода присутствует в адресе API. См. HTTPPostJSON
-      RequestBody:=sendObj.AsJSON;
-      DebugMessage('Request for method "'+Method+'": '+FRequestBody);
+  Result:=SendMethod(Method, sendObj);
+  sendObj.Free;
+end;
+
+function TTelegramSender.SendMethod(const Method: String; MethodParameters: TJSONObject): Boolean;
+begin
+  Result:=False;
+  if not FWebhookRequest then
+  begin
+    RequestBody:=MethodParameters.AsJSON;
+    DebugMessage('Request for method "'+Method+'": '+FRequestBody);
+    try
       Result:=HTTPPostJson(Method);
       DebugMessage('Response: '+FResponse);
-    end
-    else
-    begin
-      RequestBody:=sendObj.AsJSON;
-      DebugMessage('Request in HTTP reply: '+FRequestBody);
-      Result:=True;
-    end;
-  finally
-    sendObj.Free;
-    if not Result then
+    except
       ErrorMessage('It is not succesful request to API! Request body: '+FRequestBody);
+    end;
+  end
+  else
+  begin
+    MethodParameters.Strings[s_Method]:=Method;
+    RequestBody:=MethodParameters.AsJSON;
+    DebugMessage('Request in HTTP reply: '+FRequestBody);
+    Result:=True;
   end;
 end;
 
@@ -283,28 +288,39 @@ end;
 
 {  https://core.telegram.org/bots/api#sendmessage  }
 function TTelegramSender.sendMessage(chat_id: Int64; const AMessage: String;
-  ParseMode: TParseMode = pmMarkdown; ReplyMarkup: TReplyMarkup = nil): Boolean;
+  ParseMode: TParseMode = pmDefault; DisableWebPagePreview: Boolean=False;
+  ReplyMarkup: TReplyMarkup = nil): Boolean;
+var
+  sendObj: TJSONObject;
 begin
-  if Assigned(ReplyMarkup) then
-    Result:=SendMethod([s_Method, s_sendMessage, s_ChatId, chat_id, s_text, AMessage,
-      s_ParseMode, ParseModes[ParseMode], s_ReplyMarkup, ReplyMarkup.Clone])
-  else
-    Result:=SendMethod([s_Method, s_sendMessage, s_ChatId, chat_id, s_text, AMessage,
-      s_ParseMode, ParseModes[ParseMode]]);
+  sendObj:=TJSONObject.Create;
+  with sendObj do
+  try
+    Add(s_ChatId, chat_id);
+    Add(s_Text, AMessage);
+    if ParseMode<>pmDefault then
+      Add(s_ParseMode, ParseModes[ParseMode]);
+    Add(s_DsblWbpgPrvw, DisableWebPagePreview);
+    if Assigned(ReplyMarkup) then
+      Add(s_ReplyMarkup, ReplyMarkup.Clone); // Clone of ReplyMarkup object will have released with sendObject
+    SendMethod(s_sendMessage, sendObj);
+  finally
+    Free;
+  end;
 end;
 
 { https://core.telegram.org/bots/api#sendphoto }
 function TTelegramSender.sendPhoto(chat_id: Int64; const APhoto: String;
   const ACaption: String): Boolean;
 begin
-  Result:=SendMethod(['method', s_sendPhoto, 'chat_id', chat_id, 'photo', APhoto, 'caption', ACaption]);
+  Result:=SendMethod(s_sendPhoto, ['chat_id', chat_id, 'photo', APhoto, 'caption', ACaption]);
 end;
 
 { https://core.telegram.org/bots/api#sendvideo }
 function TTelegramSender.sendVideo(chat_id: Int64; const AVideo: String;
   const ACaption: String): Boolean;
 begin
-  Result:=SendMethod(['method', s_sendVideo, 'chat_id', chat_id, 'video', AVideo, 'caption', ACaption]);
+  Result:=SendMethod(s_sendVideo, ['chat_id', chat_id, 'video', AVideo, 'caption', ACaption]);
 end;
 
 end.
