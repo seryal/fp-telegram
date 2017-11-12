@@ -16,6 +16,8 @@ type
   TCallbackQueryObj = class;
   TTelegramUpdateObjList = specialize TFPGObjectList<TTelegramMessageEntityObj>;
 
+  TUpdateType = (utMessage, utCallbackQuery);
+
   { TTelegramObj }
 
   TTelegramObj = class
@@ -50,6 +52,7 @@ type
 
   TTelegramMessageObj = class(TTelegramObj)
   private
+    FFrom: TTelegramUserObj;
     fMessageId: Integer;
     fChatId: Integer;
     fText: string;
@@ -58,6 +61,7 @@ type
     constructor Create(JSONObject: TJSONObject); override;
     destructor Destroy; override;
     property MessageId: Integer read fMessageId;
+    property From: TTelegramUserObj read FFrom;
     property ChatId: Integer read fChatId;
     property Text: string read fText;
     property Entities: TTelegramUpdateObjList read fEntities;
@@ -138,6 +142,10 @@ type
     TELEGRAM_REQUEST_GETUPDATES = 'getUpdates';
 
 implementation
+
+const
+
+  UpdateTypeAliases: array[TUpdateType] of PChar = ('message', 'callback_query');
 
 { TCallbackQueryObj }
 
@@ -251,6 +259,8 @@ begin
   // простые типы - не нашли?! - дефолтное значение
   fText := fJSON.Get('text', '');
   fEntities := TTelegramUpdateObjList.Create;
+
+  FFrom:=TTelegramUserObj.CreateFromJSONObject(fJSON.Find('from', jtObject) as TJSONObject) as TTelegramUserObj;
 
   lJSONArray := fJSON.Find('entities', jtArray) as TJSONArray;
   if Assigned(lJSONArray) then

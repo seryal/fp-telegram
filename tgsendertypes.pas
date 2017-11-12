@@ -60,13 +60,18 @@ type
     procedure DebugMessage(const Msg: String); // будет отправлять в журнал все запросы и ответы. Полезно на время разработки
     procedure ErrorMessage(const Msg: String);
     procedure InfoMessage(const Msg: String);
+    function HTTPPostFile(const Method, FileField, FileName: String; AFormData: TStrings): Boolean;
     function HTTPPostJSON(const Method: String): Boolean;
+    function SendFile(const AMethod, AFileField, AFileName: String;
+      MethodParameters: TStrings): Boolean;
     function SendMethod(const Method: String; MethodParameters: array of const): Boolean;
     function SendMethod(const Method: String; MethodParameters: TJSONObject): Boolean; overload;
     procedure SetRequestBody(AValue: String);
     procedure SetWebhookRequest(AValue: Boolean);
   public
     constructor Create(const AToken: String);
+    function sendDocumentByFileName(chat_id: Int64; const AFileName: String;
+      const ACaption: String; ReplyMarkup: TReplyMarkup = nil): Boolean;
     function sendMessage(chat_id: Int64; const AMessage: String; ParseMode: TParseMode = pmDefault;
       DisableWebPagePreview: Boolean=False; ReplyMarkup: TReplyMarkup = nil): Boolean;
     function sendPhoto(chat_id: Int64; const APhoto: String; const ACaption: String = ''): Boolean;
@@ -89,11 +94,14 @@ const
   s_sendMessage='sendMessage';
   s_sendPhoto='sendPhoto';
   s_sendVideo='sendVideo';
+  s_sendDocument='sendDocument';
 
   s_Method='method';
   s_Url = 'url';
   s_Text = 'text';
   s_ChatId = 'chat_id';
+  s_Document = 'document';
+  s_Caption = 'caption';
   s_ParseMode = 'parse_mode';
   s_ReplyMarkup = 'reply_markup';
   s_DsblWbpgPrvw = 'disable_web_page_preview';
@@ -214,6 +222,26 @@ begin
     FOnLogMessage(Self, etInfo, Msg);
 end;
 
+function TTelegramSender.HTTPPostFile(const Method, FileField, FileName: String;
+  AFormData: TStrings): Boolean;
+var
+  HTTP: TFPHTTPClient;
+  AStream: TStringStream;
+begin
+  HTTP:=TFPHTTPClient.Create(nil);
+  AStream:=TStringStream.Create('');
+  try
+    HTTP.AddHeader('Content-Type','multipart/form-data');
+    HTTP.FileFormPost(API_URL+FToken+'/'+Method, AFormData, FileField, FileName, AStream);
+    FResponse:=AStream.DataString;
+    Result:=True;
+  except
+    Result:=False;
+  end;
+  AStream.Free;
+  HTTP.Free;
+end;
+
 function TTelegramSender.HTTPPostJSON(const Method: String): Boolean;
 var
   HTTP: TFPHTTPClient;
@@ -232,6 +260,20 @@ begin
     Result:=False;
   end;
   HTTP.Free;
+end;
+
+function TTelegramSender.SendFile(const AMethod, AFileField, AFileName: String;
+  MethodParameters: TStrings): Boolean;
+begin
+  Result:=False;
+  DebugMessage('Request for method "'+AMethod+'": '+FRequestBody);
+  DebugMessage('Sending file '+AFileName);
+  try
+    Result:=HTTPPostFile(AMethod, AFileField, AFileName, MethodParameters);
+    DebugMessage('Response: '+FResponse);
+  except
+    ErrorMessage('It is not succesful request to API! Request body: '+FRequestBody);
+  end;
 end;
 
 procedure TTelegramSender.SetRequestBody(AValue: String);
@@ -284,6 +326,26 @@ begin
   inherited Create;
   FToken:=AToken;
   FWebhookRequest:=False;
+end;
+
+function TTelegramSender.sendDocumentByFileName(chat_id: Int64; const AFileName: String;
+  const ACaption: String; ReplyMarkup: TReplyMarkup): Boolean;
+var
+  sendObj: TStringList;
+begin
+  Result:=False;
+  sendObj:=TStringList.Create;
+  with sendObj do
+  try
+    Add(s_ChatId+'='+IntToStr(chat_id));
+    if ACaption<>EmptyStr then
+      Add(s_Caption+'='+ACaption);
+    if Assigned(ReplyMarkup) then
+      Add(s_ReplyMarkup+'='+ReplyMarkup.AsJSON);
+    Result:=SendFile(s_sendDocument, s_Document, AFileName, sendObj);
+  finally
+    Free;
+  end;
 end;
 
 {  https://core.telegram.org/bots/api#sendmessage  }
