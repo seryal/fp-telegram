@@ -48,6 +48,13 @@ type
       write Setswitch_inline_query_current_chat;
   end;
 
+  { TInlineKeyboardButtons }
+
+  TInlineKeyboardButtons = class(TJSONArray)
+  public
+    function AddButton(const AButtonText, CallbackData: String): Integer;
+  end;
+
   { TTelegramSender }
 
   TTelegramSender = class
@@ -113,6 +120,17 @@ const
   ParseModes: array[TParseMode] of PChar = ('Markdown', 'Markdown', 'HTML');
 
   API_URL='https://api.telegram.org/bot';
+
+{ TInlineKeyboardButtons }
+
+function TInlineKeyboardButtons.AddButton(const AButtonText, CallbackData: String): Integer;
+var
+  btn: TInlineKeyboardButton;
+begin
+  btn:=TInlineKeyboardButton.Create(AButtonText);
+  btn.callback_data:=CallbackData;
+  Result:=Add(btn);
+end;
 
 { TReplyMarkup }
 
