@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <Package Version="4">
+    <PathDelim Value="\"/>
+    <Name Value="tgbotlazarus"/>
+    <Type Value="RunTimeOnly"/>
+    <Author Value="Al-muhandis (Renat Suleymanov), MstrVLT"/>
+    <CompilerOptions>
+      <Version Value="11"/>
+      <PathDelim Value="\"/>
+      <SearchPaths>
+        <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
+      </SearchPaths>
+      <Linking>
+        <Debugging>
+          <GenerateDebugInfo Value="False"/>
+        </Debugging>
+      </Linking>
+    </CompilerOptions>
+    <Description Value="Telegram API library"/>
+    <Version Build="1"/>
+    <Files Count="2">
+      <Item1>
+        <Filename Value="tgsendertypes.pas"/>
+        <UnitName Value="tgsendertypes"/>
+      </Item1>
+      <Item2>
+        <Filename Value="tgtypes.pas"/>
+        <UnitName Value="tgtypes"/>
+      </Item2>
+    </Files>
+    <RequiredPkgs Count="1">
+      <Item1>
+        <PackageName Value="FCL"/>
+      </Item1>
+    </RequiredPkgs>
+    <UsageOptions>
+      <UnitPath Value="$(PkgOutDir)"/>
+    </UsageOptions>
+    <PublishOptions>
+      <Version Value="2"/>
+    </PublishOptions>
+  </Package>
+</CONFIG>

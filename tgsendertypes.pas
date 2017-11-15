@@ -373,6 +373,7 @@ function TTelegramSender.sendMessage(chat_id: Int64; const AMessage: String;
 var
   sendObj: TJSONObject;
 begin
+  Result:=False;
   sendObj:=TJSONObject.Create;
   with sendObj do
   try
@@ -383,7 +384,7 @@ begin
     Add(s_DsblWbpgPrvw, DisableWebPagePreview);
     if Assigned(ReplyMarkup) then
       Add(s_ReplyMarkup, ReplyMarkup.Clone); // Clone of ReplyMarkup object will have released with sendObject
-    SendMethod(s_sendMessage, sendObj);
+    Result:=SendMethod(s_sendMessage, sendObj);
   finally
     Free;
   end;
