@@ -1,3 +1,3 @@
 This library can be used both independently and as part of other libraries. For example, in form plugin with Brookframework. HelloWorld example of such using is present at https://github.com/Al-Muhandis/brook-telegram/tree/master/example
 --- --- ---
-Данную библиотеку можно использовать как самостоятельно, так и в составе других библиотек. К примеру, совместно с Brookframework. Пример HelloWorld использования такой связки https://github.com/Al-Muhandis/brook-telegram/tree/master/example
+Р”Р°РЅРЅСѓСЋ Р±РёР±Р»РёРѕС‚РµРєСѓ РјРѕР¶РЅРѕ РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ РєР°Рє СЃР°РјРѕСЃС‚РѕСЏС‚РµР»СЊРЅРѕ, С‚Р°Рє Рё РІ СЃРѕСЃС‚Р°РІРµ РґСЂСѓРіРёС… Р±РёР±Р»РёРѕС‚РµРє. Рљ РїСЂРёРјРµСЂСѓ, СЃРѕРІРјРµСЃС‚РЅРѕ СЃ Brookframework. РџСЂРёРјРµСЂ HelloWorld РёСЃРїРѕР»СЊР·РѕРІР°РЅРёСЏ С‚Р°РєРѕР№ СЃРІСЏР·РєРё https://github.com/Al-Muhandis/brook-telegram/tree/master/example
