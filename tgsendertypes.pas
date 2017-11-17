@@ -63,7 +63,7 @@ type
     FResponse: String;
     FRequestBody: String;
     FToken: String;
-    FWebhookRequest: Boolean;
+    FRequestWhenAnswer: Boolean;
     procedure DebugMessage(const Msg: String); // будет отправлять в журнал все запросы и ответы. Полезно на время разработки
     procedure ErrorMessage(const Msg: String);
     procedure InfoMessage(const Msg: String);
@@ -74,7 +74,7 @@ type
     function SendMethod(const Method: String; MethodParameters: array of const): Boolean;
     function SendMethod(const Method: String; MethodParameters: TJSONObject): Boolean; overload;
     procedure SetRequestBody(AValue: String);
-    procedure SetWebhookRequest(AValue: Boolean);
+    procedure SetRequestWhenAnswer(AValue: Boolean);
   public
     constructor Create(const AToken: String);
     function sendDocumentByFileName(chat_id: Int64; const AFileName: String;
@@ -90,7 +90,7 @@ type
     property Token: String read FToken write FToken;
     { If you're using webhooks, you can perform a request to the API while sending an answer...
       In this case the method to be invoked in the method parameter of the request.}
-    property WebhookRequest: Boolean read FWebhookRequest write SetWebhookRequest;
+    property RequestWhenAnswer: Boolean read FRequestWhenAnswer write SetRequestWhenAnswer;
   end;
 
 implementation
@@ -300,10 +300,10 @@ begin
   FRequestBody:=AValue;
 end;
 
-procedure TTelegramSender.SetWebhookRequest(AValue: Boolean);
+procedure TTelegramSender.SetRequestWhenAnswer(AValue: Boolean);
 begin
-  if FWebhookRequest=AValue then Exit;
-  FWebhookRequest:=AValue;
+  if FRequestWhenAnswer=AValue then Exit;
+  FRequestWhenAnswer:=AValue;
 end;
 
 function TTelegramSender.SendMethod(const Method: String;
@@ -319,7 +319,7 @@ end;
 function TTelegramSender.SendMethod(const Method: String; MethodParameters: TJSONObject): Boolean;
 begin
   Result:=False;
-  if not FWebhookRequest then
+  if not FRequestWhenAnswer then
   begin
     RequestBody:=MethodParameters.AsJSON;
     DebugMessage('Request for method "'+Method+'": '+FRequestBody);
@@ -343,7 +343,7 @@ constructor TTelegramSender.Create(const AToken: String);
 begin
   inherited Create;
   FToken:=AToken;
-  FWebhookRequest:=False;
+  FRequestWhenAnswer:=False;
 end;
 
 function TTelegramSender.sendDocumentByFileName(chat_id: Int64; const AFileName: String;
