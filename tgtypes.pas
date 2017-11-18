@@ -14,6 +14,7 @@ type
   TTelegramInlineQueryObj = class;
   TTelegramUserObj = class;
   TCallbackQueryObj = class;
+  TTelegramLocation = class;
   TTelegramUpdateObjList = specialize TFPGObjectList<TTelegramMessageEntityObj>;
 
   TUpdateType = (utMessage, utCallbackQuery);
@@ -53,6 +54,7 @@ type
   TTelegramMessageObj = class(TTelegramObj)
   private
     FFrom: TTelegramUserObj;
+    FLocation: TTelegramLocation;
     fMessageId: Integer;
     fChatId: Integer;
     fText: string;
@@ -65,6 +67,7 @@ type
     property ChatId: Integer read fChatId;
     property Text: string read fText;
     property Entities: TTelegramUpdateObjList read fEntities;
+    property Location: TTelegramLocation read FLocation;
   end;
 
   { TTelegramMessageEntityObj }
@@ -138,6 +141,20 @@ type
     property Language_code: String read FLanguage_code;
   end;
 
+  { TTelegramLocation }
+
+  TTelegramLocation = class(TTelegramObj)
+  private
+    FLatitude: Real;
+    FLongitude: Real;
+    procedure SetLatitude(AValue: Real);
+    procedure SetLongitude(AValue: Real);
+  public
+    constructor Create(JSONObject: TJSONObject); override;
+    property Longitude: Real read FLongitude write SetLongitude;
+    property Latitude: Real read FLatitude write SetLatitude;
+  end;
+
   const
     TELEGRAM_REQUEST_GETUPDATES = 'getUpdates';
 
@@ -146,6 +163,27 @@ implementation
 const
 
   UpdateTypeAliases: array[TUpdateType] of PChar = ('message', 'callback_query');
+
+{ TTelegramLocation }
+
+procedure TTelegramLocation.SetLatitude(AValue: Real);
+begin
+  if FLatitude=AValue then Exit;
+  FLatitude:=AValue;
+end;
+
+procedure TTelegramLocation.SetLongitude(AValue: Real);
+begin
+  if FLongitude=AValue then Exit;
+  FLongitude:=AValue;
+end;
+
+constructor TTelegramLocation.Create(JSONObject: TJSONObject);
+begin
+  inherited Create(JSONObject);
+  FLongitude := fJSON.Floats['longitude'];
+  FLatitude :=  fJSON.Floats['latitude'];
+end;
 
 { TCallbackQueryObj }
 
@@ -261,6 +299,8 @@ begin
   fEntities := TTelegramUpdateObjList.Create;
 
   FFrom:=TTelegramUserObj.CreateFromJSONObject(fJSON.Find('from', jtObject) as TJSONObject) as TTelegramUserObj;
+
+  FLocation:=TTelegramUserObj.CreateFromJSONObject(fJSON.Find('location', jtObject) as TJSONObject) as TTelegramLocation;
 
   lJSONArray := fJSON.Find('entities', jtArray) as TJSONArray;
   if Assigned(lJSONArray) then
