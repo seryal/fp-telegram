@@ -77,6 +77,9 @@ type
     procedure SetRequestWhenAnswer(AValue: Boolean);
   public
     constructor Create(const AToken: String);
+    function editMessageText(const AMessage: String; chat_id: Int64 = 0; message_id: Int64 = 0;
+      ParseMode: TParseMode = pmDefault; DisableWebPagePreview: Boolean=False;
+      inline_message_id: String = ''; ReplyMarkup: TReplyMarkup = nil): Boolean;
     function sendDocumentByFileName(chat_id: Int64; const AFileName: String;
       const ACaption: String; ReplyMarkup: TReplyMarkup = nil): Boolean;
     function sendMessage(chat_id: Int64; const AMessage: String; ParseMode: TParseMode = pmDefault;
@@ -98,6 +101,7 @@ implementation
 const
 //  API names constants
 
+  s_editMessageText='editMessageText';
   s_sendMessage='sendMessage';
   s_sendPhoto='sendPhoto';
   s_sendVideo='sendVideo';
@@ -107,6 +111,8 @@ const
   s_Url = 'url';
   s_Text = 'text';
   s_ChatId = 'chat_id';
+  s_MessageId = 'message_id';
+  s_InlineMessageId = 'inline_message_id';
   s_Document = 'document';
   s_Caption = 'caption';
   s_ParseMode = 'parse_mode';
@@ -344,6 +350,35 @@ begin
   inherited Create;
   FToken:=AToken;
   FRequestWhenAnswer:=False;
+end;
+
+function TTelegramSender.editMessageText(const AMessage: String;
+  chat_id: Int64; message_id: Int64; ParseMode: TParseMode;
+  DisableWebPagePreview: Boolean; inline_message_id: String;
+  ReplyMarkup: TReplyMarkup): Boolean;
+var
+  sendObj: TJSONObject;
+begin
+  Result:=False;
+  sendObj:=TJSONObject.Create;
+  with sendObj do
+  try
+    if chat_id<>0 then
+      Add(s_ChatId, chat_id);
+    if message_id<>0 then
+      Add(s_MessageId, message_id);
+    if inline_message_id<>EmptyStr then
+      Add(s_InlineMessageId, inline_message_id);
+    Add(s_Text, AMessage);
+    if ParseMode<>pmDefault then
+      Add(s_ParseMode, ParseModes[ParseMode]);
+    Add(s_DsblWbpgPrvw, DisableWebPagePreview);
+    if Assigned(ReplyMarkup) then
+      Add(s_ReplyMarkup, ReplyMarkup.Clone); // Clone of ReplyMarkup object will have released with sendObject
+    Result:=SendMethod(s_editMessageText, sendObj);
+  finally
+    Free;
+  end;
 end;
 
 function TTelegramSender.sendDocumentByFileName(chat_id: Int64; const AFileName: String;
