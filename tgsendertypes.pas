@@ -52,6 +52,7 @@ type
 
   TInlineKeyboardButtons = class(TJSONArray)
   public
+    constructor Create(const AButtonText, CallbackData: String); overload;
     function AddButton(const AButtonText, CallbackData: String): Integer;
   end;
 
@@ -128,6 +129,13 @@ const
   API_URL='https://api.telegram.org/bot';
 
 { TInlineKeyboardButtons }
+
+constructor TInlineKeyboardButtons.Create(const AButtonText,
+  CallbackData: String);
+begin
+  inherited Create;
+  AddButton(AButtonText, CallbackData);
+end;
 
 function TInlineKeyboardButtons.AddButton(const AButtonText, CallbackData: String): Integer;
 var
