@@ -53,7 +53,9 @@ type
   TInlineKeyboardButtons = class(TJSONArray)
   public
     constructor Create(const AButtonText, CallbackData: String); overload;
+    constructor Create(const AButtons: array of String); overload;
     function AddButton(const AButtonText, CallbackData: String): Integer;
+    procedure AddButtons(const AButtonts: array of String);
   end;
 
   { TTelegramSender }
@@ -137,6 +139,12 @@ begin
   AddButton(AButtonText, CallbackData);
 end;
 
+constructor TInlineKeyboardButtons.Create(const AButtons: array of String);
+begin
+  inherited Create;
+  AddButtons(AButtons);
+end;
+
 function TInlineKeyboardButtons.AddButton(const AButtonText, CallbackData: String): Integer;
 var
   btn: TInlineKeyboardButton;
@@ -144,6 +152,20 @@ begin
   btn:=TInlineKeyboardButton.Create(AButtonText);
   btn.callback_data:=CallbackData;
   Result:=Add(btn);
+end;
+
+procedure TInlineKeyboardButtons.AddButtons(const AButtonts: array of String);
+var
+  btn: TInlineKeyboardButton;
+  i, c: Integer;
+begin
+  c:=Length(AButtonts) div 2;
+  for i:=0 to c-1 do
+  begin
+    btn:=TInlineKeyboardButton.Create(AButtonts[i*2]);
+    btn.callback_data:=AButtonts[i*2+1];
+    Add(btn);
+  end;
 end;
 
 { TReplyMarkup }
