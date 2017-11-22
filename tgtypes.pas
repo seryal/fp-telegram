@@ -30,8 +30,6 @@ type
     class function CreateFromJSONObject(JSONObject: TJSONObject): TTelegramObj;
   end;
 
-  TTelegramObjClass = class of TTelegramObj;
-
   { TTelegramUpdateObj }
 
   TTelegramUpdateObj = class(TTelegramObj)
@@ -310,6 +308,10 @@ end;
 
 destructor TTelegramMessageObj.Destroy;
 begin
+  if Assigned(FFrom) then
+    FFrom.Free;
+  if Assigned(FLocation) then
+    FLocation.Free;
   fEntities.Free;
   inherited Destroy;
 end;

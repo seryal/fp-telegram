@@ -85,6 +85,9 @@ type
       inline_message_id: String = ''; ReplyMarkup: TReplyMarkup = nil): Boolean;
     function sendDocumentByFileName(chat_id: Int64; const AFileName: String;
       const ACaption: String; ReplyMarkup: TReplyMarkup = nil): Boolean;
+    function sendLocation(chat_id: Int64; Latitude, Longitude: Real; LivePeriod: Integer = 0;
+      ParseMode: TParseMode = pmDefault; DisableWebPagePreview: Boolean=False;
+      ReplyMarkup: TReplyMarkup = nil): Boolean;
     function sendMessage(chat_id: Int64; const AMessage: String; ParseMode: TParseMode = pmDefault;
       DisableWebPagePreview: Boolean=False; ReplyMarkup: TReplyMarkup = nil): Boolean;
     function sendPhoto(chat_id: Int64; const APhoto: String; const ACaption: String = ''): Boolean;
@@ -109,6 +112,7 @@ const
   s_sendPhoto='sendPhoto';
   s_sendVideo='sendVideo';
   s_sendDocument='sendDocument';
+  s_sendLocation='sendLocation';
 
   s_Method='method';
   s_Url = 'url';
@@ -120,6 +124,9 @@ const
   s_Caption = 'caption';
   s_ParseMode = 'parse_mode';
   s_ReplyMarkup = 'reply_markup';
+  s_Latitude = 'latitude';
+  s_Longitude = 'longitude';
+  s_LivePeriod = 'live_period';
   s_DsblWbpgPrvw = 'disable_web_page_preview';
   s_InlineKeyboard = 'inline_keyboard';
   s_SwitchInlineQuery = 'switch_inline_query';
@@ -426,6 +433,32 @@ begin
     if Assigned(ReplyMarkup) then
       Add(s_ReplyMarkup+'='+ReplyMarkup.AsJSON);
     Result:=SendFile(s_sendDocument, s_Document, AFileName, sendObj);
+  finally
+    Free;
+  end;
+end;
+
+function TTelegramSender.sendLocation(chat_id: Int64; Latitude,
+  Longitude: Real; LivePeriod: Integer; ParseMode: TParseMode;
+  DisableWebPagePreview: Boolean; ReplyMarkup: TReplyMarkup): Boolean;
+var
+  sendObj: TJSONObject;
+begin
+  Result:=False;
+  sendObj:=TJSONObject.Create;
+  with sendObj do
+  try
+    Add(s_ChatId, chat_id);
+    Add(s_Latitude, Latitude);
+    Add(s_Longitude, Longitude);
+    if LivePeriod<>0 then
+      Add(s_LivePeriod, LivePeriod);
+    if ParseMode<>pmDefault then
+      Add(s_ParseMode, ParseModes[ParseMode]);
+    Add(s_DsblWbpgPrvw, DisableWebPagePreview);
+    if Assigned(ReplyMarkup) then
+      Add(s_ReplyMarkup, ReplyMarkup.Clone); // Clone of ReplyMarkup object will have released with sendObject
+    Result:=SendMethod(s_sendLocation, sendObj);
   finally
     Free;
   end;
