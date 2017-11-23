@@ -143,14 +143,12 @@ type
 
   TTelegramLocation = class(TTelegramObj)
   private
-    FLatitude: Real;
-    FLongitude: Real;
-    procedure SetLatitude(AValue: Real);
-    procedure SetLongitude(AValue: Real);
+    FLatitude: Double;
+    FLongitude: Double;
   public
     constructor Create(JSONObject: TJSONObject); override;
-    property Longitude: Real read FLongitude write SetLongitude;
-    property Latitude: Real read FLatitude write SetLatitude;
+    property Longitude: Double read FLongitude write FLongitude;
+    property Latitude: Double read FLatitude write FLatitude;
   end;
 
   const
@@ -163,18 +161,6 @@ const
   UpdateTypeAliases: array[TUpdateType] of PChar = ('message', 'callback_query');
 
 { TTelegramLocation }
-
-procedure TTelegramLocation.SetLatitude(AValue: Real);
-begin
-  if FLatitude=AValue then Exit;
-  FLatitude:=AValue;
-end;
-
-procedure TTelegramLocation.SetLongitude(AValue: Real);
-begin
-  if FLongitude=AValue then Exit;
-  FLongitude:=AValue;
-end;
 
 constructor TTelegramLocation.Create(JSONObject: TJSONObject);
 begin
@@ -298,7 +284,7 @@ begin
 
   FFrom:=TTelegramUserObj.CreateFromJSONObject(fJSON.Find('from', jtObject) as TJSONObject) as TTelegramUserObj;
 
-  FLocation:=TTelegramUserObj.CreateFromJSONObject(fJSON.Find('location', jtObject) as TJSONObject) as TTelegramLocation;
+  FLocation:=TTelegramLocation.CreateFromJSONObject(fJSON.Find('location', jtObject) as TJSONObject) as TTelegramLocation;
 
   lJSONArray := fJSON.Find('entities', jtArray) as TJSONArray;
   if Assigned(lJSONArray) then
