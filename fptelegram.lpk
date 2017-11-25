@@ -2,7 +2,7 @@
 <CONFIG>
   <Package Version="4">
     <PathDelim Value="\"/>
-    <Name Value="tgbotlazarus"/>
+    <Name Value="fptelegram"/>
     <Type Value="RunTimeOnly"/>
     <Author Value="Al-muhandis (Renat Suleymanov), MstrVLT"/>
     <CompilerOptions>
