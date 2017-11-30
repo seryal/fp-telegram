@@ -11,15 +11,55 @@ type
   TParseMode = (pmDefault, pmMarkdown, pmHTML);
   TLogMessageEvent = procedure(Sender: TObject; LogType: TEventType; const Msg: String) of object;
   TInlineKeyboardButton = class;
+  TKeyboardButton = class;
 
   { TReplyMarkup }
 
   TReplyMarkup = class(TJSONObject)
   private
     function GetInlineKeyBoard: TJSONArray;
+    function GetReplyKeyboardMarkup: TJSONArray;
+    function GetResizeKeyboard: Boolean;
     procedure SetInlineKeyBoard(AValue: TJSONArray);
-  public
+    procedure SetReplyKeyboardMarkup(AValue: TJSONArray);
+    procedure SetResizeKeyboard(AValue: Boolean);
+  public  { Only one from InlineKeyboard or ReplyMarkup is must to set }
     property InlineKeyBoard: TJSONArray read GetInlineKeyBoard write SetInlineKeyBoard;
+    property ReplyKeyboardMarkup: TJSONArray read GetReplyKeyboardMarkup
+      write SetReplyKeyboardMarkup;
+{ Only if ReplyKeyboard is present then optional}
+    property ResizeKeyboard: Boolean read GetResizeKeyboard write SetResizeKeyboard;
+  end;
+
+  { TKeyboardButton }
+
+  TKeyboardButton = class(TJSONObject)
+  private
+    function GetRequestContact: Boolean;
+    function GetRequestLocation: Boolean;
+    function Gettext: String;
+    procedure SetRequestContact(AValue: Boolean);
+    procedure SetRequestLocation(AValue: Boolean);
+    procedure Settext(AValue: String);
+  public
+    constructor Create(const AText: String);
+    property text: String read Gettext write Settext;
+    property RequestContact: Boolean read GetRequestContact write SetRequestContact; // Optional
+    property RequestLocation: Boolean read GetRequestLocation write SetRequestLocation; // Optional
+  end;
+
+  { TKeyboardButtons }
+
+  TKeyboardButtons = class(TJSONArray)
+  private
+    function GetButtons(Index : Integer): TKeyboardButton;
+    procedure SetButtons(Index : Integer; AValue: TKeyboardButton);
+  public
+    constructor Create(const AText: String); overload;
+    constructor Create(const AButtons: array of String); overload;
+    function AddButton(const AButtonText: String): Integer;
+    procedure AddButtons(const AButtons: array of String);
+    property Buttons[Index : Integer]: TKeyboardButton read GetButtons write SetButtons;
   end;
 
   { TInlineKeyboardButton }
@@ -55,7 +95,7 @@ type
     constructor Create(const AButtonText, CallbackData: String); overload;
     constructor Create(const AButtons: array of String); overload;
     function AddButton(const AButtonText, CallbackData: String): Integer;
-    procedure AddButtons(const AButtonts: array of String);
+    procedure AddButtons(const AButtons: array of String);
   end;
 
   { TTelegramSender }
@@ -129,6 +169,10 @@ const
   s_LivePeriod = 'live_period';
   s_DsblWbpgPrvw = 'disable_web_page_preview';
   s_InlineKeyboard = 'inline_keyboard';
+  s_Keyboard = 'keyboard';
+  s_ResizeKeyboard = 'resize_keyboard';
+  s_RequestContact = 'request_contact';
+  s_RequestLocation = 'request_location';
   s_SwitchInlineQuery = 'switch_inline_query';
   s_CallbackData = 'callback_data';
   s_SwitchInlineQueryCurrentChat = 's_switch_inline_query_current_chat';
@@ -136,6 +180,81 @@ const
   ParseModes: array[TParseMode] of PChar = ('Markdown', 'Markdown', 'HTML');
 
   API_URL='https://api.telegram.org/bot';
+
+{ TKeyboardButtons }
+
+function TKeyboardButtons.GetButtons(Index : Integer): TKeyboardButton;
+begin
+  Result:=Items[Index] as TKeyboardButton;
+end;
+
+procedure TKeyboardButtons.SetButtons(Index : Integer; AValue: TKeyboardButton);
+begin
+  Items[Index]:=AValue;
+end;
+
+constructor TKeyboardButtons.Create(const AText: String);
+begin
+  inherited Create;
+  AddButton(AText);
+end;
+
+constructor TKeyboardButtons.Create(const AButtons: array of String);
+begin
+  inherited Create;
+  AddButtons(AButtons);
+end;
+
+function TKeyboardButtons.AddButton(const AButtonText: String): Integer;
+begin
+  Result:=Add(TKeyboardButton.Create(AButtonText));
+end;
+
+procedure TKeyboardButtons.AddButtons(const AButtons: array of String);
+var
+  i: Integer;
+begin
+  for i:=0 to Length(AButtons)-1 do
+    Add(TKeyboardButton.Create(AButtons[i]));
+end;
+
+{ TKeyboardButton }
+
+function TKeyboardButton.GetRequestContact: Boolean;
+begin
+  Result:=Get(s_RequestContact, False);
+end;
+
+function TKeyboardButton.GetRequestLocation: Boolean;
+begin
+  Result:=Get(s_RequestLocation, False);
+end;
+
+function TKeyboardButton.Gettext: String;
+begin
+  Result:=Strings[s_text];
+end;
+
+procedure TKeyboardButton.SetRequestContact(AValue: Boolean);
+begin
+  Booleans[s_RequestContact]:=AValue;
+end;
+
+procedure TKeyboardButton.SetRequestLocation(AValue: Boolean);
+begin
+  Booleans[s_RequestLocation]:=AValue;
+end;
+
+procedure TKeyboardButton.Settext(AValue: String);
+begin
+  Strings[s_text]:=AValue;
+end;
+
+constructor TKeyboardButton.Create(const AText: String);
+begin
+  inherited Create;
+  Add(s_text, AText);
+end;
 
 { TInlineKeyboardButtons }
 
@@ -161,16 +280,16 @@ begin
   Result:=Add(btn);
 end;
 
-procedure TInlineKeyboardButtons.AddButtons(const AButtonts: array of String);
+procedure TInlineKeyboardButtons.AddButtons(const AButtons: array of String);
 var
   btn: TInlineKeyboardButton;
   i, c: Integer;
 begin
-  c:=Length(AButtonts) div 2;
+  c:=Length(AButtons) div 2;
   for i:=0 to c-1 do
   begin
-    btn:=TInlineKeyboardButton.Create(AButtonts[i*2]);
-    btn.callback_data:=AButtonts[i*2+1];
+    btn:=TInlineKeyboardButton.Create(AButtons[i*2]);
+    btn.callback_data:=AButtons[i*2+1];
     Add(btn);
   end;
 end;
@@ -182,9 +301,29 @@ begin
   Result:=Arrays[s_InlineKeyboard];
 end;
 
+function TReplyMarkup.GetReplyKeyboardMarkup: TJSONArray;
+begin
+  Result:=Arrays[s_Keyboard];
+end;
+
+function TReplyMarkup.GetResizeKeyboard: Boolean;
+begin
+  Result:=Get(s_ResizeKeyboard, False);     // default False
+end;
+
 procedure TReplyMarkup.SetInlineKeyBoard(AValue: TJSONArray);
 begin
   Arrays[s_InlineKeyboard]:=AValue;
+end;
+
+procedure TReplyMarkup.SetReplyKeyboardMarkup(AValue: TJSONArray);
+begin
+  Arrays[s_Keyboard]:=AValue;
+end;
+
+procedure TReplyMarkup.SetResizeKeyboard(AValue: Boolean);
+begin
+  Booleans[s_ResizeKeyboard]:=AValue;
 end;
 
 { TInlineKeyboardButton }
