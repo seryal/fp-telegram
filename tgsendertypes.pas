@@ -18,9 +18,11 @@ type
   TReplyMarkup = class(TJSONObject)
   private
     function GetInlineKeyBoard: TJSONArray;
+    function GetOneTimeKeyboard: Boolean;
     function GetReplyKeyboardMarkup: TJSONArray;
     function GetResizeKeyboard: Boolean;
     procedure SetInlineKeyBoard(AValue: TJSONArray);
+    procedure SetOneTimeKeyboard(AValue: Boolean);
     procedure SetReplyKeyboardMarkup(AValue: TJSONArray);
     procedure SetResizeKeyboard(AValue: Boolean);
   public  { Only one from InlineKeyboard or ReplyMarkup is must to set }
@@ -29,6 +31,7 @@ type
       write SetReplyKeyboardMarkup;
 { Only if ReplyKeyboard is present then optional}
     property ResizeKeyboard: Boolean read GetResizeKeyboard write SetResizeKeyboard;
+    property OneTimeKeyboard: Boolean read GetOneTimeKeyboard write SetOneTimeKeyboard;
   end;
 
   { TKeyboardButton }
@@ -171,6 +174,7 @@ const
   s_InlineKeyboard = 'inline_keyboard';
   s_Keyboard = 'keyboard';
   s_ResizeKeyboard = 'resize_keyboard';
+  s_OneTimeKeyboard = 'one_time_keyboard';
   s_RequestContact = 'request_contact';
   s_RequestLocation = 'request_location';
   s_SwitchInlineQuery = 'switch_inline_query';
@@ -301,6 +305,11 @@ begin
   Result:=Arrays[s_InlineKeyboard];
 end;
 
+function TReplyMarkup.GetOneTimeKeyboard: Boolean;
+begin
+  Result:=Get(s_OneTimeKeyboard, False);
+end;
+
 function TReplyMarkup.GetReplyKeyboardMarkup: TJSONArray;
 begin
   Result:=Arrays[s_Keyboard];
@@ -314,6 +323,11 @@ end;
 procedure TReplyMarkup.SetInlineKeyBoard(AValue: TJSONArray);
 begin
   Arrays[s_InlineKeyboard]:=AValue;
+end;
+
+procedure TReplyMarkup.SetOneTimeKeyboard(AValue: Boolean);
+begin
+  Booleans[s_OneTimeKeyboard]:=AValue;
 end;
 
 procedure TReplyMarkup.SetReplyKeyboardMarkup(AValue: TJSONArray);
