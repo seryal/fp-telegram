@@ -17,21 +17,30 @@ type
 
   TReplyMarkup = class(TJSONObject)
   private
+    function GetForceReply: Boolean;
     function GetInlineKeyBoard: TJSONArray;
     function GetOneTimeKeyboard: Boolean;
     function GetReplyKeyboardMarkup: TJSONArray;
     function GetResizeKeyboard: Boolean;
+    function GetSelective: Boolean;
+    procedure SetForceReply(AValue: Boolean);
     procedure SetInlineKeyBoard(AValue: TJSONArray);
     procedure SetOneTimeKeyboard(AValue: Boolean);
     procedure SetReplyKeyboardMarkup(AValue: TJSONArray);
     procedure SetResizeKeyboard(AValue: Boolean);
+    procedure SetSelective(AValue: Boolean);
   public  { Only one from InlineKeyboard or ReplyMarkup is must to set }
     property InlineKeyBoard: TJSONArray read GetInlineKeyBoard write SetInlineKeyBoard;
+{ ٌReplyKeyboard porerties }
     property ReplyKeyboardMarkup: TJSONArray read GetReplyKeyboardMarkup
       write SetReplyKeyboardMarkup;
 { Only if ReplyKeyboard is present then optional}
     property ResizeKeyboard: Boolean read GetResizeKeyboard write SetResizeKeyboard;
     property OneTimeKeyboard: Boolean read GetOneTimeKeyboard write SetOneTimeKeyboard;
+{ ForceReply properties
+  If property ForceReply is set then ReplyMarkup must be only ForceReply type }
+    property ForceReply: Boolean read GetForceReply write SetForceReply;
+    property Selective: Boolean read GetSelective write SetSelective;
   end;
 
   { TKeyboardButton }
@@ -180,12 +189,14 @@ const
   s_SwitchInlineQuery = 'switch_inline_query';
   s_CallbackData = 'callback_data';
   s_SwitchInlineQueryCurrentChat = 's_switch_inline_query_current_chat';
+  s_Selective = 'selective';
+  s_ForceReply = 'force_reply';
 
   ParseModes: array[TParseMode] of PChar = ('Markdown', 'Markdown', 'HTML');
 
   API_URL='https://api.telegram.org/bot';
 
-{ TKeyboardButtons }
+  { TKeyboardButtons }
 
 function TKeyboardButtons.GetButtons(Index : Integer): TKeyboardButton;
 begin
@@ -300,6 +311,11 @@ end;
 
 { TReplyMarkup }
 
+function TReplyMarkup.GetForceReply: Boolean;
+begin
+  Result:=Booleans[s_ForceReply];
+end;
+
 function TReplyMarkup.GetInlineKeyBoard: TJSONArray;
 begin
   Result:=Arrays[s_InlineKeyboard];
@@ -320,6 +336,24 @@ begin
   Result:=Get(s_ResizeKeyboard, False);     // default False
 end;
 
+function TReplyMarkup.GetSelective: Boolean;
+begin
+
+end;
+
+procedure TReplyMarkup.SetForceReply(AValue: Boolean);
+begin
+  if not AValue then
+  begin
+    if IndexOfName(s_ForceReply)>-1 then
+      Delete(s_ForceReply);
+    if IndexOfName(s_Selective)>-1 then
+      Delete(s_Selective);
+  end
+  else
+    Booleans[s_ForceReply]:=True;
+end;
+
 procedure TReplyMarkup.SetInlineKeyBoard(AValue: TJSONArray);
 begin
   Arrays[s_InlineKeyboard]:=AValue;
@@ -338,6 +372,14 @@ end;
 procedure TReplyMarkup.SetResizeKeyboard(AValue: Boolean);
 begin
   Booleans[s_ResizeKeyboard]:=AValue;
+end;
+
+procedure TReplyMarkup.SetSelective(AValue: Boolean);
+begin
+  if AValue then
+    if not ForceReply then
+      ForceReply:=True;
+  Booleans[s_Selective]:=AValue;
 end;
 
 { TInlineKeyboardButton }
