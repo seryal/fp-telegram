@@ -55,6 +55,7 @@ type
     FLocation: TTelegramLocation;
     fMessageId: Integer;
     fChatId: Integer;
+    FReplyToMessage: TTelegramMessageObj;
     fText: string;
     fEntities: TTelegramUpdateObjList;
   public
@@ -63,6 +64,7 @@ type
     property MessageId: Integer read fMessageId;
     property From: TTelegramUserObj read FFrom;
     property ChatId: Integer read fChatId;
+    property ReplyToMessage: TTelegramMessageObj read FReplyToMessage;
     property Text: string read fText;
     property Entities: TTelegramUpdateObjList read fEntities;
     property Location: TTelegramLocation read FLocation;
@@ -286,6 +288,10 @@ begin
 
   FLocation:=TTelegramLocation.CreateFromJSONObject(fJSON.Find('location', jtObject) as TJSONObject) as TTelegramLocation;
 
+  FReplyToMessage:=
+    TTelegramMessageObj.CreateFromJSONObject(fJSON.Find('reply_to_message', jtObject) as TJSONObject)
+    as TTelegramMessageObj;
+
   lJSONArray := fJSON.Find('entities', jtArray) as TJSONArray;
   if Assigned(lJSONArray) then
     for lJSONEnum in lJSONArray do
@@ -298,6 +304,8 @@ begin
     FFrom.Free;
   if Assigned(FLocation) then
     FLocation.Free;
+  if Assigned(FReplyToMessage) then
+    FReplyToMessage.Free;
   fEntities.Free;
   inherited Destroy;
 end;
