@@ -5,13 +5,30 @@ unit tgsendertypes;
 interface
 
 uses
-  Classes, SysUtils, fphttpclient, fpjson;
+  Classes, SysUtils, fphttpclient, fpjson, tgtypes, ghashmap;
 
 type
   TParseMode = (pmDefault, pmMarkdown, pmHTML);
-  TLogMessageEvent = procedure(Sender: TObject; LogType: TEventType; const Msg: String) of object;
+  TLogMessageEvent = procedure(ASender: TObject; LogType: TEventType; const Msg: String) of object;
   TInlineKeyboardButton = class;
   TKeyboardButton = class;
+
+  TOnUpdateEvent = procedure (ASender: TObject; AnUpdate: TTelegramUpdateObj) of object;
+
+  TCommandEvent = procedure (ASender: TObject; const ACommand: String;
+    AMessage: TTelegramMessageObj) of object;
+  TCallbackEvent = procedure (ASender: TObject; ACallback: TCallbackQueryObj) of object;
+  TMessageEvent = procedure (ASender: TObject; AMessage: TTelegramMessageObj) of object;
+
+  { TStringHash }
+
+  TStringHash = class
+    class function hash(s: String; n: Integer): Integer;
+  end;
+
+  generic TStringHashMap<T> = class(specialize THashMap<String,T,TStringHash>) end;
+
+  TCommandHandlersMap = specialize TStringHashMap<TCommandEvent>;
 
   { TReplyMarkup }
 
@@ -114,27 +131,51 @@ type
 
   TTelegramSender = class
   private
+    FCurrentChatId: Int64;
+    FCurrentUser: TTelegramUserObj;
+    FOnReceiveCallbackQuery: TCallbackEvent;
+    FOnReceiveMessage: TMessageEvent;
+    FUpdate: TTelegramUpdateObj;
+    FJSONResponse: TJSONData;
     FOnLogMessage: TLogMessageEvent;
+    FOnReceiveUpdate: TOnUpdateEvent;
+    FProcessUpdate: Boolean;
     FResponse: String;
     FRequestBody: String;
     FToken: String;
     FRequestWhenAnswer: Boolean;
+    FCommandHandlers: TCommandHandlersMap;
+    function GetCommandHandlers(const Command: String): TCommandEvent;
+    procedure SetCommandHandlers(const Command: String; AValue: TCommandEvent);
+    procedure DoReceiveMessageUpdate;
+    procedure DoReceiveCallbackQuery;
     procedure DebugMessage(const Msg: String); // будет отправлять в журнал все запросы и ответы. Полезно на время разработки
     procedure ErrorMessage(const Msg: String);
     procedure InfoMessage(const Msg: String);
     function HTTPPostFile(const Method, FileField, FileName: String; AFormData: TStrings): Boolean;
     function HTTPPostJSON(const Method: String): Boolean;
+    function ResponseToJSONObject: TJSONObject;
     function SendFile(const AMethod, AFileField, AFileName: String;
       MethodParameters: TStrings): Boolean;
     function SendMethod(const Method: String; MethodParameters: array of const): Boolean;
     function SendMethod(const Method: String; MethodParameters: TJSONObject): Boolean; overload;
+    procedure SetJSONResponse(AValue: TJSONData);
+    procedure SetOnReceiveCallbackQuery(AValue: TCallbackEvent);
+    procedure SetOnReceiveMessage(AValue: TMessageEvent);
+    procedure SetOnReceiveUpdate(AValue: TOnUpdateEvent);
+    procedure SetProcessUpdate(AValue: Boolean);
     procedure SetRequestBody(AValue: String);
     procedure SetRequestWhenAnswer(AValue: Boolean);
+    class function StringToJSONObject(const AString: String): TJSONObject;
   public
     constructor Create(const AToken: String);
+    destructor Destroy; override;
+    procedure DoReceiveUpdate(AnUpdate: TTelegramUpdateObj);
     function editMessageText(const AMessage: String; chat_id: Int64 = 0; message_id: Int64 = 0;
       ParseMode: TParseMode = pmDefault; DisableWebPagePreview: Boolean=False;
       inline_message_id: String = ''; ReplyMarkup: TReplyMarkup = nil): Boolean;
+    function getUpdates(offset: Int64 = 0; limit: Integer = 0; timeout: Integer = 0;
+      allowed_updates: TUpdateSet = []): Boolean;
     function sendDocumentByFileName(chat_id: Int64; const AFileName: String;
       const ACaption: String; ReplyMarkup: TReplyMarkup = nil): Boolean;
     function sendLocation(chat_id: Int64; Latitude, Longitude: Real; LivePeriod: Integer = 0;
@@ -142,9 +183,14 @@ type
       ReplyMarkup: TReplyMarkup = nil): Boolean;
     function sendMessage(chat_id: Int64; const AMessage: String; ParseMode: TParseMode = pmDefault;
       DisableWebPagePreview: Boolean=False; ReplyMarkup: TReplyMarkup = nil): Boolean;
+    function sendMessage(const AMessage: String; ParseMode: TParseMode = pmDefault;
+      DisableWebPagePreview: Boolean=False; ReplyMarkup: TReplyMarkup = nil): Boolean; overload;
     function sendPhoto(chat_id: Int64; const APhoto: String; const ACaption: String = ''): Boolean;
     function sendVideo(chat_id: Int64; const AVideo: String; const ACaption: String = ''): Boolean;
     { Пусть пользователь сам решит какого типа логирование он будет использовать }
+    property JSONResponse: TJSONData read FJSONResponse write SetJSONResponse;
+    property CurrentChatId: Int64 read FCurrentChatId;
+    property CurrentUser: TTelegramUserObj read FCurrentUser;
     property OnLogMessage: TLogMessageEvent read FOnLogMessage write FOnLogMessage;
     property RequestBody: String read FRequestBody write SetRequestBody;
     property Response: String read FResponse;
@@ -152,9 +198,22 @@ type
     { If you're using webhooks, you can perform a request to the API while sending an answer...
       In this case the method to be invoked in the method parameter of the request.}
     property RequestWhenAnswer: Boolean read FRequestWhenAnswer write SetRequestWhenAnswer;
+    { if ProcessUpdate then the incoming update object will be processed.
+      May be useful for multithreaded work when updates is receiving in one Sender object and
+      processing and sending to telegram server in another Sender object. In this case ProcessUpdate = False}
+    property ProcessUpdate: Boolean read FProcessUpdate write SetProcessUpdate;
+    property CommandHandlers [const Command: String]: TCommandEvent read GetCommandHandlers
+      write SetCommandHandlers;  // It can create command handlers by assigning their to array elements
+
+    property OnReceiveUpdate: TOnUpdateEvent read FOnReceiveUpdate write SetOnReceiveUpdate;
+    property OnReceiveMessage: TMessageEvent read FOnReceiveMessage write SetOnReceiveMessage;
+    property OnReceiveCallbackQuery: TCallbackEvent read FOnReceiveCallbackQuery write SetOnReceiveCallbackQuery;
   end;
 
 implementation
+
+uses
+  jsonparser, jsonscanner;
 
 const
 //  API names constants
@@ -165,6 +224,7 @@ const
   s_sendVideo='sendVideo';
   s_sendDocument='sendDocument';
   s_sendLocation='sendLocation';
+  s_getUpdates='getUpdates';
 
   s_Method='method';
   s_Url = 'url';
@@ -191,10 +251,26 @@ const
   s_SwitchInlineQueryCurrentChat = 's_switch_inline_query_current_chat';
   s_Selective = 'selective';
   s_ForceReply = 'force_reply';
+  s_Offset = 'offset';
+  s_Limit = 'limit';
+  s_Timeout = 'timeout';
+  s_AllowedUpdates = 'allowed_updates';
 
   ParseModes: array[TParseMode] of PChar = ('Markdown', 'Markdown', 'HTML');
 
   API_URL='https://api.telegram.org/bot';
+
+{ TStringHash }
+
+class function TStringHash.hash(s: String; n: Integer): Integer;
+var
+  c: Char;
+begin
+  Result := 0;
+  for c in s do
+    Inc(Result,Ord(c));
+  Result := Result mod n;
+end;
 
   { TKeyboardButtons }
 
@@ -338,7 +414,7 @@ end;
 
 function TReplyMarkup.GetSelective: Boolean;
 begin
-
+  Result:=Get(s_Selective, False);     // default ??? False
 end;
 
 procedure TReplyMarkup.SetForceReply(AValue: Boolean);
@@ -460,10 +536,98 @@ end;
 
 { TTelegramSender }
 
+class function TTelegramSender.StringToJSONObject(const AString: String): TJSONObject;
+var
+  lParser: TJSONParser;
+  lJSON: TJSONObject;
+begin
+  Result := nil;
+  if AString<>EmptyStr then
+  begin
+    lParser := TJSONParser.Create(AString, DefaultOptions);
+    try
+      try
+        lJSON := lParser.Parse as TJSONObject;
+        if lJSON.Booleans['ok'] then
+          Result := lJSON
+        else
+        begin
+          // todo  to log error message from telegram server
+        end;
+      except
+      end;
+    finally
+      lParser.Free;
+    end;
+  end;
+end;
+
 procedure TTelegramSender.DebugMessage(const Msg: String);
 begin
   if Assigned(FOnLogMessage) then
     FOnLogMessage(Self, etDebug, Msg);
+end;
+
+function TTelegramSender.GetCommandHandlers(const Command: String
+  ): TCommandEvent;
+begin
+  Result:=FCommandHandlers.Items[Command];
+end;
+
+procedure TTelegramSender.SetCommandHandlers(const Command: String;
+  AValue: TCommandEvent);
+begin
+  FCommandHandlers.Items[Command]:=AValue;
+end;
+
+procedure TTelegramSender.DoReceiveMessageUpdate;
+var
+  lCommand, Txt: String;
+  lMessageEntityObj: TTelegramMessageEntityObj;
+  H: TCommandEvent;
+begin
+  FCurrentChatID:=FUpdate.Message.ChatId;
+  FCurrentUser:=FUpdate.Message.From;
+  Txt:=FUpdate.Message.Text;
+  for lMessageEntityObj in FUpdate.Message.Entities do
+  begin
+    if (lMessageEntityObj.TypeEntity = 'bot_command') and (lMessageEntityObj.Offset = 0) then
+    begin
+      lCommand := Copy(Txt, lMessageEntityObj.Offset, lMessageEntityObj.Length);
+      if FCommandHandlers.contains(lCommand) then
+      begin
+        H:=FCommandHandlers.Items[lCommand];
+        H(Self, lCommand, FUpdate.Message);
+      end;
+    end;
+  end;
+  if Assigned(FOnReceiveMessage) then
+    FOnReceiveMessage(Self, FUpdate.Message);
+end;
+
+procedure TTelegramSender.DoReceiveCallbackQuery;
+begin
+  FCurrentChatID:=FUpdate.CallbackQuery.Message.ChatId;
+  FCurrentUser:=FUpdate.CallbackQuery.From;
+  if Assigned(FOnReceiveCallbackQuery) then
+    FOnReceiveCallbackQuery(Self, FUpdate.CallbackQuery);
+end;
+
+procedure TTelegramSender.DoReceiveUpdate(AnUpdate: TTelegramUpdateObj);
+begin
+  FUpdate:=AnUpdate;
+  if Assigned(AnUpdate) then
+  begin
+    if FProcessUpdate then
+    begin
+      case AnUpdate.UpdateType of
+        utMessage: DoReceiveMessageUpdate;
+        utCallbackQuery: DoReceiveCallbackQuery;
+      end;
+    end;
+    if Assigned(FOnReceiveUpdate) then
+      FOnReceiveUpdate(Self, AnUpdate);
+  end;
 end;
 
 procedure TTelegramSender.ErrorMessage(const Msg: String);
@@ -518,6 +682,11 @@ begin
   HTTP.Free;
 end;
 
+function TTelegramSender.ResponseToJSONObject: TJSONObject;
+begin
+  Result:=StringToJSONObject(FResponse);
+end;
+
 function TTelegramSender.SendFile(const AMethod, AFileField, AFileName: String;
   MethodParameters: TStrings): Boolean;
 begin
@@ -555,8 +724,12 @@ begin
 end;
 
 function TTelegramSender.SendMethod(const Method: String; MethodParameters: TJSONObject): Boolean;
+var
+  lJSON: TJSONObject;
 begin
   Result:=False;
+  FJSONResponse:=nil;
+  FResponse:='';
   if not FRequestWhenAnswer then
   begin
     RequestBody:=MethodParameters.AsJSON;
@@ -566,6 +739,16 @@ begin
       DebugMessage('Response: '+FResponse);
     except
       ErrorMessage('It is not succesful request to API! Request body: '+FRequestBody);
+    end;
+
+    if Result then
+    begin
+      lJSON:=ResponseToJSONObject;
+      if Assigned(lJSON) then
+      begin
+        FJSONResponse := lJSON.Find('result').Clone;
+        lJSON.Free;
+      end;
     end;
   end
   else
@@ -577,11 +760,53 @@ begin
   end;
 end;
 
+procedure TTelegramSender.SetJSONResponse(AValue: TJSONData);
+begin
+  if FJSONResponse=AValue then Exit;
+  FJSONResponse:=AValue;
+end;
+
+procedure TTelegramSender.SetOnReceiveCallbackQuery(AValue: TCallbackEvent);
+begin
+  if FOnReceiveCallbackQuery=AValue then Exit;
+  FOnReceiveCallbackQuery:=AValue;
+end;
+
+procedure TTelegramSender.SetOnReceiveMessage(AValue: TMessageEvent);
+begin
+  if FOnReceiveMessage=AValue then Exit;
+  FOnReceiveMessage:=AValue;
+end;
+
+procedure TTelegramSender.SetOnReceiveUpdate(AValue: TOnUpdateEvent);
+begin
+  if FOnReceiveUpdate=AValue then Exit;
+  FOnReceiveUpdate:=AValue;
+end;
+
+procedure TTelegramSender.SetProcessUpdate(AValue: Boolean);
+begin
+  if FProcessUpdate=AValue then Exit;
+  FProcessUpdate:=AValue;
+end;
+
 constructor TTelegramSender.Create(const AToken: String);
 begin
   inherited Create;
   FToken:=AToken;
   FRequestWhenAnswer:=False;
+  FProcessUpdate:=True;
+  FCurrentChatId:=0;
+  FCurrentUser:=nil;
+  FCommandHandlers:=TCommandHandlersMap.create;
+end;
+
+destructor TTelegramSender.Destroy;
+begin
+  FCommandHandlers.Free;
+  if Assigned(FUpdate) then
+    FUpdate.Free;
+  inherited Destroy;
 end;
 
 function TTelegramSender.editMessageText(const AMessage: String;
@@ -608,6 +833,47 @@ begin
     if Assigned(ReplyMarkup) then
       Add(s_ReplyMarkup, ReplyMarkup.Clone); // Clone of ReplyMarkup object will have released with sendObject
     Result:=SendMethod(s_editMessageText, sendObj);
+  finally
+    Free;
+  end;
+end;
+// todo for long polling receiver
+function TTelegramSender.getUpdates(offset: Int64; limit: Integer;
+  timeout: Integer; allowed_updates: TUpdateSet): Boolean;
+var
+  sendObj: TJSONObject;
+  lJSONArray: TJSONArray;
+  lUpdateObj: TTelegramUpdateObj;
+  lJSONEnum: TJSONEnum;
+begin
+  Result:=False;
+  sendObj:=TJSONObject.Create;
+  with sendObj do
+  try
+    if offset<>0 then
+      Add(s_Offset, offset);
+    if limit<>0 then    // if not specified then default[ = 100]
+      Add(s_Limit, limit);
+    if timeout<>0 then
+      Add(s_Timeout, timeout);
+    if allowed_updates <> [] then
+      Add(s_AllowedUpdates, AllowedUpdatesToJSON(allowed_updates));
+    FRequestWhenAnswer:=False; // You must do only HTTP request because because it's important to get a response in the form of an update array
+    Result:=SendMethod(s_getUpdates, sendObj);
+    if Result then
+      if Assigned(FJSONResponse) then
+      begin
+        try
+          lJSONArray:=FJSONResponse as TJSONArray;
+          for lJSONEnum in lJSONArray do
+          begin
+            lUpdateObj := TTelegramUpdateObj.CreateFromJSONObject(lJSONEnum.Value as TJSONObject) as TTelegramUpdateObj;
+            DoReceiveUpdate(lUpdateObj);
+          end;
+        finally
+          FreeAndNil(FJSONResponse);  // Where is must released?
+        end;
+      end;
   finally
     Free;
   end;
@@ -681,6 +947,13 @@ begin
   finally
     Free;
   end;
+end;
+
+function TTelegramSender.sendMessage(const AMessage: String;
+  ParseMode: TParseMode; DisableWebPagePreview: Boolean;
+  ReplyMarkup: TReplyMarkup): Boolean;
+begin
+  sendMessage(FCurrentChatId, AMessage, ParseMode, DisableWebPagePreview, ReplyMarkup);
 end;
 
 { https://core.telegram.org/bots/api#sendphoto }

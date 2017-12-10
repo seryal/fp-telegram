@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <ProjectSession>
+    <PathDelim Value="\"/>
+    <Version Value="10"/>
+    <BuildModes Active="Debug"/>
+    <Units Count="10">
+      <Unit0>
+        <Filename Value="LongPollingDesktop.lpr"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="-1"/>
+        <WindowIndex Value="-1"/>
+        <TopLine Value="-1"/>
+        <CursorPos X="-1" Y="-1"/>
+        <UsageCount Value="34"/>
+      </Unit0>
+      <Unit1>
+        <Filename Value="mainform.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="FrmMain"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <UnitName Value="MainForm"/>
+        <IsVisibleTab Value="True"/>
+        <TopLine Value="45"/>
+        <CursorPos X="53" Y="52"/>
+        <UsageCount Value="34"/>
+        <Loaded Value="True"/>
+        <LoadedDesigner Value="True"/>
+      </Unit1>
+      <Unit2>
+        <Filename Value="..\tgsendertypes.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="1"/>
+        <TopLine Value="614"/>
+        <CursorPos X="48" Y="625"/>
+        <UsageCount Value="28"/>
+        <Loaded Value="True"/>
+      </Unit2>
+      <Unit3>
+        <Filename Value="..\fptelegram.pas"/>
+        <EditorIndex Value="-1"/>
+        <UsageCount Value="9"/>
+      </Unit3>
+      <Unit4>
+        <Filename Value="..\longpoll_mthread.pas"/>
+        <EditorIndex Value="4"/>
+        <TopLine Value="110"/>
+        <CursorPos X="20" Y="119"/>
+        <UsageCount Value="16"/>
+        <Loaded Value="True"/>
+      </Unit4>
+      <Unit5>
+        <Filename Value="..\tgtypes.pas"/>
+        <EditorIndex Value="3"/>
+        <TopLine Value="34"/>
+        <CursorPos X="5" Y="44"/>
+        <UsageCount Value="16"/>
+        <Loaded Value="True"/>
+      </Unit5>
+      <Unit6>
+        <Filename Value="..\..\..\brook-telegram\trunk\brooktelegramaction.pas"/>
+        <EditorIndex Value="2"/>
+        <TopLine Value="429"/>
+        <CursorPos X="15" Y="441"/>
+        <UsageCount Value="16"/>
+        <Loaded Value="True"/>
+      </Unit6>
+      <Unit7>
+        <Filename Value="C:\lazarus1_8\fpc\3.0.4\source\packages\fcl-stl\src\ghashmap.pp"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="46"/>
+        <CursorPos X="13" Y="56"/>
+        <UsageCount Value="10"/>
+      </Unit7>
+      <Unit8>
+        <Filename Value="C:\lazarus1_8\fpc\3.0.4\source\packages\fcl-json\src\fpjson.pp"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="36"/>
+        <CursorPos X="3" Y="46"/>
+        <UsageCount Value="10"/>
+      </Unit8>
+      <Unit9>
+        <Filename Value="C:\lazarus1_8\fpc\3.0.4\source\rtl\objpas\classes\classesh.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="1695"/>
+        <CursorPos X="15" Y="1705"/>
+        <UsageCount Value="10"/>
+      </Unit9>
+    </Units>
+    <JumpHistory Count="30" HistoryIndex="29">
+      <Position1>
+        <Filename Value="mainform.pas"/>
+        <Caret Line="52" Column="15" TopLine="34"/>
+      </Position1>
+      <Position2>
+        <Filename Value="mainform.pas"/>
+        <Caret Line="75" Column="46" TopLine="65"/>
+      </Position2>
+      <Position3>
+        <Filename Value="mainform.pas"/>
+        <Caret Line="153" Column="26" TopLine="148"/>
+      </Position3>
+      <Position4>
+        <Filename Value="mainform.pas"/>
+        <Caret Line="126" Column="3" TopLine="122"/>
+      </Position4>
+      <Position5>
+        <Filename Value="mainform.pas"/>
+        <Caret Line="150" Column="29" TopLine="142"/>
+      </Position5>
+      <Position6>
+        <Filename Value="mainform.pas"/>
+        <Caret Line="151" Column="30" TopLine="142"/>
+      </Position6>
+      <Position7>
+        <Filename Value="mainform.pas"/>
+        <Caret Line="155" Column="18" TopLine="114"/>
+      </Position7>
+      <Position8>
+        <Filename Value="mainform.pas"/>
+        <Caret Line="150" Column="3" TopLine="148"/>
+      </Position8>
+      <Position9>
+        <Filename Value="..\longpoll_mthread.pas"/>
+        <Caret Line="52" Column="56" TopLine="40"/>
+      </Position9>
+      <Position10>
+        <Filename Value="..\longpoll_mthread.pas"/>
+        <Caret Line="142" Column="3" TopLine="126"/>
+      </Position10>
+      <Position11>
+        <Filename Value="..\longpoll_mthread.pas"/>
+        <Caret Line="34" Column="16" TopLine="20"/>
+      </Position11>
+      <Position12>
+        <Filename Value="..\longpoll_mthread.pas"/>
+        <Caret Line="96" Column="3" TopLine="94"/>
+      </Position12>
+      <Position13>
+        <Filename Value="..\longpoll_mthread.pas"/>
+        <Caret Line="30" Column="16" TopLine="25"/>
+      </Position13>
+      <Position14>
+        <Filename Value="mainform.pas"/>
+        <Caret Line="42" Column="22" TopLine="29"/>
+      </Position14>
+      <Position15>
+        <Filename Value="..\tgsendertypes.pas"/>
+        <Caret Line="580" Column="19" TopLine="569"/>
+      </Position15>
+      <Position16>
+        <Filename Value="..\tgsendertypes.pas"/>
+        <Caret Line="150" Column="15" TopLine="141"/>
+      </Position16>
+      <Position17>
+        <Filename Value="..\longpoll_mthread.pas"/>
+        <Caret Line="48" Column="24" TopLine="39"/>
+      </Position17>
+      <Position18>
+        <Filename Value="..\longpoll_mthread.pas"/>
+        <Caret Line="33" Column="16" TopLine="25"/>
+      </Position18>
+      <Position19>
+        <Filename Value="..\longpoll_mthread.pas"/>
+        <Caret Line="83" Column="3" TopLine="81"/>
+      </Position19>
+      <Position20>
+        <Filename Value="..\longpoll_mthread.pas"/>
+        <Caret Line="34" Column="17" TopLine="23"/>
+      </Position20>
+      <Position21>
+        <Filename Value="..\longpoll_mthread.pas"/>
+        <Caret Line="92" Column="3" TopLine="90"/>
+      </Position21>
+      <Position22>
+        <Filename Value="..\longpoll_mthread.pas"/>
+        <Caret Line="47" Column="19" TopLine="39"/>
+      </Position22>
+      <Position23>
+        <Filename Value="..\tgsendertypes.pas"/>
+        <Caret Line="625" Column="48" TopLine="616"/>
+      </Position23>
+      <Position24>
+        <Filename Value="mainform.pas"/>
+        <Caret Line="152" Column="31" TopLine="141"/>
+      </Position24>
+      <Position25>
+        <Filename Value="mainform.pas"/>
+        <Caret Line="153" Column="31" TopLine="142"/>
+      </Position25>
+      <Position26>
+        <Filename Value="mainform.pas"/>
+        <Caret Line="152" Column="31" TopLine="141"/>
+      </Position26>
+      <Position27>
+        <Filename Value="mainform.pas"/>
+        <Caret Line="150" Column="25" TopLine="142"/>
+      </Position27>
+      <Position28>
+        <Filename Value="mainform.pas"/>
+        <Caret Line="146" Column="26" TopLine="127"/>
+      </Position28>
+      <Position29>
+        <Filename Value="mainform.pas"/>
+        <Caret Line="127" Column="10" TopLine="152"/>
+      </Position29>
+      <Position30>
+        <Filename Value="mainform.pas"/>
+        <Caret Line="193" TopLine="177"/>
+      </Position30>
+    </JumpHistory>
+  </ProjectSession>
+  <Debugging>
+    <Watches Count="4">
+      <Item1>
+        <Expression Value="FResponse"/>
+      </Item1>
+      <Item2>
+        <Expression Value="AnUpdate"/>
+      </Item2>
+      <Item3>
+        <Expression Value="FCurrentChatID"/>
+      </Item3>
+      <Item4>
+        <Expression Value="FCurrentUser"/>
+      </Item4>
+    </Watches>
+  </Debugging>
+</CONFIG>

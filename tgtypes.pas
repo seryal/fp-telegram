@@ -17,7 +17,9 @@ type
   TTelegramLocation = class;
   TTelegramUpdateObjList = specialize TFPGObjectList<TTelegramMessageEntityObj>;
 
-  TUpdateType = (utMessage, utCallbackQuery);
+  TUpdateType = (utMessage, utEditedMessage, utChannelPost, utEditedChannelPost, utInlineQuery,
+    utChosenInlineResult, utCallbackQuery, utShippingQuery, utPreCheckoutQuery, utUnknown);
+  TUpdateSet = set of TUpdateType;
 
   { TTelegramObj }
 
@@ -28,6 +30,7 @@ type
     constructor Create(JSONObject: TJSONObject); virtual;  // Caution! The JSONObject must be released separately
     destructor Destroy; override;
     class function CreateFromJSONObject(JSONObject: TJSONObject): TTelegramObj;
+    function AsString: String;
   end;
 
   { TTelegramUpdateObj }
@@ -38,10 +41,12 @@ type
     FInlineQuery: TTelegramInlineQueryObj;
     fUpdateId: Integer;
     fMessage: TTelegramMessageObj;
+    FUpdateType: TUpdateType;
   public
     constructor Create(JSONObject: TJSONObject); override;
     destructor Destroy; override;
     property UpdateId: Integer read fUpdateId;
+    property UpdateType: TUpdateType read FUpdateType;
     property Message: TTelegramMessageObj read fMessage;
     property CallbackQuery: TCallbackQueryObj read FCallbackQuery write FCallbackQuery;
     property InlineQuery: TTelegramInlineQueryObj read FInlineQuery;
@@ -155,12 +160,22 @@ type
 
   const
     TELEGRAM_REQUEST_GETUPDATES = 'getUpdates';
+    UpdateTypeAliases: array[TUpdateType] of PChar = ('message', 'edited_message', 'channel_post',
+      'edited_channel_post', 'inline_query', 'chosen_inline_result', 'callback_query',
+      'shipping_query', 'pre_checkout_query', '');
+
+function AllowedUpdatesToJSON(const AllowedUpdates: TUpdateSet): TJSONArray;
 
 implementation
 
-const
-
-  UpdateTypeAliases: array[TUpdateType] of PChar = ('message', 'callback_query');
+function AllowedUpdatesToJSON(const AllowedUpdates: TUpdateSet): TJSONArray;
+var
+  u: TUpdateType;
+begin
+  Result:=TJSONArray.Create;
+  for u in AllowedUpdates do
+    Result.Add(UpdateTypeAliases[u]);
+end;
 
 { TTelegramLocation }
 
@@ -244,6 +259,11 @@ begin
   end;
 end;
 
+function TTelegramObj.AsString: String;
+begin
+  Result:=fJSON.AsJSON;
+end;
+
 { TTelegramUpdateObj }
 
 constructor TTelegramUpdateObj.Create(JSONObject: TJSONObject);
@@ -251,12 +271,19 @@ begin
   inherited Create(JSONObject);
   fUpdateId := fJSON.Integers['update_id'];
   // объекты - не нашли?! - nil
+  FUpdateType:=utUnknown;
   fMessage := TTelegramMessageObj.CreateFromJSONObject(
     fJSON.Find('message', jtObject) as TJSONObject) as TTelegramMessageObj;
   FCallbackQuery:=TCallbackQueryObj.CreateFromJSONObject(
     fJSON.Find('callback_query', jtObject) as TJSONObject) as TCallbackQueryObj;
   FInlineQuery:=TTelegramInlineQueryObj.CreateFromJSONObject(
     fJSON.Find('inline_query', jtObject) as TJSONObject) as TTelegramInlineQueryObj;
+  if Assigned(fMessage) then
+    FUpdateType:=utMessage;
+  if Assigned(FCallbackQuery) then
+    FUpdateType:=utCallbackQuery;
+  if Assigned(FInlineQuery) then
+    FUpdateType:=utInlineQuery;
 end;
 
 destructor TTelegramUpdateObj.Destroy;
