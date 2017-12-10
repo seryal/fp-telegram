@@ -133,6 +133,7 @@ type
   private
     FCurrentChatId: Int64;
     FCurrentUser: TTelegramUserObj;
+    FBotUser: TTelegramUserObj;
     FOnReceiveCallbackQuery: TCallbackEvent;
     FOnReceiveMessage: TMessageEvent;
     FUpdate: TTelegramUpdateObj;
@@ -174,6 +175,7 @@ type
     function editMessageText(const AMessage: String; chat_id: Int64 = 0; message_id: Int64 = 0;
       ParseMode: TParseMode = pmDefault; DisableWebPagePreview: Boolean=False;
       inline_message_id: String = ''; ReplyMarkup: TReplyMarkup = nil): Boolean;
+    function getMe: Boolean;
     function getUpdates(offset: Int64 = 0; limit: Integer = 0; timeout: Integer = 0;
       allowed_updates: TUpdateSet = []): Boolean;
     function sendDocumentByFileName(chat_id: Int64; const AFileName: String;
@@ -187,7 +189,7 @@ type
       DisableWebPagePreview: Boolean=False; ReplyMarkup: TReplyMarkup = nil): Boolean; overload;
     function sendPhoto(chat_id: Int64; const APhoto: String; const ACaption: String = ''): Boolean;
     function sendVideo(chat_id: Int64; const AVideo: String; const ACaption: String = ''): Boolean;
-    { Пусть пользователь сам решит какого типа логирование он будет использовать }
+    property BotUser: TTelegramUserObj read FBotUser;
     property JSONResponse: TJSONData read FJSONResponse write SetJSONResponse;
     property CurrentChatId: Int64 read FCurrentChatId;
     property CurrentUser: TTelegramUserObj read FCurrentUser;
@@ -225,6 +227,7 @@ const
   s_sendDocument='sendDocument';
   s_sendLocation='sendLocation';
   s_getUpdates='getUpdates';
+  s_getMe='getMe';
 
   s_Method='method';
   s_Url = 'url';
@@ -615,6 +618,8 @@ end;
 
 procedure TTelegramSender.DoReceiveUpdate(AnUpdate: TTelegramUpdateObj);
 begin
+  if Assigned(FUpdate) then
+    FUpdate.Free;
   FUpdate:=AnUpdate;
   if Assigned(AnUpdate) then
   begin
@@ -798,12 +803,15 @@ begin
   FProcessUpdate:=True;
   FCurrentChatId:=0;
   FCurrentUser:=nil;
+  FUpdate:=nil;
   FCommandHandlers:=TCommandHandlersMap.create;
 end;
 
 destructor TTelegramSender.Destroy;
 begin
   FCommandHandlers.Free;
+  if Assigned(FBotUser) then
+    FBotUser.Free;
   if Assigned(FUpdate) then
     FUpdate.Free;
   inherited Destroy;
@@ -837,6 +845,30 @@ begin
     Free;
   end;
 end;
+
+function TTelegramSender.getMe: Boolean;
+var
+  sendObj: TJSONObject;
+begin
+  Result:=False;
+  sendObj:=TJSONObject.Create;
+  with sendObj do
+  try
+    Result:=SendMethod(s_getMe, sendObj);
+    if Result then
+      if Assigned(FJSONResponse) then
+      begin
+        try
+          FBotUser := TTelegramUserObj.CreateFromJSONObject(FJSONResponse as TJSONObject) as TTelegramUserObj;
+        finally
+          FreeAndNil(FJSONResponse);  // Where is must released?
+        end;
+      end;
+  finally
+    Free;
+  end;
+end;
+
 // todo for long polling receiver
 function TTelegramSender.getUpdates(offset: Int64; limit: Integer;
   timeout: Integer; allowed_updates: TUpdateSet): Boolean;
@@ -953,7 +985,7 @@ function TTelegramSender.sendMessage(const AMessage: String;
   ParseMode: TParseMode; DisableWebPagePreview: Boolean;
   ReplyMarkup: TReplyMarkup): Boolean;
 begin
-  sendMessage(FCurrentChatId, AMessage, ParseMode, DisableWebPagePreview, ReplyMarkup);
+  Result:=sendMessage(FCurrentChatId, AMessage, ParseMode, DisableWebPagePreview, ReplyMarkup);
 end;
 
 { https://core.telegram.org/bots/api#sendphoto }
