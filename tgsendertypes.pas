@@ -148,11 +148,6 @@ type
     FCommandHandlers: TCommandHandlersMap;
     function GetCommandHandlers(const Command: String): TCommandEvent;
     procedure SetCommandHandlers(const Command: String; AValue: TCommandEvent);
-    procedure DoReceiveMessageUpdate;
-    procedure DoReceiveCallbackQuery;
-    procedure DebugMessage(const Msg: String); // будет отправлять в журнал все запросы и ответы. Полезно на время разработки
-    procedure ErrorMessage(const Msg: String);
-    procedure InfoMessage(const Msg: String);
     function HTTPPostFile(const Method, FileField, FileName: String; AFormData: TStrings): Boolean;
     function HTTPPostJSON(const Method: String): Boolean;
     function ResponseToJSONObject: TJSONObject;
@@ -168,13 +163,22 @@ type
     procedure SetRequestBody(AValue: String);
     procedure SetRequestWhenAnswer(AValue: Boolean);
     class function StringToJSONObject(const AString: String): TJSONObject;
+  protected
+    procedure DoReceiveMessageUpdate; virtual;
+    procedure DoReceiveCallbackQuery; virtual;
+    procedure DebugMessage(const Msg: String); virtual; // будет отправлять в журнал все запросы и ответы. Полезно на время разработки
+    procedure ErrorMessage(const Msg: String); virtual;
+    procedure InfoMessage(const Msg: String); virtual;
   public
     constructor Create(const AToken: String);
     destructor Destroy; override;
-    procedure DoReceiveUpdate(AnUpdate: TTelegramUpdateObj);
+    procedure DoReceiveUpdate(AnUpdate: TTelegramUpdateObj); virtual;
     function editMessageText(const AMessage: String; chat_id: Int64 = 0; message_id: Int64 = 0;
       ParseMode: TParseMode = pmDefault; DisableWebPagePreview: Boolean=False;
       inline_message_id: String = ''; ReplyMarkup: TReplyMarkup = nil): Boolean;
+    function editMessageText(const AMessage: String; ParseMode: TParseMode = pmDefault;
+      DisableWebPagePreview: Boolean=False; inline_message_id: String = '';
+      ReplyMarkup: TReplyMarkup = nil): Boolean; overload;
     function getMe: Boolean;
     function getUpdates(offset: Int64 = 0; limit: Integer = 0; timeout: Integer = 0;
       allowed_updates: TUpdateSet = []): Boolean;
@@ -188,11 +192,14 @@ type
     function sendMessage(const AMessage: String; ParseMode: TParseMode = pmDefault;
       DisableWebPagePreview: Boolean=False; ReplyMarkup: TReplyMarkup = nil): Boolean; overload;
     function sendPhoto(chat_id: Int64; const APhoto: String; const ACaption: String = ''): Boolean;
+    function sendPhoto(const APhoto: String; const ACaption: String = ''): Boolean; overload;
     function sendVideo(chat_id: Int64; const AVideo: String; const ACaption: String = ''): Boolean;
+    function sendVideo(const AVideo: String; const ACaption: String = ''): Boolean; overload;
     property BotUser: TTelegramUserObj read FBotUser;
     property JSONResponse: TJSONData read FJSONResponse write SetJSONResponse;
     property CurrentChatId: Int64 read FCurrentChatId;
     property CurrentUser: TTelegramUserObj read FCurrentUser;
+    property CurrentUpdate: TTelegramUpdateObj read FUpdate;
     property OnLogMessage: TLogMessageEvent read FOnLogMessage write FOnLogMessage;
     property RequestBody: String read FRequestBody write SetRequestBody;
     property Response: String read FResponse;
@@ -846,6 +853,13 @@ begin
   end;
 end;
 
+function TTelegramSender.editMessageText(const AMessage: String;
+  ParseMode: TParseMode; DisableWebPagePreview: Boolean;
+  inline_message_id: String; ReplyMarkup: TReplyMarkup): Boolean;
+begin
+  Result:=editMessageText(AMessage, ParseMode, DisableWebPagePreview, inline_message_id, ReplyMarkup);
+end;
+
 function TTelegramSender.getMe: Boolean;
 var
   sendObj: TJSONObject;
@@ -995,11 +1009,23 @@ begin
   Result:=SendMethod(s_sendPhoto, ['chat_id', chat_id, 'photo', APhoto, 'caption', ACaption]);
 end;
 
+function TTelegramSender.sendPhoto(const APhoto: String; const ACaption: String
+  ): Boolean;
+begin
+  Result:=sendPhoto(APhoto, ACaption);
+end;
+
 { https://core.telegram.org/bots/api#sendvideo }
 function TTelegramSender.sendVideo(chat_id: Int64; const AVideo: String;
   const ACaption: String): Boolean;
 begin
   Result:=SendMethod(s_sendVideo, ['chat_id', chat_id, 'video', AVideo, 'caption', ACaption]);
+end;
+
+function TTelegramSender.sendVideo(const AVideo: String; const ACaption: String
+  ): Boolean;
+begin
+  Result:=sendVideo(AVideo, ACaption);
 end;
 
 end.

@@ -21,6 +21,7 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="getMeForm"/>
+        <IsVisibleTab Value="True"/>
         <TopLine Value="33"/>
         <CursorPos X="18" Y="45"/>
         <UsageCount Value="20"/>
@@ -29,7 +30,6 @@
       </Unit1>
       <Unit2>
         <Filename Value="..\tgsendertypes.pas"/>
-        <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
         <TopLine Value="849"/>
         <CursorPos X="38" Y="859"/>
