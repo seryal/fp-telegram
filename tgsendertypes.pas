@@ -132,6 +132,7 @@ type
   TTelegramSender = class
   private
     FCurrentChatId: Int64;
+    FCurrentMessage: TTelegramMessageObj;
     FCurrentUser: TTelegramUserObj;
     FBotUser: TTelegramUserObj;
     FOnReceiveCallbackQuery: TCallbackEvent;
@@ -177,8 +178,7 @@ type
       ParseMode: TParseMode = pmDefault; DisableWebPagePreview: Boolean=False;
       inline_message_id: String = ''; ReplyMarkup: TReplyMarkup = nil): Boolean;
     function editMessageText(const AMessage: String; ParseMode: TParseMode = pmDefault;
-      DisableWebPagePreview: Boolean=False; inline_message_id: String = '';
-      ReplyMarkup: TReplyMarkup = nil): Boolean; overload;
+      DisableWebPagePreview: Boolean=False; ReplyMarkup: TReplyMarkup = nil): Boolean; overload;
     function getMe: Boolean;
     function getUpdates(offset: Int64 = 0; limit: Integer = 0; timeout: Integer = 0;
       allowed_updates: TUpdateSet = []): Boolean;
@@ -199,6 +199,7 @@ type
     property JSONResponse: TJSONData read FJSONResponse write SetJSONResponse;
     property CurrentChatId: Int64 read FCurrentChatId;
     property CurrentUser: TTelegramUserObj read FCurrentUser;
+    property CurrentMessage: TTelegramMessageObj read FCurrentMessage;
     property CurrentUpdate: TTelegramUpdateObj read FUpdate;
     property OnLogMessage: TLogMessageEvent read FOnLogMessage write FOnLogMessage;
     property RequestBody: String read FRequestBody write SetRequestBody;
@@ -617,6 +618,7 @@ end;
 
 procedure TTelegramSender.DoReceiveCallbackQuery;
 begin
+  FCurrentMessage:=FUpdate.CallbackQuery.Message;
   FCurrentChatID:=FUpdate.CallbackQuery.Message.ChatId;
   FCurrentUser:=FUpdate.CallbackQuery.From;
   if Assigned(FOnReceiveCallbackQuery) then
@@ -628,6 +630,9 @@ begin
   if Assigned(FUpdate) then
     FUpdate.Free;
   FUpdate:=AnUpdate;
+  FCurrentMessage:=nil;
+  FCurrentChatId:=0;
+  FCurrentUser:=nil;
   if Assigned(AnUpdate) then
   begin
     if FProcessUpdate then
@@ -810,6 +815,7 @@ begin
   FProcessUpdate:=True;
   FCurrentChatId:=0;
   FCurrentUser:=nil;
+  FCurrentMessage:=nil;
   FUpdate:=nil;
   FCommandHandlers:=TCommandHandlersMap.create;
 end;
@@ -855,9 +861,13 @@ end;
 
 function TTelegramSender.editMessageText(const AMessage: String;
   ParseMode: TParseMode; DisableWebPagePreview: Boolean;
-  inline_message_id: String; ReplyMarkup: TReplyMarkup): Boolean;
+  ReplyMarkup: TReplyMarkup): Boolean;
 begin
-  Result:=editMessageText(AMessage, ParseMode, DisableWebPagePreview, inline_message_id, ReplyMarkup);
+  if Assigned(FCurrentMessage) then
+    Result:=editMessageText(AMessage, FCurrentChatId, FCurrentMessage.MessageId,
+      ParseMode, DisableWebPagePreview, EmptyStr, ReplyMarkup)
+  else
+    Result:=sendMessage(AMessage, ParseMode, DisableWebPagePreview, ReplyMarkup);
 end;
 
 function TTelegramSender.getMe: Boolean;
@@ -1012,7 +1022,7 @@ end;
 function TTelegramSender.sendPhoto(const APhoto: String; const ACaption: String
   ): Boolean;
 begin
-  Result:=sendPhoto(APhoto, ACaption);
+  Result:=sendPhoto(FCurrentChatId, APhoto, ACaption);
 end;
 
 { https://core.telegram.org/bots/api#sendvideo }
@@ -1025,7 +1035,7 @@ end;
 function TTelegramSender.sendVideo(const AVideo: String; const ACaption: String
   ): Boolean;
 begin
-  Result:=sendVideo(AVideo, ACaption);
+  Result:=sendVideo(FCurrentChatId, AVideo, ACaption);
 end;
 
 end.
