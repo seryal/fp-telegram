@@ -135,7 +135,9 @@ type
     FCurrentMessage: TTelegramMessageObj;
     FCurrentUser: TTelegramUserObj;
     FBotUser: TTelegramUserObj;
+    FLanguage: string;
     FOnReceiveCallbackQuery: TCallbackEvent;
+    FOnReceiveChannelPost: TMessageEvent;
     FOnReceiveMessage: TMessageEvent;
     FUpdate: TTelegramUpdateObj;
     FJSONResponse: TJSONData;
@@ -146,11 +148,18 @@ type
     FRequestBody: String;
     FToken: String;
     FRequestWhenAnswer: Boolean;
-    FCommandHandlers: TCommandHandlersMap;
+    FCommandHandlers: TCommandHandlersMap; 
+    FChannelCommandHandlers: TCommandHandlersMap;
+    function CurrentLanguage(ACallback: TCallbackQueryObj): String;
+    function CurrentLanguage(AMessage: TTelegramMessageObj): String;
+    function GetChannelCommandHandlers(const Command: String): TCommandEvent;
     function GetCommandHandlers(const Command: String): TCommandEvent;
+    procedure SetChannelCommandHandlers(const Command: String;
+      AValue: TCommandEvent);
     procedure SetCommandHandlers(const Command: String; AValue: TCommandEvent);
     function HTTPPostFile(const Method, FileField, FileName: String; AFormData: TStrings): Boolean;
     function HTTPPostJSON(const Method: String): Boolean;
+    procedure ProcessCommands(AMessage: TTelegramMessageObj; AHandlers: TCommandHandlersMap);
     function ResponseToJSONObject: TJSONObject;
     function SendFile(const AMethod, AFileField, AFileName: String;
       MethodParameters: TStrings): Boolean;
@@ -158,6 +167,7 @@ type
     function SendMethod(const Method: String; MethodParameters: TJSONObject): Boolean; overload;
     procedure SetJSONResponse(AValue: TJSONData);
     procedure SetOnReceiveCallbackQuery(AValue: TCallbackEvent);
+    procedure SetOnReceiveChannelPost(AValue: TMessageEvent);
     procedure SetOnReceiveMessage(AValue: TMessageEvent);
     procedure SetOnReceiveUpdate(AValue: TOnUpdateEvent);
     procedure SetProcessUpdate(AValue: Boolean);
@@ -165,16 +175,20 @@ type
     procedure SetRequestWhenAnswer(AValue: Boolean);
     class function StringToJSONObject(const AString: String): TJSONObject;
   protected
-    procedure DoReceiveMessageUpdate; virtual;
-    procedure DoReceiveCallbackQuery; virtual;
+    procedure DoReceiveMessageUpdate(AMessage: TTelegramMessageObj); virtual;
+    procedure DoReceiveCallbackQuery(ACallback: TCallbackQueryObj); virtual;
+    procedure DoReceiveChannelPost(AChannelPost: TTelegramMessageObj); virtual;
     procedure DebugMessage(const Msg: String); virtual; // будет отправлять в журнал все запросы и ответы. Полезно на время разработки
     procedure ErrorMessage(const Msg: String); virtual;
     procedure InfoMessage(const Msg: String); virtual;
+    function IsBanned(ChatID: Int64): Boolean; virtual;
+    function IsSimpleUser(ChatID: Int64): Boolean; virtual;
+    procedure SetLanguage(const AValue: String); virtual;
   public
     constructor Create(const AToken: String);
     destructor Destroy; override;
     procedure DoReceiveUpdate(AnUpdate: TTelegramUpdateObj); virtual;
-    function editMessageText(const AMessage: String; chat_id: Int64 = 0; message_id: Int64 = 0;
+    function editMessageText(const AMessage: String; chat_id: Int64; message_id: Int64;
       ParseMode: TParseMode = pmDefault; DisableWebPagePreview: Boolean=False;
       inline_message_id: String = ''; ReplyMarkup: TReplyMarkup = nil): Boolean;
     function editMessageText(const AMessage: String; ParseMode: TParseMode = pmDefault;
@@ -182,6 +196,9 @@ type
     function getMe: Boolean;
     function getUpdates(offset: Int64 = 0; limit: Integer = 0; timeout: Integer = 0;
       allowed_updates: TUpdateSet = []): Boolean;
+
+    function CurrentIsSimpleUser: Boolean; overload;
+    function CurrentIsBanned: Boolean; overload;
     function sendDocumentByFileName(chat_id: Int64; const AFileName: String;
       const ACaption: String; ReplyMarkup: TReplyMarkup = nil): Boolean;
     function sendLocation(chat_id: Int64; Latitude, Longitude: Real; LivePeriod: Integer = 0;
@@ -201,6 +218,7 @@ type
     property CurrentUser: TTelegramUserObj read FCurrentUser;
     property CurrentMessage: TTelegramMessageObj read FCurrentMessage;
     property CurrentUpdate: TTelegramUpdateObj read FUpdate;
+    property Language: string read FLanguage write SetLanguage;
     property OnLogMessage: TLogMessageEvent read FOnLogMessage write FOnLogMessage;
     property RequestBody: String read FRequestBody write SetRequestBody;
     property Response: String read FResponse;
@@ -214,17 +232,19 @@ type
     property ProcessUpdate: Boolean read FProcessUpdate write SetProcessUpdate;
     property CommandHandlers [const Command: String]: TCommandEvent read GetCommandHandlers
       write SetCommandHandlers;  // It can create command handlers by assigning their to array elements
+    property ChannelCommandHandlers [const Command: String]: TCommandEvent read GetChannelCommandHandlers
+      write SetChannelCommandHandlers;  // It can create command handlers by assigning their to array elements
 
     property OnReceiveUpdate: TOnUpdateEvent read FOnReceiveUpdate write SetOnReceiveUpdate;
     property OnReceiveMessage: TMessageEvent read FOnReceiveMessage write SetOnReceiveMessage;
     property OnReceiveCallbackQuery: TCallbackEvent read FOnReceiveCallbackQuery write SetOnReceiveCallbackQuery;
+    property OnReceiveChannelPost: TMessageEvent read FOnReceiveChannelPost write SetOnReceiveChannelPost;
   end;
 
 implementation
 
 uses
   jsonparser, jsonscanner;
-
 const
 //  API names constants
 
@@ -266,6 +286,8 @@ const
   s_Limit = 'limit';
   s_Timeout = 'timeout';
   s_AllowedUpdates = 'allowed_updates';
+  s_Ok = 'ok';
+  s_BotCommand = 'bot_command';
 
   ParseModes: array[TParseMode] of PChar = ('Markdown', 'Markdown', 'HTML');
 
@@ -559,7 +581,7 @@ begin
     try
       try
         lJSON := lParser.Parse as TJSONObject;
-        if lJSON.Booleans['ok'] then
+        if lJSON.Booleans[s_Ok] then
           Result := lJSON
         else
         begin
@@ -585,44 +607,75 @@ begin
   Result:=FCommandHandlers.Items[Command];
 end;
 
+function TTelegramSender.CurrentLanguage(ACallback: TCallbackQueryObj): String;
+begin
+  Result:=ACallback.From.Language_code;
+end;
+
+function TTelegramSender.CurrentLanguage(AMessage: TTelegramMessageObj): String;
+begin
+  Result:=EmptyStr;
+  if Assigned(AMessage.From) then
+    Result:=AMessage.From.Language_code
+  else begin
+    if Assigned(AMessage.ReplyToMessage) then
+      Result:=CurrentLanguage(AMessage.ReplyToMessage)
+  end;
+end;
+
+function TTelegramSender.GetChannelCommandHandlers(const Command: String
+  ): TCommandEvent;
+begin
+  Result:=FChannelCommandHandlers.Items[Command];
+end;
+
+procedure TTelegramSender.SetChannelCommandHandlers(const Command: String;
+  AValue: TCommandEvent);
+begin
+  FChannelCommandHandlers.Items[Command]:=AValue;
+end;
+
 procedure TTelegramSender.SetCommandHandlers(const Command: String;
   AValue: TCommandEvent);
 begin
   FCommandHandlers.Items[Command]:=AValue;
 end;
 
-procedure TTelegramSender.DoReceiveMessageUpdate;
-var
-  lCommand, Txt: String;
-  lMessageEntityObj: TTelegramMessageEntityObj;
-  H: TCommandEvent;
+procedure TTelegramSender.DoReceiveMessageUpdate(AMessage: TTelegramMessageObj);
 begin
-  FCurrentChatID:=FUpdate.Message.ChatId;
-  FCurrentUser:=FUpdate.Message.From;
-  Txt:=FUpdate.Message.Text;
-  for lMessageEntityObj in FUpdate.Message.Entities do
-  begin
-    if (lMessageEntityObj.TypeEntity = 'bot_command') and (lMessageEntityObj.Offset = 0) then
-    begin
-      lCommand := Copy(Txt, lMessageEntityObj.Offset, lMessageEntityObj.Length);
-      if FCommandHandlers.contains(lCommand) then
-      begin
-        H:=FCommandHandlers.Items[lCommand];
-        H(Self, lCommand, FUpdate.Message);
-      end;
-    end;
-  end;
+  FCurrentMessage:=AMessage;
+  FCurrentChatID:=AMessage.ChatId;
+  FCurrentUser:=AMessage.From;
+  if CurrentIsBanned then
+    Exit;
+  SetLanguage(CurrentLanguage(AMessage));
+  ProcessCommands(AMessage, FCommandHandlers);
   if Assigned(FOnReceiveMessage) then
-    FOnReceiveMessage(Self, FUpdate.Message);
+    FOnReceiveMessage(Self, AMessage);
 end;
 
-procedure TTelegramSender.DoReceiveCallbackQuery;
+procedure TTelegramSender.DoReceiveCallbackQuery(ACallback: TCallbackQueryObj);
 begin
-  FCurrentMessage:=FUpdate.CallbackQuery.Message;
-  FCurrentChatID:=FUpdate.CallbackQuery.Message.ChatId;
-  FCurrentUser:=FUpdate.CallbackQuery.From;
+  FCurrentMessage:=ACallback.Message;
+  FCurrentUser:=ACallback.From;
+  FCurrentChatID:=FCurrentUser.ID; { Bot will send to private chat if in channel is called } {ACallback.Message.ChatId;}
+  if CurrentIsBanned then
+    Exit;
+  SetLanguage(CurrentLanguage(ACallback));
   if Assigned(FOnReceiveCallbackQuery) then
-    FOnReceiveCallbackQuery(Self, FUpdate.CallbackQuery);
+    FOnReceiveCallbackQuery(Self, ACallback);
+end;
+
+procedure TTelegramSender.DoReceiveChannelPost(AChannelPost: TTelegramMessageObj);
+begin
+  FCurrentMessage:=AChannelPost;
+  FCurrentChatID:=AChannelPost.ChatId;
+  if CurrentIsBanned then
+    Exit;
+  SetLanguage(CurrentLanguage(AChannelPost));
+  ProcessCommands(AChannelPost, FChannelCommandHandlers);
+  if Assigned(FOnReceiveChannelPost) then
+    FOnReceiveChannelPost(Self, AChannelPost);
 end;
 
 procedure TTelegramSender.DoReceiveUpdate(AnUpdate: TTelegramUpdateObj);
@@ -633,13 +686,15 @@ begin
   FCurrentMessage:=nil;
   FCurrentChatId:=0;
   FCurrentUser:=nil;
+  FLanguage:='';
   if Assigned(AnUpdate) then
   begin
     if FProcessUpdate then
     begin
       case AnUpdate.UpdateType of
-        utMessage: DoReceiveMessageUpdate;
-        utCallbackQuery: DoReceiveCallbackQuery;
+        utMessage: DoReceiveMessageUpdate(AnUpdate.Message);
+        utCallbackQuery: DoReceiveCallbackQuery(AnUpdate.CallbackQuery);
+        utChannelPost: DoReceiveChannelPost(AnUpdate.ChannelPost);
       end;
     end;
     if Assigned(FOnReceiveUpdate) then
@@ -659,6 +714,26 @@ begin
     FOnLogMessage(Self, etInfo, Msg);
 end;
 
+function TTelegramSender.IsBanned(ChatID: Int64): Boolean;
+begin
+  Result:=False;
+end;
+
+function TTelegramSender.IsSimpleUser(ChatID: Int64): Boolean;
+begin
+  Result:=False;
+end;
+
+function TTelegramSender.CurrentIsSimpleUser: Boolean;
+begin
+  Result:=IsSimpleUser(FCurrentChatId);
+end;
+
+function TTelegramSender.CurrentIsBanned: Boolean;
+begin
+  Result:=IsBanned(FCurrentChatId);
+end;
+
 function TTelegramSender.HTTPPostFile(const Method, FileField, FileName: String;
   AFormData: TStrings): Boolean;
 var
@@ -666,7 +741,7 @@ var
   AStream: TStringStream;
 begin
   HTTP:=TFPHTTPClient.Create(nil);
-  AStream:=TStringStream.Create('');
+  AStream:=TStringStream.Create(EmptyStr);
   try
     HTTP.AddHeader('Content-Type','multipart/form-data');
     HTTP.FileFormPost(API_URL+FToken+'/'+Method, AFormData, FileField, FileName, AStream);
@@ -697,6 +772,32 @@ begin
     Result:=False;
   end;
   HTTP.Free;
+end;
+
+procedure TTelegramSender.ProcessCommands(AMessage: TTelegramMessageObj;
+  AHandlers: TCommandHandlersMap);
+var
+  lCommand, Txt: String;
+  lMessageEntityObj: TTelegramMessageEntityObj;
+  H: TCommandEvent;
+  AtPos: Integer;
+begin
+  Txt:=AMessage.Text;
+  for lMessageEntityObj in AMessage.Entities do
+  begin
+    if (lMessageEntityObj.TypeEntity = s_BotCommand) and (lMessageEntityObj.Offset = 0) then
+    begin
+      lCommand := Copy(Txt, lMessageEntityObj.Offset, lMessageEntityObj.Length);
+      AtPos:=Pos('@', lCommand);
+      if AtPos>0 then
+        lCommand:=LeftStr(lCommand, AtPos-1);
+      if AHandlers.contains(lCommand) then
+      begin
+        H:=AHandlers.Items[lCommand];
+        H(Self, lCommand, AMessage);
+      end;
+    end;
+  end;
 end;
 
 function TTelegramSender.ResponseToJSONObject: TJSONObject;
@@ -783,10 +884,22 @@ begin
   FJSONResponse:=AValue;
 end;
 
+procedure TTelegramSender.SetLanguage(const AValue: string);
+begin
+  if FLanguage=AValue then Exit;
+  FLanguage:=AValue;
+end;
+
 procedure TTelegramSender.SetOnReceiveCallbackQuery(AValue: TCallbackEvent);
 begin
   if FOnReceiveCallbackQuery=AValue then Exit;
   FOnReceiveCallbackQuery:=AValue;
+end;
+
+procedure TTelegramSender.SetOnReceiveChannelPost(AValue: TMessageEvent);
+begin
+  if FOnReceiveChannelPost=AValue then Exit;
+  FOnReceiveChannelPost:=AValue;
 end;
 
 procedure TTelegramSender.SetOnReceiveMessage(AValue: TMessageEvent);
@@ -817,11 +930,14 @@ begin
   FCurrentUser:=nil;
   FCurrentMessage:=nil;
   FUpdate:=nil;
+  FLanguage:='';
   FCommandHandlers:=TCommandHandlersMap.create;
+  FChannelCommandHandlers:=TCommandHandlersMap.create;
 end;
 
 destructor TTelegramSender.Destroy;
 begin
+  FChannelCommandHandlers.Free;
   FCommandHandlers.Free;
   if Assigned(FBotUser) then
     FBotUser.Free;
@@ -862,8 +978,8 @@ end;
 function TTelegramSender.editMessageText(const AMessage: String;
   ParseMode: TParseMode; DisableWebPagePreview: Boolean;
   ReplyMarkup: TReplyMarkup): Boolean;
-begin
-  if Assigned(FCurrentMessage) then
+begin  { try to edit message if the message is present and chat is private with sender user }
+  if Assigned(FCurrentMessage) and (FCurrentChatId = FCurrentMessage.ChatId) then
     Result:=editMessageText(AMessage, FCurrentChatId, FCurrentMessage.MessageId,
       ParseMode, DisableWebPagePreview, EmptyStr, ReplyMarkup)
   else
