@@ -131,6 +131,7 @@ type
 
   TTelegramSender = class
   private
+    FBotUsername: String;
     FCurrentChatId: Int64;
     FCurrentMessage: TTelegramMessageObj;
     FCurrentUser: TTelegramUserObj;
@@ -154,6 +155,7 @@ type
     function CurrentLanguage(AMessage: TTelegramMessageObj): String;
     function GetChannelCommandHandlers(const Command: String): TCommandEvent;
     function GetCommandHandlers(const Command: String): TCommandEvent;
+    procedure SetBotUsername(AValue: String);
     procedure SetChannelCommandHandlers(const Command: String;
       AValue: TCommandEvent);
     procedure SetCommandHandlers(const Command: String; AValue: TCommandEvent);
@@ -234,6 +236,7 @@ type
       write SetCommandHandlers;  // It can create command handlers by assigning their to array elements
     property ChannelCommandHandlers [const Command: String]: TCommandEvent read GetChannelCommandHandlers
       write SetChannelCommandHandlers;  // It can create command handlers by assigning their to array elements
+    property BotUsername: String read FBotUsername write SetBotUsername;
 
     property OnReceiveUpdate: TOnUpdateEvent read FOnReceiveUpdate write SetOnReceiveUpdate;
     property OnReceiveMessage: TMessageEvent read FOnReceiveMessage write SetOnReceiveMessage;
@@ -607,6 +610,12 @@ begin
   Result:=FCommandHandlers.Items[Command];
 end;
 
+procedure TTelegramSender.SetBotUsername(AValue: String);
+begin
+  if FBotUsername=AValue then Exit;
+  FBotUsername:=AValue;
+end;
+
 function TTelegramSender.CurrentLanguage(ACallback: TCallbackQueryObj): String;
 begin
   Result:=ACallback.From.Language_code;
@@ -662,6 +671,9 @@ begin
   if CurrentIsBanned then
     Exit;
   SetLanguage(CurrentLanguage(ACallback));
+  if Assigned(FCurrentMessage) then
+    if Assigned(FCurrentMessage.From) then
+      FBotUsername:=FCurrentMessage.From.Username;
   if Assigned(FOnReceiveCallbackQuery) then
     FOnReceiveCallbackQuery(Self, ACallback);
 end;
@@ -884,7 +896,7 @@ begin
   FJSONResponse:=AValue;
 end;
 
-procedure TTelegramSender.SetLanguage(const AValue: string);
+procedure TTelegramSender.SetLanguage(const AValue: String);
 begin
   if FLanguage=AValue then Exit;
   FLanguage:=AValue;
@@ -931,6 +943,7 @@ begin
   FCurrentMessage:=nil;
   FUpdate:=nil;
   FLanguage:='';
+  BotUsername:='';
   FCommandHandlers:=TCommandHandlersMap.create;
   FChannelCommandHandlers:=TCommandHandlersMap.create;
 end;
@@ -1000,6 +1013,8 @@ begin
       begin
         try
           FBotUser := TTelegramUserObj.CreateFromJSONObject(FJSONResponse as TJSONObject) as TTelegramUserObj;
+          if Assigned(FBotUser) then
+            FBotUsername:=FBotUser.Username;
         finally
           FreeAndNil(FJSONResponse);  // Where is must released?
         end;
