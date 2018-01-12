@@ -4,7 +4,7 @@
     <PathDelim Value="\"/>
     <Version Value="10"/>
     <BuildModes Active="Debug"/>
-    <Units Count="6">
+    <Units Count="7">
       <Unit0>
         <Filename Value="getMe.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -38,7 +38,7 @@
       </Unit2>
       <Unit3>
         <Filename Value="..\tgtypes.pas"/>
-        <EditorIndex Value="3"/>
+        <EditorIndex Value="4"/>
         <TopLine Value="22"/>
         <CursorPos X="41" Y="32"/>
         <UsageCount Value="10"/>
@@ -60,6 +60,13 @@
         <UsageCount Value="10"/>
         <Loaded Value="True"/>
       </Unit5>
+      <Unit6>
+        <Filename Value="..\tgstatlog.pas"/>
+        <EditorIndex Value="3"/>
+        <TopLine Value="7"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+      </Unit6>
     </Units>
     <JumpHistory Count="30" HistoryIndex="29">
       <Position1>
