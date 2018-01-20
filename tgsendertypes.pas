@@ -5,7 +5,7 @@ unit tgsendertypes;
 interface
 
 uses
-  Classes, SysUtils, fphttpclient, fpjson, tgtypes, ghashmap;
+  Classes, SysUtils, fphttpclient, fpjson, tgtypes, ghashmap, tgstatlog;
 
 type
   TParseMode = (pmDefault, pmMarkdown, pmHTML);
@@ -151,6 +151,7 @@ type
     FRequestWhenAnswer: Boolean;
     FCommandHandlers: TCommandHandlersMap; 
     FChannelCommandHandlers: TCommandHandlersMap;
+    FUpdateLogger: TtgStatLog;
     function CurrentLanguage(ACallback: TCallbackQueryObj): String;
     function CurrentLanguage(AMessage: TTelegramMessageObj): String;
     function GetChannelCommandHandlers(const Command: String): TCommandEvent;
@@ -175,6 +176,7 @@ type
     procedure SetProcessUpdate(AValue: Boolean);
     procedure SetRequestBody(AValue: String);
     procedure SetRequestWhenAnswer(AValue: Boolean);
+    procedure SetUpdateLogger(AValue: TtgStatLog);
     class function StringToJSONObject(const AString: String): TJSONObject;
   protected
     procedure DoReceiveMessageUpdate(AMessage: TTelegramMessageObj); virtual;
@@ -183,8 +185,8 @@ type
     procedure DebugMessage(const Msg: String); virtual; // будет отправлять в журнал все запросы и ответы. Полезно на время разработки
     procedure ErrorMessage(const Msg: String); virtual;
     procedure InfoMessage(const Msg: String); virtual;
-    function IsBanned(ChatID: Int64): Boolean; virtual;
-    function IsSimpleUser(ChatID: Int64): Boolean; virtual;
+    function IsBanned({%H-}ChatID: Int64): Boolean; virtual;
+    function IsSimpleUser({%H-}ChatID: Int64): Boolean; virtual;
     procedure SetLanguage(const AValue: String); virtual;
   public
     constructor Create(const AToken: String);
@@ -237,6 +239,8 @@ type
     property ChannelCommandHandlers [const Command: String]: TCommandEvent read GetChannelCommandHandlers
       write SetChannelCommandHandlers;  // It can create command handlers by assigning their to array elements
     property BotUsername: String read FBotUsername write SetBotUsername;
+
+    property UpdateLogger: TtgStatLog read FUpdateLogger write SetUpdateLogger; //We will log the update object completely if need
 
     property OnReceiveUpdate: TOnUpdateEvent read FOnReceiveUpdate write SetOnReceiveUpdate;
     property OnReceiveMessage: TMessageEvent read FOnReceiveMessage write SetOnReceiveMessage;
@@ -708,6 +712,9 @@ begin
         utCallbackQuery: DoReceiveCallbackQuery(AnUpdate.CallbackQuery);
         utChannelPost: DoReceiveChannelPost(AnUpdate.ChannelPost);
       end;
+      if Assigned(FUpdateLogger) then
+        if CurrentIsSimpleUser then  // This is to ensure that admins and moderators do not affect the statistics
+          FUpdateLogger.Log(FUpdate.AsString);
     end;
     if Assigned(FOnReceiveUpdate) then
       FOnReceiveUpdate(Self, AnUpdate);
@@ -733,7 +740,7 @@ end;
 
 function TTelegramSender.IsSimpleUser(ChatID: Int64): Boolean;
 begin
-  Result:=False;
+  Result:=True;
 end;
 
 function TTelegramSender.CurrentIsSimpleUser: Boolean;
@@ -843,6 +850,12 @@ begin
   FRequestWhenAnswer:=AValue;
 end;
 
+procedure TTelegramSender.SetUpdateLogger(AValue: TtgStatLog);
+begin
+  if FUpdateLogger=AValue then Exit;
+  FUpdateLogger:=AValue;
+end;
+
 function TTelegramSender.SendMethod(const Method: String;
   MethodParameters: array of const): Boolean;
 var
@@ -942,14 +955,18 @@ begin
   FCurrentUser:=nil;
   FCurrentMessage:=nil;
   FUpdate:=nil;
+  FUpdateLogger:=nil;
   FLanguage:='';
   BotUsername:='';
   FCommandHandlers:=TCommandHandlersMap.create;
   FChannelCommandHandlers:=TCommandHandlersMap.create;
+
 end;
 
 destructor TTelegramSender.Destroy;
 begin
+  if Assigned(FUpdateLogger) then
+    FreeAndNil(FUpdateLogger);
   FChannelCommandHandlers.Free;
   FCommandHandlers.Free;
   if Assigned(FBotUser) then
