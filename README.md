@@ -1,10 +1,11 @@
 # fp-telegram #
 
-Library for working with Telegram API in FreePascal/Lazarus
+Library for working with Telegram bots API in FreePascal/Lazarus
 
 FreePascal wrapper classes for Telegram bot's API. It is still unfinished library, but You can use it in your own working projects. Please join if you want to help of the development this library.
 
 The library does not use any third-party libraries, besides the built-in FPC. You can use it both independently and together with other libraries, for example, as a plug-in to Brook-framework https://github.com/Al-Muhandis/brook-telegram/
+
 
 Библиотека для работы с API ботов в телеграмм
 
