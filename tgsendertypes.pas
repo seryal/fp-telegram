@@ -9,6 +9,7 @@ uses
 
 type
   TParseMode = (pmDefault, pmMarkdown, pmHTML);
+  TInlineQueryResultType = (qrtArticle, qrtUnknown);
   TLogMessageEvent = procedure(ASender: TObject; LogType: TEventType; const Msg: String) of object;
   TInlineKeyboardButton = class;
   TKeyboardButton = class;
@@ -125,6 +126,44 @@ type
     constructor Create(const AButtons: array of String); overload;
     function AddButton(const AButtonText, CallbackData: String): Integer;
     procedure AddButtons(const AButtons: array of String);
+  end;
+
+  { TInputMessageContent }
+
+  TInputMessageContent = class(TJSONObject)
+  private
+    function GetMessageText: String;
+    function GetParseMode: TParseMode;
+    procedure SetMessageText(AValue: String);
+    procedure SetParseMode(AValue: TParseMode);
+  public
+    property MessageText: String read GetMessageText write SetMessageText;
+    property ParseMode: TParseMode read GetParseMode write SetParseMode;
+  end;
+
+  { TInlineQueryResult }
+
+  TInlineQueryResult = class(TJSONObject)
+  private
+    function GetDescription: String;
+    function GetID: String;
+    function GetInputMessageContent: TInputMessageContent;
+    function GetIQRType: TInlineQueryResultType;
+    function GetReplyMarkup: TReplyMarkup;
+    function GetTitle: String;
+    procedure SetDescription(AValue: String);
+    procedure SetID(AValue: String);
+    procedure SetInputMessageContent(AValue: TInputMessageContent);
+    procedure SetIQRType(AValue: TInlineQueryResultType);
+    procedure SetReplyMarkup(AValue: TReplyMarkup);
+    procedure SetTitle(AValue: String);
+  public
+    property IQRType: TInlineQueryResultType read GetIQRType write SetIQRType;
+    property ID: String read GetID write SetID;
+    property Title: String read GetTitle write SetTitle;
+    property InputMessageContent: TInputMessageContent read GetInputMessageContent write SetInputMessageContent;
+    property ReplyMarkup: TReplyMarkup read GetReplyMarkup write SetReplyMarkup;
+    property Description: String read GetDescription write SetDescription;
   end;
 
   { TTelegramSender }
@@ -296,9 +335,123 @@ const
   s_Ok = 'ok';
   s_BotCommand = 'bot_command';
 
+  s_Description = 'description';
+  s_ID = 'id';
+  s_InputMessageContent = 'input_message_content';
+  s_Type = 'type';
+  s_Title = 'title';
+
+  s_MessageText = 'message_text';
+
   ParseModes: array[TParseMode] of PChar = ('Markdown', 'Markdown', 'HTML');
+  QueryResultTypeArray: array[TInlineQueryResultType] of PChar = ('article', '');
 
   API_URL='https://api.telegram.org/bot';
+
+function StringToIQRType(const S: String): TInlineQueryResultType;
+var
+  iqrt: TInlineQueryResultType;
+begin
+  Result:=qrtUnknown;
+  for iqrt:=Low(QueryResultTypeArray) to High(QueryResultTypeArray) do
+    if SameStr(QueryResultTypeArray[iqrt], S) then
+      Exit(iqrt);
+end;
+
+function StringToParseMode(const S: String): TParseMode;
+var
+  pm: TParseMode;
+begin
+  Result:=pmDefault;
+  for pm:=Low(ParseModes) to High(ParseModes) do
+    if SameStr(ParseModes[pm], S) then
+      Exit(pm);
+end;
+
+{ TInputMessageContent }
+
+function TInputMessageContent.GetMessageText: String;
+begin
+  Result:=Strings[s_MessageText];
+end;
+
+function TInputMessageContent.GetParseMode: TParseMode;
+begin
+  Result:=StringToParseMode(Get(s_ParseMode, EmptyStr));
+end;
+
+procedure TInputMessageContent.SetMessageText(AValue: String);
+begin
+  Strings[s_MessageText]:=AValue;
+end;
+
+procedure TInputMessageContent.SetParseMode(AValue: TParseMode);
+begin
+  Strings[s_ParseMode]:=ParseModes[AValue];
+end;
+
+{ TInlineQueryResult }
+
+function TInlineQueryResult.GetDescription: String;
+begin
+  Result:=Get(s_Description, EmptyStr);
+end;
+
+function TInlineQueryResult.GetID: String;
+begin
+  Result:=Strings[s_ID];
+end;
+
+function TInlineQueryResult.GetInputMessageContent: TInputMessageContent;
+begin
+  Result:=Objects[s_InputMessageContent];
+end;
+
+function TInlineQueryResult.GetIQRType: TInlineQueryResultType;
+begin
+  Result:=StringToIQRType(Strings[s_Type]);
+end;
+
+function TInlineQueryResult.GetReplyMarkup: TReplyMarkup;
+begin
+  Result:=Get(s_ReplyMarkup, nil);
+end;
+
+function TInlineQueryResult.GetTitle: String;
+begin
+  Result:=Strings[s_Title];
+end;
+
+procedure TInlineQueryResult.SetDescription(AValue: String);
+begin
+  Strings[s_Description]:=AValue;
+end;
+
+procedure TInlineQueryResult.SetID(AValue: String);
+begin
+  Strings[s_ID]:=AValue;
+end;
+
+procedure TInlineQueryResult.SetInputMessageContent(AValue: TInputMessageContent
+  );
+begin
+  Objects[s_InputMessageContent]:=AValue;
+end;
+
+procedure TInlineQueryResult.SetIQRType(AValue: TInlineQueryResultType);
+begin
+  Strings[s_Type]:=QueryResultTypeArray[AValue];
+end;
+
+procedure TInlineQueryResult.SetReplyMarkup(AValue: TReplyMarkup);
+begin
+  Objects[s_ReplyMarkup]:=AValue;
+end;
+
+procedure TInlineQueryResult.SetTitle(AValue: String);
+begin
+  Strings[s_Title]:=AValue;
+end;
 
 { TStringHash }
 

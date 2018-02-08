@@ -116,14 +116,15 @@ type
   private
     FFrom: TTelegramUserObj;
     FID: String;
-//    FLocation: TTelegramLocation;
+    FLocation: TTelegramLocation;
     FOffset: String;
     FQuery: String;
   public
     constructor Create(JSONObject: TJSONObject); override;
+    destructor Destroy; override;
     property ID: String read FID;
     property From: TTelegramUserObj read FFrom;
-//    property Location: TTelegramLocation read FLocation;
+    property Location: TTelegramLocation read FLocation;
     property Query: String read FQuery;
     property Offset: String read FOffset;
   end;
@@ -234,6 +235,16 @@ begin
   FOffset:=fJSON.Get('offset', '');
 
   FFrom:=TTelegramUserObj.CreateFromJSONObject(fJSON.Find('from', jtObject) as TJSONObject) as TTelegramUserObj;
+  FLocation:=TTelegramUserObj.CreateFromJSONObject(fJSON.Find('location', jtObject) as TJSONObject) as TTelegramLocation;
+end;
+
+destructor TTelegramInlineQueryObj.Destroy;
+begin
+  if Assigned(FLocation) then
+    FLocation.Free;
+  if Assigned(FFrom) then
+    FFrom.Free;
+  inherited Destroy;
 end;
 
 { TTelegramObj }
