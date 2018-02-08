@@ -166,6 +166,19 @@ type
     property Description: String read GetDescription write SetDescription;
   end;
 
+  { TAnswerInlineQuery }
+
+  TAnswerInlineQuery = class(TJSONObject)
+  private
+    function GetInlineQueryID: String;
+    function GetResults: TJSONArray;
+    procedure SetInlineQueryID(AValue: String);
+    procedure SetResults(AValue: TJSONArray);
+  public
+    property InlineQueryID: String read GetInlineQueryID write SetInlineQueryID;
+    property Results: TJSONArray read GetResults write SetResults;
+  end;
+
   { TTelegramSender }
 
   TTelegramSender = class
@@ -343,6 +356,9 @@ const
 
   s_MessageText = 'message_text';
 
+  s_InlineQueryID = 'inline_query_id';
+  s_Results = 'results';
+
   ParseModes: array[TParseMode] of PChar = ('Markdown', 'Markdown', 'HTML');
   QueryResultTypeArray: array[TInlineQueryResultType] of PChar = ('article', '');
 
@@ -366,6 +382,28 @@ begin
   for pm:=Low(ParseModes) to High(ParseModes) do
     if SameStr(ParseModes[pm], S) then
       Exit(pm);
+end;
+
+{ TAnswerInlineQuery }
+
+function TAnswerInlineQuery.GetInlineQueryID: String;
+begin
+  Result:=Strings[s_InlineQueryID];
+end;
+
+function TAnswerInlineQuery.GetResults: TJSONArray;
+begin
+  Result:=Arrays[s_Results];
+end;
+
+procedure TAnswerInlineQuery.SetInlineQueryID(AValue: String);
+begin
+  Strings[s_InlineQueryID]:=AValue;
+end;
+
+procedure TAnswerInlineQuery.SetResults(AValue: TJSONArray);
+begin
+  Arrays[s_Results]:=AValue;
 end;
 
 { TInputMessageContent }
@@ -404,7 +442,7 @@ end;
 
 function TInlineQueryResult.GetInputMessageContent: TInputMessageContent;
 begin
-  Result:=Objects[s_InputMessageContent];
+  Result:=Objects[s_InputMessageContent] as TInputMessageContent;
 end;
 
 function TInlineQueryResult.GetIQRType: TInlineQueryResultType;
@@ -414,7 +452,7 @@ end;
 
 function TInlineQueryResult.GetReplyMarkup: TReplyMarkup;
 begin
-  Result:=Get(s_ReplyMarkup, nil);
+  Result:=Find(s_ReplyMarkup, jtObject) as TReplyMarkup;
 end;
 
 function TInlineQueryResult.GetTitle: String;
