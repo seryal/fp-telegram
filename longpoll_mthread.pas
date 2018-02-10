@@ -44,7 +44,7 @@ type
     fQueneProcessor: TTGQueneProcessorThread;
     FOffset: Integer;
   protected
-    procedure QueneAddUpdate(ASender: TObject; AnUpdate: TTelegramUpdateObj);
+    procedure QueneAddUpdate({%H-}ASender: TObject; AnUpdate: TTelegramUpdateObj);
     procedure Execute; override;
     property Bot: TTelegramSender read FBot write FBot;
   public

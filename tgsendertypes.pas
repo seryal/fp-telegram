@@ -20,6 +20,9 @@ type
     AMessage: TTelegramMessageObj) of object;
   TCallbackEvent = procedure (ASender: TObject; ACallback: TCallbackQueryObj) of object;
   TMessageEvent = procedure (ASender: TObject; AMessage: TTelegramMessageObj) of object;
+  TInlineQueryEvent = procedure (ASender: TObject; AnInlineQuery: TTelegramInlineQueryObj) of object;
+  TChosenInlineResultEvent = procedure (ASender: TObject;
+    AChosenInlineResult: TTelegramChosenInlineResultObj) of object;
 
   { TStringHash }
 
@@ -166,19 +169,6 @@ type
     property Description: String read GetDescription write SetDescription;
   end;
 
-  { TAnswerInlineQuery }
-
-  TAnswerInlineQuery = class(TJSONObject)
-  private
-    function GetInlineQueryID: String;
-    function GetResults: TJSONArray;
-    procedure SetInlineQueryID(AValue: String);
-    procedure SetResults(AValue: TJSONArray);
-  public
-    property InlineQueryID: String read GetInlineQueryID write SetInlineQueryID;
-    property Results: TJSONArray read GetResults write SetResults;
-  end;
-
   { TTelegramSender }
 
   TTelegramSender = class
@@ -191,6 +181,8 @@ type
     FLanguage: string;
     FOnReceiveCallbackQuery: TCallbackEvent;
     FOnReceiveChannelPost: TMessageEvent;
+    FOnReceiveChosenInlineResult: TChosenInlineResultEvent;
+    FOnReceiveInlineQuery: TInlineQueryEvent;
     FOnReceiveMessage: TMessageEvent;
     FUpdate: TTelegramUpdateObj;
     FJSONResponse: TJSONData;
@@ -204,7 +196,7 @@ type
     FCommandHandlers: TCommandHandlersMap; 
     FChannelCommandHandlers: TCommandHandlersMap;
     FUpdateLogger: TtgStatLog;
-    function CurrentLanguage(ACallback: TCallbackQueryObj): String;
+    function CurrentLanguage(AUser: TTelegramUserObj): String;
     function CurrentLanguage(AMessage: TTelegramMessageObj): String;
     function GetChannelCommandHandlers(const Command: String): TCommandEvent;
     function GetCommandHandlers(const Command: String): TCommandEvent;
@@ -223,6 +215,8 @@ type
     procedure SetJSONResponse(AValue: TJSONData);
     procedure SetOnReceiveCallbackQuery(AValue: TCallbackEvent);
     procedure SetOnReceiveChannelPost(AValue: TMessageEvent);
+    procedure SetOnReceiveChosenInlineResult(AValue: TChosenInlineResultEvent);
+    procedure SetOnReceiveInlineQuery(AValue: TInlineQueryEvent);
     procedure SetOnReceiveMessage(AValue: TMessageEvent);
     procedure SetOnReceiveUpdate(AValue: TOnUpdateEvent);
     procedure SetProcessUpdate(AValue: Boolean);
@@ -234,6 +228,8 @@ type
     procedure DoReceiveMessageUpdate(AMessage: TTelegramMessageObj); virtual;
     procedure DoReceiveCallbackQuery(ACallback: TCallbackQueryObj); virtual;
     procedure DoReceiveChannelPost(AChannelPost: TTelegramMessageObj); virtual;
+    procedure DoReceiveInlineQuery(AnInlineQuery: TTelegramInlineQueryObj);  virtual;
+    procedure DoReceiveChosenInlineResult(AChosenInlineResult: TTelegramChosenInlineResultObj); virtual;
     procedure DebugMessage(const Msg: String); virtual; // будет отправлять в журнал все запросы и ответы. Полезно на время разработки
     procedure ErrorMessage(const Msg: String); virtual;
     procedure InfoMessage(const Msg: String); virtual;
@@ -268,6 +264,9 @@ type
     function sendPhoto(const APhoto: String; const ACaption: String = ''): Boolean; overload;
     function sendVideo(chat_id: Int64; const AVideo: String; const ACaption: String = ''): Boolean;
     function sendVideo(const AVideo: String; const ACaption: String = ''): Boolean; overload;
+    function answerInlineQuery(const AnInlineQueryID: String; Results: TJSONArray;
+      CacheTime: Integer = 300; IsPersonal: Boolean = False; const NextOffset: String = '';
+      const SwitchPmText: String = ''; const SwitchPmParameter: String = ''): Boolean;
     property BotUser: TTelegramUserObj read FBotUser;
     property JSONResponse: TJSONData read FJSONResponse write SetJSONResponse;
     property CurrentChatId: Int64 read FCurrentChatId;
@@ -298,6 +297,8 @@ type
     property OnReceiveMessage: TMessageEvent read FOnReceiveMessage write SetOnReceiveMessage;
     property OnReceiveCallbackQuery: TCallbackEvent read FOnReceiveCallbackQuery write SetOnReceiveCallbackQuery;
     property OnReceiveChannelPost: TMessageEvent read FOnReceiveChannelPost write SetOnReceiveChannelPost;
+    property OnReceiveInlineQuery: TInlineQueryEvent read FOnReceiveInlineQuery write SetOnReceiveInlineQuery;
+    property OnReceiveChosenInlineResult: TChosenInlineResultEvent read FOnReceiveChosenInlineResult write SetOnReceiveChosenInlineResult;
   end;
 
 implementation
@@ -315,6 +316,7 @@ const
   s_sendLocation='sendLocation';
   s_getUpdates='getUpdates';
   s_getMe='getMe';
+  s_answerInlineQuery='answerInlineQuery';
 
   s_Method='method';
   s_Url = 'url';
@@ -358,6 +360,12 @@ const
 
   s_InlineQueryID = 'inline_query_id';
   s_Results = 'results';
+  s_CacheTime = 'cache_time';
+  s_IsPersonal = 'is_personal';
+  s_NextOffset = 'next_offset';
+  s_SwitchPmText = 'switch_pm_text';
+  s_SwitchPmParameter = 'switch_pm_parameter';
+
 
   ParseModes: array[TParseMode] of PChar = ('Markdown', 'Markdown', 'HTML');
   QueryResultTypeArray: array[TInlineQueryResultType] of PChar = ('article', '');
@@ -382,28 +390,6 @@ begin
   for pm:=Low(ParseModes) to High(ParseModes) do
     if SameStr(ParseModes[pm], S) then
       Exit(pm);
-end;
-
-{ TAnswerInlineQuery }
-
-function TAnswerInlineQuery.GetInlineQueryID: String;
-begin
-  Result:=Strings[s_InlineQueryID];
-end;
-
-function TAnswerInlineQuery.GetResults: TJSONArray;
-begin
-  Result:=Arrays[s_Results];
-end;
-
-procedure TAnswerInlineQuery.SetInlineQueryID(AValue: String);
-begin
-  Strings[s_InlineQueryID]:=AValue;
-end;
-
-procedure TAnswerInlineQuery.SetResults(AValue: TJSONArray);
-begin
-  Arrays[s_Results]:=AValue;
 end;
 
 { TInputMessageContent }
@@ -811,9 +797,9 @@ begin
   FBotUsername:=AValue;
 end;
 
-function TTelegramSender.CurrentLanguage(ACallback: TCallbackQueryObj): String;
+function TTelegramSender.CurrentLanguage(AUser: TTelegramUserObj): String;
 begin
-  Result:=ACallback.From.Language_code;
+  Result:=AUser.Language_code;
 end;
 
 function TTelegramSender.CurrentLanguage(AMessage: TTelegramMessageObj): String;
@@ -865,7 +851,7 @@ begin
   FCurrentChatID:=FCurrentUser.ID; { Bot will send to private chat if in channel is called } {ACallback.Message.ChatId;}
   if CurrentIsBanned then
     Exit;
-  SetLanguage(CurrentLanguage(ACallback));
+  SetLanguage(CurrentLanguage(ACallback.From));
   if Assigned(FCurrentMessage) then
     if Assigned(FCurrentMessage.From) then
       FBotUsername:=FCurrentMessage.From.Username;
@@ -885,6 +871,30 @@ begin
     FOnReceiveChannelPost(Self, AChannelPost);
 end;
 
+procedure TTelegramSender.DoReceiveInlineQuery(
+  AnInlineQuery: TTelegramInlineQueryObj);
+begin
+  FCurrentMessage:=nil;
+  FCurrentChatID:=AnInlineQuery.From.ID; // This is doubtful. It will be necessary to re-check
+  if CurrentIsBanned then
+    Exit;
+  SetLanguage(CurrentLanguage(AnInlineQuery.From));
+  if Assigned(FOnReceiveInlineQuery) then
+    FOnReceiveInlineQuery(Self, AnInlineQuery);
+end;
+
+procedure TTelegramSender.DoReceiveChosenInlineResult(
+  AChosenInlineResult: TTelegramChosenInlineResultObj);
+begin
+  FCurrentMessage:=nil;
+  FCurrentChatID:=AChosenInlineResult.From.ID; // This is doubtful. It will be necessary to re-check
+  if CurrentIsBanned then
+    Exit;
+  SetLanguage(CurrentLanguage(AChosenInlineResult.From));
+  if Assigned(FOnReceiveChosenInlineResult) then
+    FOnReceiveChosenInlineResult(Self, AChosenInlineResult);
+end;
+
 procedure TTelegramSender.DoReceiveUpdate(AnUpdate: TTelegramUpdateObj);
 begin
   if Assigned(FUpdate) then
@@ -902,6 +912,8 @@ begin
         utMessage: DoReceiveMessageUpdate(AnUpdate.Message);
         utCallbackQuery: DoReceiveCallbackQuery(AnUpdate.CallbackQuery);
         utChannelPost: DoReceiveChannelPost(AnUpdate.ChannelPost);
+        utInlineQuery: DoReceiveInlineQuery(AnUpdate.InlineQuery);
+        utChosenInlineResult: DoReceiveChosenInlineResult(AnUpdate.ChosenInlineResult);
       end;
       if Assigned(FUpdateLogger) then
         if CurrentIsSimpleUser then  // This is to ensure that admins and moderators do not affect the statistics
@@ -1116,6 +1128,19 @@ procedure TTelegramSender.SetOnReceiveChannelPost(AValue: TMessageEvent);
 begin
   if FOnReceiveChannelPost=AValue then Exit;
   FOnReceiveChannelPost:=AValue;
+end;
+
+procedure TTelegramSender.SetOnReceiveChosenInlineResult(
+  AValue: TChosenInlineResultEvent);
+begin
+  if FOnReceiveChosenInlineResult=AValue then Exit;
+  FOnReceiveChosenInlineResult:=AValue;
+end;
+
+procedure TTelegramSender.SetOnReceiveInlineQuery(AValue: TInlineQueryEvent);
+begin
+  if FOnReceiveInlineQuery=AValue then Exit;
+  FOnReceiveInlineQuery:=AValue;
 end;
 
 procedure TTelegramSender.SetOnReceiveMessage(AValue: TMessageEvent);
@@ -1375,6 +1400,16 @@ function TTelegramSender.sendVideo(const AVideo: String; const ACaption: String
   ): Boolean;
 begin
   Result:=sendVideo(FCurrentChatId, AVideo, ACaption);
+end;
+
+function TTelegramSender.answerInlineQuery(const AnInlineQueryID: String;
+  Results: TJSONArray; CacheTime: Integer; IsPersonal: Boolean;
+  const NextOffset: String; const SwitchPmText: String;
+  const SwitchPmParameter: String): Boolean;
+begin  // todo: do not include default parameters... but is it really so necessary?
+  Result:=SendMethod(s_answerInlineQuery, [s_InlineQueryID, AnInlineQueryID, s_Results, Results,
+    s_CacheTime, CacheTime, s_IsPersonal, IsPersonal, s_NextOffset, NextOffset,
+    s_switchPmText, SwitchPmText, s_SwitchPmParameter, SwitchPmParameter]);
 end;
 
 end.

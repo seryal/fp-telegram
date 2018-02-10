@@ -12,6 +12,7 @@ type
   TTelegramMessageObj = class;
   TTelegramMessageEntityObj = class;
   TTelegramInlineQueryObj = class;
+  TTelegramChosenInlineResultObj = class;
   TTelegramUserObj = class;
   TCallbackQueryObj = class;
   TTelegramLocation = class;
@@ -39,10 +40,12 @@ type
   private
     FCallbackQuery: TCallbackQueryObj;
     FChannelPost: TTelegramMessageObj;
+    FChosenInlineResult: TTelegramChosenInlineResultObj;
     FInlineQuery: TTelegramInlineQueryObj;
     fUpdateId: Integer;
     fMessage: TTelegramMessageObj;
     FUpdateType: TUpdateType;
+    function ParseJSONObject: TUpdateType;
   public
     constructor Create(JSONObject: TJSONObject); override;
     destructor Destroy; override;
@@ -51,6 +54,7 @@ type
     property Message: TTelegramMessageObj read fMessage;
     property CallbackQuery: TCallbackQueryObj read FCallbackQuery;
     property InlineQuery: TTelegramInlineQueryObj read FInlineQuery;
+    property ChosenInlineResult: TTelegramChosenInlineResultObj read FChosenInlineResult;
     property ChannelPost: TTelegramMessageObj read FChannelPost;
   end;
 
@@ -129,6 +133,30 @@ type
     property Offset: String read FOffset;
   end;
 
+  { TTelegramChosenInlineResultObj }
+
+  TTelegramChosenInlineResultObj = class(TTelegramObj)
+  private
+    FFrom: TTelegramUserObj;
+    FInlineMessageID: String;
+    FLocation: TTelegramLocation;
+    FQuery: String;
+    FResultID: String;
+    procedure SetFrom(AValue: TTelegramUserObj);
+    procedure SetInlineMessageID(AValue: String);
+    procedure SetLocation(AValue: TTelegramLocation);
+    procedure SetQuery(AValue: String);
+    procedure SetResultID(AValue: String);
+  public
+    constructor Create(JSONObject: TJSONObject); override;
+    destructor Destroy; override;
+    property ResultID: String read FResultID;
+    property From: TTelegramUserObj read FFrom;
+    property Location: TTelegramLocation read FLocation;
+    property InlineMessageID: String read FInlineMessageID;
+    property Query: String read FQuery;
+  end;
+
   { TTelegramUserObj }
 
   TTelegramUserObj = class(TTelegramObj)
@@ -178,6 +206,57 @@ begin
   Result:=TJSONArray.Create;
   for u in AllowedUpdates do
     Result.Add(UpdateTypeAliases[u]);
+end;
+
+{ TTelegramChosenInlineResultObj }
+
+procedure TTelegramChosenInlineResultObj.SetFrom(AValue: TTelegramUserObj);
+begin
+  if FFrom=AValue then Exit;
+  FFrom:=AValue;
+end;
+
+procedure TTelegramChosenInlineResultObj.SetInlineMessageID(AValue: String);
+begin
+  if FInlineMessageID=AValue then Exit;
+  FInlineMessageID:=AValue;
+end;
+
+procedure TTelegramChosenInlineResultObj.SetLocation(AValue: TTelegramLocation);
+begin
+  if FLocation=AValue then Exit;
+  FLocation:=AValue;
+end;
+
+procedure TTelegramChosenInlineResultObj.SetQuery(AValue: String);
+begin
+  if FQuery=AValue then Exit;
+  FQuery:=AValue;
+end;
+
+procedure TTelegramChosenInlineResultObj.SetResultID(AValue: String);
+begin
+  if FResultID=AValue then Exit;
+  FResultID:=AValue;
+end;
+
+constructor TTelegramChosenInlineResultObj.Create(JSONObject: TJSONObject);
+begin
+  inherited Create(JSONObject);
+  FResultID := fJSON.Strings['result_id'];
+  FFrom:=TTelegramUserObj.CreateFromJSONObject(fJSON.Find('from', jtObject) as TJSONObject) as TTelegramUserObj;
+  FLocation:=TTelegramLocation.CreateFromJSONObject(fJSON.Find('location', jtObject) as TJSONObject) as TTelegramLocation;
+  FInlineMessageID:=fJSON.Get('inline_message_id', '');
+  FQuery:=fJSON.Strings['query'];
+end;
+
+destructor TTelegramChosenInlineResultObj.Destroy;
+begin
+  if Assigned(FLocation) then
+    FLocation.Free;
+  if Assigned(FFrom) then
+    FFrom.Free;
+  inherited Destroy;
 end;
 
 { TTelegramLocation }
@@ -279,28 +358,37 @@ end;
 
 { TTelegramUpdateObj }
 
-constructor TTelegramUpdateObj.Create(JSONObject: TJSONObject);
+function TTelegramUpdateObj.ParseJSONObject: TUpdateType;
 begin
-  inherited Create(JSONObject);
   fUpdateId := fJSON.Integers['update_id'];
   // объекты - не нашли?! - nil
-  FUpdateType:=utUnknown;
+  Result:=utUnknown;
   fMessage := TTelegramMessageObj.CreateFromJSONObject(
     fJSON.Find('message', jtObject) as TJSONObject) as TTelegramMessageObj;
   if Assigned(fMessage) then
-    FUpdateType:=utMessage;
+    Exit(utMessage);
   FCallbackQuery:=TCallbackQueryObj.CreateFromJSONObject(
     fJSON.Find('callback_query', jtObject) as TJSONObject) as TCallbackQueryObj;
   if Assigned(FCallbackQuery) then
-    FUpdateType:=utCallbackQuery;
+    Exit(utCallbackQuery);
   FInlineQuery:=TTelegramInlineQueryObj.CreateFromJSONObject(
     fJSON.Find('inline_query', jtObject) as TJSONObject) as TTelegramInlineQueryObj;
   if Assigned(FInlineQuery) then
-    FUpdateType:=utInlineQuery;
+    Exit(utInlineQuery);
+  FChosenInlineResult:=TTelegramChosenInlineResultObj.CreateFromJSONObject(
+    fJSON.Find('chosen_inline_result', jtObject) as TJSONObject) as TTelegramChosenInlineResultObj;
+  if Assigned(FChosenInlineResult) then
+    Exit(utChosenInlineResult);
   FChannelPost:=TTelegramMessageObj.CreateFromJSONObject(
     fJSON.Find('channel_post', jtObject) as TJSONObject) as TTelegramMessageObj;
   if Assigned(FChannelPost) then
-    FUpdateType:=utChannelPost;
+    Exit(utChannelPost);
+end;
+
+constructor TTelegramUpdateObj.Create(JSONObject: TJSONObject);
+begin
+  inherited Create(JSONObject);
+  FUpdateType:=ParseJSONObject;
 end;
 
 destructor TTelegramUpdateObj.Destroy;
