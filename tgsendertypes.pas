@@ -140,6 +140,7 @@ type
     procedure SetMessageText(AValue: String);
     procedure SetParseMode(AValue: TParseMode);
   public
+    constructor Create(const AMessageText: String; AParseMode: TParseMode = pmDefault);
     property MessageText: String read GetMessageText write SetMessageText;
     property ParseMode: TParseMode read GetParseMode write SetParseMode;
   end;
@@ -412,6 +413,12 @@ end;
 procedure TInputMessageContent.SetParseMode(AValue: TParseMode);
 begin
   Strings[s_ParseMode]:=ParseModes[AValue];
+end;
+
+constructor TInputMessageContent.Create(const AMessageText: String;
+  AParseMode: TParseMode);
+begin
+  inherited Create([s_MessageText, AMessageText, s_ParseMode, ParseModes[AParseMode]]);
 end;
 
 { TInlineQueryResult }
@@ -1407,7 +1414,7 @@ function TTelegramSender.answerInlineQuery(const AnInlineQueryID: String;
   const NextOffset: String; const SwitchPmText: String;
   const SwitchPmParameter: String): Boolean;
 begin  // todo: do not include default parameters... but is it really so necessary?
-  Result:=SendMethod(s_answerInlineQuery, [s_InlineQueryID, AnInlineQueryID, s_Results, Results,
+  Result:=SendMethod(s_answerInlineQuery, [s_InlineQueryID, AnInlineQueryID, s_Results, Results.Clone,
     s_CacheTime, CacheTime, s_IsPersonal, IsPersonal, s_NextOffset, NextOffset,
     s_switchPmText, SwitchPmText, s_SwitchPmParameter, SwitchPmParameter]);
 end;
