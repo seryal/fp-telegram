@@ -9,7 +9,7 @@ uses
 
 type
   TParseMode = (pmDefault, pmMarkdown, pmHTML);
-  TInlineQueryResultType = (qrtArticle, qrtUnknown);
+  TInlineQueryResultType = (qrtArticle, qrtPhoto, qrtVideo, qrtUnknown);
   TLogMessageEvent = procedure(ASender: TObject; LogType: TEventType; const Msg: String) of object;
   TInlineKeyboardButton = class;
   TKeyboardButton = class;
@@ -153,14 +153,22 @@ type
     function GetID: String;
     function GetInputMessageContent: TInputMessageContent;
     function GetIQRType: TInlineQueryResultType;
+    function GetMimeType: String;
+    function GetPhotoUrl: String;
     function GetReplyMarkup: TReplyMarkup;
+    function GetThumbUrl: String;
     function GetTitle: String;
+    function GetVideoUrl: String;
     procedure SetDescription(AValue: String);
     procedure SetID(AValue: String);
     procedure SetInputMessageContent(AValue: TInputMessageContent);
     procedure SetIQRType(AValue: TInlineQueryResultType);
+    procedure SetMimeType(AValue: String);
+    procedure SetPhotoUrl(AValue: String);
     procedure SetReplyMarkup(AValue: TReplyMarkup);
+    procedure SetThumbUrl(AValue: String);
     procedure SetTitle(AValue: String);
+    procedure SetVideoUrl(AValue: String);
   public
     property IQRType: TInlineQueryResultType read GetIQRType write SetIQRType;
     property ID: String read GetID write SetID;
@@ -168,6 +176,12 @@ type
     property InputMessageContent: TInputMessageContent read GetInputMessageContent write SetInputMessageContent;
     property ReplyMarkup: TReplyMarkup read GetReplyMarkup write SetReplyMarkup;
     property Description: String read GetDescription write SetDescription;
+
+    property PhotoUrl: String read GetPhotoUrl write SetPhotoUrl;
+    property ThumbUrl: String read GetThumbUrl write SetThumbUrl;
+
+    property VideoUrl: String read GetVideoUrl write SetVideoUrl;
+    property MimeType: String read GetMimeType write SetMimeType;
   end;
 
   { TTelegramSender }
@@ -367,9 +381,14 @@ const
   s_SwitchPmText = 'switch_pm_text';
   s_SwitchPmParameter = 'switch_pm_parameter';
 
+  s_PhotoUrl ='photo_url';
+  s_ThumbUrl ='thumb_url';
+  s_VideoUrl ='video_url';
+  s_MimeType ='mime_type';
+
 
   ParseModes: array[TParseMode] of PChar = ('Markdown', 'Markdown', 'HTML');
-  QueryResultTypeArray: array[TInlineQueryResultType] of PChar = ('article', '');
+  QueryResultTypeArray: array[TInlineQueryResultType] of PChar = ('article', 'photo', 'video', '');
 
   API_URL='https://api.telegram.org/bot';
 
@@ -443,14 +462,34 @@ begin
   Result:=StringToIQRType(Strings[s_Type]);
 end;
 
+function TInlineQueryResult.GetMimeType: String;
+begin
+  Result:=Get(s_MimeType, '');
+end;
+
+function TInlineQueryResult.GetPhotoUrl: String;
+begin
+  Result:=Get(s_PhotoUrl, '');
+end;
+
 function TInlineQueryResult.GetReplyMarkup: TReplyMarkup;
 begin
   Result:=Find(s_ReplyMarkup, jtObject) as TReplyMarkup;
 end;
 
+function TInlineQueryResult.GetThumbUrl: String;
+begin
+  Result:=Get(s_ThumbUrl, '');
+end;
+
 function TInlineQueryResult.GetTitle: String;
 begin
   Result:=Strings[s_Title];
+end;
+
+function TInlineQueryResult.GetVideoUrl: String;
+begin
+  Result:=Get(s_VideoUrl, '');
 end;
 
 procedure TInlineQueryResult.SetDescription(AValue: String);
@@ -474,14 +513,34 @@ begin
   Strings[s_Type]:=QueryResultTypeArray[AValue];
 end;
 
+procedure TInlineQueryResult.SetMimeType(AValue: String);
+begin
+  Strings[s_MimeType]:=AValue;
+end;
+
+procedure TInlineQueryResult.SetPhotoUrl(AValue: String);
+begin
+  Strings[s_PhotoUrl]:=AValue;
+end;
+
 procedure TInlineQueryResult.SetReplyMarkup(AValue: TReplyMarkup);
 begin
   Objects[s_ReplyMarkup]:=AValue;
 end;
 
+procedure TInlineQueryResult.SetThumbUrl(AValue: String);
+begin
+  Strings[s_ThumbUrl]:=AValue;
+end;
+
 procedure TInlineQueryResult.SetTitle(AValue: String);
 begin
   Strings[s_Title]:=AValue;
+end;
+
+procedure TInlineQueryResult.SetVideoUrl(AValue: String);
+begin
+  Strings[s_VideoUrl]:=AValue;
 end;
 
 { TStringHash }
@@ -870,6 +929,7 @@ procedure TTelegramSender.DoReceiveChannelPost(AChannelPost: TTelegramMessageObj
 begin
   FCurrentMessage:=AChannelPost;
   FCurrentChatID:=AChannelPost.ChatId;
+  FCurrentUser:=AChannelPost.From;
   if CurrentIsBanned then
     Exit;
   SetLanguage(CurrentLanguage(AChannelPost));
@@ -883,6 +943,7 @@ procedure TTelegramSender.DoReceiveInlineQuery(
 begin
   FCurrentMessage:=nil;
   FCurrentChatID:=AnInlineQuery.From.ID; // This is doubtful. It will be necessary to re-check
+  FCurrentUser:=AnInlineQuery.From;
   if CurrentIsBanned then
     Exit;
   SetLanguage(CurrentLanguage(AnInlineQuery.From));
@@ -895,6 +956,7 @@ procedure TTelegramSender.DoReceiveChosenInlineResult(
 begin
   FCurrentMessage:=nil;
   FCurrentChatID:=AChosenInlineResult.From.ID; // This is doubtful. It will be necessary to re-check
+  FCurrentUser:=AChosenInlineResult.From;
   if CurrentIsBanned then
     Exit;
   SetLanguage(CurrentLanguage(AChosenInlineResult.From));

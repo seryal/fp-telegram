@@ -18,8 +18,8 @@
       </Linking>
     </CompilerOptions>
     <Description Value="Telegram API library"/>
-    <Version Build="5"/>
-    <Files Count="4">
+    <Version Build="6"/>
+    <Files Count="5">
       <Item1>
         <Filename Value="tgsendertypes.pas"/>
         <UnitName Value="tgsendertypes"/>
@@ -36,6 +36,10 @@
         <Filename Value="tgstatlog.pas"/>
         <UnitName Value="tgstatlog"/>
       </Item4>
+      <Item5>
+        <Filename Value="tgutils.pas"/>
+        <UnitName Value="tgutils"/>
+      </Item5>
     </Files>
     <RequiredPkgs Count="1">
       <Item1>
