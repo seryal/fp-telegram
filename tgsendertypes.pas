@@ -9,7 +9,7 @@ uses
 
 type
   TParseMode = (pmDefault, pmMarkdown, pmHTML);
-  TInlineQueryResultType = (qrtArticle, qrtPhoto, qrtVideo, qrtUnknown);
+  TInlineQueryResultType = (qrtArticle, qrtPhoto, qrtVideo, qrtMpeg4Gif, qrtUnknown);
   TLogMessageEvent = procedure(ASender: TObject; LogType: TEventType; const Msg: String) of object;
   TInlineKeyboardButton = class;
   TKeyboardButton = class;
@@ -154,7 +154,12 @@ type
     function GetInputMessageContent: TInputMessageContent;
     function GetIQRType: TInlineQueryResultType;
     function GetMimeType: String;
+    function GetMpeg4Height: Integer;
+    function GetMpeg4Url: String;
+    function GetMpeg4Width: Integer;
+    function GetPhotoHeight: Integer;
     function GetPhotoUrl: String;
+    function GetPhotoWidth: Integer;
     function GetReplyMarkup: TReplyMarkup;
     function GetThumbUrl: String;
     function GetTitle: String;
@@ -164,7 +169,12 @@ type
     procedure SetInputMessageContent(AValue: TInputMessageContent);
     procedure SetIQRType(AValue: TInlineQueryResultType);
     procedure SetMimeType(AValue: String);
+    procedure SetMpeg4Height(AValue: Integer);
+    procedure SetMpeg4Url(AValue: String);
+    procedure SetMpeg4Width(AValue: Integer);
+    procedure SetPhotoHeight(AValue: Integer);
     procedure SetPhotoUrl(AValue: String);
+    procedure SetPhotoWidth(AValue: Integer);
     procedure SetReplyMarkup(AValue: TReplyMarkup);
     procedure SetThumbUrl(AValue: String);
     procedure SetTitle(AValue: String);
@@ -182,6 +192,13 @@ type
 
     property VideoUrl: String read GetVideoUrl write SetVideoUrl;
     property MimeType: String read GetMimeType write SetMimeType;
+
+    property PhotoWidth: Integer read GetPhotoWidth write SetPhotoWidth;
+    property PhotoHeight: Integer read GetPhotoHeight write SetPhotoHeight;
+
+    property Mpeg4Url: String read GetMpeg4Url write SetMpeg4Url;
+    property Mpeg4Height: Integer read GetMpeg4Height write SetMpeg4Height;
+    property Mpeg4Width: Integer read GetMpeg4Width write SetMpeg4Width;
   end;
 
   { TTelegramSender }
@@ -385,10 +402,16 @@ const
   s_ThumbUrl ='thumb_url';
   s_VideoUrl ='video_url';
   s_MimeType ='mime_type';
+  s_PhotoHeight = 'photo_height';
+  s_PhotoWidth = 'photo_width';
+  s_Mpeg4Url = 'mpeg4_url';
+  s_Mpeg4Width = 'mpeg4_width';
+  s_Mpeg4Height = 'mpeg4_height';
 
 
-  ParseModes: array[TParseMode] of PChar = ('Markdown', 'Markdown', 'HTML');
-  QueryResultTypeArray: array[TInlineQueryResultType] of PChar = ('article', 'photo', 'video', '');
+  ParseModes: array[TParseMode] of PChar = ('', 'Markdown', 'HTML');
+  QueryResultTypeArray: array[TInlineQueryResultType] of PChar =
+    ('article', 'photo', 'video', 'mpeg4_gif', '');
 
   API_URL='https://api.telegram.org/bot';
 
@@ -437,7 +460,10 @@ end;
 constructor TInputMessageContent.Create(const AMessageText: String;
   AParseMode: TParseMode);
 begin
-  inherited Create([s_MessageText, AMessageText, s_ParseMode, ParseModes[AParseMode]]);
+  if AParseMode=pmDefault then
+    inherited Create([s_MessageText, AMessageText])
+  else
+    inherited Create([s_MessageText, AMessageText, s_ParseMode, ParseModes[AParseMode]])
 end;
 
 { TInlineQueryResult }
@@ -467,9 +493,34 @@ begin
   Result:=Get(s_MimeType, '');
 end;
 
+function TInlineQueryResult.GetMpeg4Height: Integer;
+begin
+  Result:=Get(s_Mpeg4Height, 0);
+end;
+
+function TInlineQueryResult.GetMpeg4Url: String;
+begin
+  Result:=Get(s_Mpeg4Url, '');
+end;
+
+function TInlineQueryResult.GetMpeg4Width: Integer;
+begin
+  Result:=Get(s_Mpeg4Width, 0);
+end;
+
+function TInlineQueryResult.GetPhotoHeight: Integer;
+begin
+  Result:=Get(s_PhotoHeight, 0);
+end;
+
 function TInlineQueryResult.GetPhotoUrl: String;
 begin
   Result:=Get(s_PhotoUrl, '');
+end;
+
+function TInlineQueryResult.GetPhotoWidth: Integer;
+begin
+  Result:=Get(s_PhotoWidth, 0);
 end;
 
 function TInlineQueryResult.GetReplyMarkup: TReplyMarkup;
@@ -518,9 +569,34 @@ begin
   Strings[s_MimeType]:=AValue;
 end;
 
+procedure TInlineQueryResult.SetMpeg4Height(AValue: Integer);
+begin
+  Integers[s_Mpeg4Height]:=AValue;
+end;
+
+procedure TInlineQueryResult.SetMpeg4Url(AValue: String);
+begin
+  Strings[s_Mpeg4Url]:=AValue;
+end;
+
+procedure TInlineQueryResult.SetMpeg4Width(AValue: Integer);
+begin
+  Integers[s_Mpeg4Height]:=AValue;
+end;
+
+procedure TInlineQueryResult.SetPhotoHeight(AValue: Integer);
+begin
+  Integers[s_PhotoHeight]:=AValue;
+end;
+
 procedure TInlineQueryResult.SetPhotoUrl(AValue: String);
 begin
   Strings[s_PhotoUrl]:=AValue;
+end;
+
+procedure TInlineQueryResult.SetPhotoWidth(AValue: Integer);
+begin
+  Integers[s_PhotoWidth]:=AValue;
 end;
 
 procedure TInlineQueryResult.SetReplyMarkup(AValue: TReplyMarkup);
