@@ -211,6 +211,8 @@ type
     FCurrentUser: TTelegramUserObj;
     FBotUser: TTelegramUserObj;
     FLanguage: string;
+    FLastErrorCode: Integer;
+    FLastErrorDescription: String;
     FOnReceiveCallbackQuery: TCallbackEvent;
     FOnReceiveChannelPost: TMessageEvent;
     FOnReceiveChosenInlineResult: TChosenInlineResultEvent;
@@ -240,11 +242,14 @@ type
     function HTTPPostJSON(const Method: String): Boolean;
     procedure ProcessCommands(AMessage: TTelegramMessageObj; AHandlers: TCommandHandlersMap);
     function ResponseToJSONObject: TJSONObject;
+    function ResponseHandle: Boolean;
     function SendFile(const AMethod, AFileField, AFileName: String;
       MethodParameters: TStrings): Boolean;
     function SendMethod(const Method: String; MethodParameters: array of const): Boolean;
     function SendMethod(const Method: String; MethodParameters: TJSONObject): Boolean; overload;
     procedure SetJSONResponse(AValue: TJSONData);
+    procedure SetLastErrorCode(AValue: Integer);
+    procedure SetLastErrorDescription(AValue: String);
     procedure SetOnReceiveCallbackQuery(AValue: TCallbackEvent);
     procedure SetOnReceiveChannelPost(AValue: TMessageEvent);
     procedure SetOnReceiveChosenInlineResult(AValue: TChosenInlineResultEvent);
@@ -290,6 +295,8 @@ type
       ReplyMarkup: TReplyMarkup = nil): Boolean;
     function sendMessage(chat_id: Int64; const AMessage: String; ParseMode: TParseMode = pmDefault;
       DisableWebPagePreview: Boolean=False; ReplyMarkup: TReplyMarkup = nil): Boolean;
+    function sendMessage(const chat_id, AMessage: String; ParseMode: TParseMode = pmDefault;
+      DisableWebPagePreview: Boolean=False; ReplyMarkup: TReplyMarkup = nil): Boolean; overload;
     function sendMessage(const AMessage: String; ParseMode: TParseMode = pmDefault;
       DisableWebPagePreview: Boolean=False; ReplyMarkup: TReplyMarkup = nil): Boolean; overload;
     function sendPhoto(chat_id: Int64; const APhoto: String; const ACaption: String = ''): Boolean;
@@ -322,6 +329,8 @@ type
     property ChannelCommandHandlers [const Command: String]: TCommandEvent read GetChannelCommandHandlers
       write SetChannelCommandHandlers;  // It can create command handlers by assigning their to array elements
     property BotUsername: String read FBotUsername write SetBotUsername;
+    property LastErrorCode: Integer read FLastErrorCode write SetLastErrorCode;
+    property LastErrorDescription: String read FLastErrorDescription write SetLastErrorDescription;
 
     property UpdateLogger: TtgStatLog read FUpdateLogger write SetUpdateLogger; //We will log the update object completely if need
 
@@ -380,9 +389,11 @@ const
   s_Timeout = 'timeout';
   s_AllowedUpdates = 'allowed_updates';
   s_Ok = 'ok';
+  s_ErrorCode = 'error_code';
+  s_Description = 'description';
+  s_Result = 'result';
   s_BotCommand = 'bot_command';
 
-  s_Description = 'description';
   s_ID = 'id';
   s_InputMessageContent = 'input_message_content';
   s_Type = 'type';
@@ -898,7 +909,6 @@ end;
 class function TTelegramSender.StringToJSONObject(const AString: String): TJSONObject;
 var
   lParser: TJSONParser;
-  lJSON: TJSONObject;
 begin
   Result := nil;
   if AString<>EmptyStr then
@@ -906,14 +916,9 @@ begin
     lParser := TJSONParser.Create(AString, DefaultOptions);
     try
       try
-        lJSON := lParser.Parse as TJSONObject;
-        if lJSON.Booleans[s_Ok] then
-          Result := lJSON
-        else
-        begin
-          // todo  to log error message from telegram server
-        end;
+        Result := lParser.Parse as TJSONObject
       except
+        Result:=nil;
       end;
     finally
       lParser.Free;
@@ -1172,6 +1177,29 @@ begin
   Result:=StringToJSONObject(FResponse);
 end;
 
+function TTelegramSender.ResponseHandle: Boolean;
+var
+  lJSON: TJSONObject;
+begin
+  Result:=False;
+  lJSON:=ResponseToJSONObject;
+  if Assigned(lJSON) then
+  begin
+    if lJSON.Booleans[s_Ok] then
+    begin
+      JSONResponse := lJSON.Find(s_Result);
+      FLastErrorCode:=0;
+      FLastErrorDescription:='';
+      Result:=True;
+    end
+    else begin
+      FLastErrorCode:=lJSON.Integers[s_ErrorCode];
+      FLastErrorDescription:=lJSON.Get(s_Description, EmptyStr);
+    end;
+    lJSON.Free;
+  end;
+end;
+
 function TTelegramSender.SendFile(const AMethod, AFileField, AFileName: String;
   MethodParameters: TStrings): Boolean;
 begin
@@ -1215,11 +1243,9 @@ begin
 end;
 
 function TTelegramSender.SendMethod(const Method: String; MethodParameters: TJSONObject): Boolean;
-var
-  lJSON: TJSONObject;
 begin
   Result:=False;
-  FJSONResponse:=nil;
+  JSONResponse:=nil;
   FResponse:='';
   if not FRequestWhenAnswer then
   begin
@@ -1233,14 +1259,11 @@ begin
     end;
 
     if Result then
-    begin
-      lJSON:=ResponseToJSONObject;
-      if Assigned(lJSON) then
+      if not ResponseHandle then
       begin
-        FJSONResponse := lJSON.Find('result').Clone;
-        lJSON.Free;
+        Result:=False;
+        ErrorMessage('Error request: '+FResponse);
       end;
-    end;
   end
   else
   begin
@@ -1254,7 +1277,24 @@ end;
 procedure TTelegramSender.SetJSONResponse(AValue: TJSONData);
 begin
   if FJSONResponse=AValue then Exit;
-  FJSONResponse:=AValue;
+  if Assigned(FJSONResponse) then
+    FJSONResponse.Free;
+  if Assigned(AValue) then
+    FJSONResponse:=AValue.Clone
+  else
+    FJSONResponse:=nil;
+end;
+
+procedure TTelegramSender.SetLastErrorCode(AValue: Integer);
+begin
+  if FLastErrorCode=AValue then Exit;
+  FLastErrorCode:=AValue;
+end;
+
+procedure TTelegramSender.SetLastErrorDescription(AValue: String);
+begin
+  if FLastErrorDescription=AValue then Exit;
+  FLastErrorDescription:=AValue;
 end;
 
 procedure TTelegramSender.SetLanguage(const AValue: String);
@@ -1317,6 +1357,7 @@ begin
   FCurrentMessage:=nil;
   FUpdate:=nil;
   FUpdateLogger:=nil;
+  FJSONResponse:=nil;
   FLanguage:='';
   BotUsername:='';
   FCommandHandlers:=TCommandHandlersMap.create;
@@ -1326,6 +1367,7 @@ end;
 
 destructor TTelegramSender.Destroy;
 begin
+  JSONResponse:=nil;
   if Assigned(FUpdateLogger) then
     FreeAndNil(FUpdateLogger);
   FChannelCommandHandlers.Free;
@@ -1387,15 +1429,11 @@ begin
   try
     Result:=SendMethod(s_getMe, sendObj);
     if Result then
-      if Assigned(FJSONResponse) then
+      if Assigned(JSONResponse) then
       begin
-        try
-          FBotUser := TTelegramUserObj.CreateFromJSONObject(FJSONResponse as TJSONObject) as TTelegramUserObj;
-          if Assigned(FBotUser) then
-            FBotUsername:=FBotUser.Username;
-        finally
-          FreeAndNil(FJSONResponse);  // Where is must released?
-        end;
+        FBotUser := TTelegramUserObj.CreateFromJSONObject(JSONResponse as TJSONObject) as TTelegramUserObj;
+        if Assigned(FBotUser) then
+          FBotUsername:=FBotUser.Username;
       end;
   finally
     Free;
@@ -1426,17 +1464,13 @@ begin
     FRequestWhenAnswer:=False; // You must do only HTTP request because because it's important to get a response in the form of an update array
     Result:=SendMethod(s_getUpdates, sendObj);
     if Result then
-      if Assigned(FJSONResponse) then
+      if Assigned(JSONResponse) then
       begin
-        try
-          lJSONArray:=FJSONResponse as TJSONArray;
-          for lJSONEnum in lJSONArray do
-          begin
-            lUpdateObj := TTelegramUpdateObj.CreateFromJSONObject(lJSONEnum.Value as TJSONObject) as TTelegramUpdateObj;
-            DoReceiveUpdate(lUpdateObj);
-          end;
-        finally
-          FreeAndNil(FJSONResponse);  // Where is must released?
+        lJSONArray:=JSONResponse as TJSONArray;
+        for lJSONEnum in lJSONArray do
+        begin
+          lUpdateObj := TTelegramUpdateObj.CreateFromJSONObject(lJSONEnum.Value as TJSONObject) as TTelegramUpdateObj;
+          DoReceiveUpdate(lUpdateObj);
         end;
       end;
   finally
@@ -1494,6 +1528,29 @@ end;
 function TTelegramSender.sendMessage(chat_id: Int64; const AMessage: String;
   ParseMode: TParseMode = pmDefault; DisableWebPagePreview: Boolean=False;
   ReplyMarkup: TReplyMarkup = nil): Boolean;
+var
+  sendObj: TJSONObject;
+begin
+  Result:=False;
+  sendObj:=TJSONObject.Create;
+  with sendObj do
+    try
+      Add(s_ChatId, chat_id);
+      Add(s_Text, AMessage);
+      if ParseMode<>pmDefault then
+        Add(s_ParseMode, ParseModes[ParseMode]);
+      Add(s_DsblWbpgPrvw, DisableWebPagePreview);
+      if Assigned(ReplyMarkup) then
+        Add(s_ReplyMarkup, ReplyMarkup.Clone); // Clone of ReplyMarkup object will have released with sendObject
+      Result:=SendMethod(s_sendMessage, sendObj);
+    finally
+      Free;
+    end;
+end;
+
+function TTelegramSender.sendMessage(const chat_id, AMessage: String;
+  ParseMode: TParseMode; DisableWebPagePreview: Boolean;
+  ReplyMarkup: TReplyMarkup): Boolean;
 var
   sendObj: TJSONObject;
 begin

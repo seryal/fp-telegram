@@ -13,6 +13,7 @@ Type
   TtgStatLog = Class(TComponent)
   Private
     fAppendContent : Boolean;
+    FDateTimeFormat: String;
     FDirectory: String;
     FFieldDelimiter: String;
     FFilePostfix: String;
@@ -100,12 +101,12 @@ begin
   FFilePostfix:='.csv';
   FFilePrefix:='~log';
   FFieldDelimiter:='; ';
+  FTimeStampFormat:='';
   AppendContent:=True;
 end;
 
 
 procedure TtgStatLog.Pause;
-
 begin
   Paused:=True;
 end;
