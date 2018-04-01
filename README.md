@@ -25,7 +25,7 @@ Done:
 Todo:
 + Extensive statistics *(Quantitative data on requests and unique users)*
 + Other bots API methods
-~~+ Other update events handling~~
++ ~~Other update events handling~~
 + Please suggest me other functionalities
 
 ***
