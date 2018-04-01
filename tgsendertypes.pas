@@ -206,6 +206,7 @@ type
   TTelegramSender = class
   private
     FBotUsername: String;
+    FCurrentChat: TTelegramChatObj;
     FCurrentChatId: Int64;
     FCurrentMessage: TTelegramMessageObj;
     FCurrentUser: TTelegramUserObj;
@@ -216,6 +217,8 @@ type
     FOnReceiveCallbackQuery: TCallbackEvent;
     FOnReceiveChannelPost: TMessageEvent;
     FOnReceiveChosenInlineResult: TChosenInlineResultEvent;
+    FOnReceiveEditedChannelPost: TMessageEvent;
+    FOnReceiveEditedMessage: TMessageEvent;
     FOnReceiveInlineQuery: TInlineQueryEvent;
     FOnReceiveMessage: TMessageEvent;
     FUpdate: TTelegramUpdateObj;
@@ -253,6 +256,8 @@ type
     procedure SetOnReceiveCallbackQuery(AValue: TCallbackEvent);
     procedure SetOnReceiveChannelPost(AValue: TMessageEvent);
     procedure SetOnReceiveChosenInlineResult(AValue: TChosenInlineResultEvent);
+    procedure SetOnReceiveEditedChannelPost(AValue: TMessageEvent);
+    procedure SetOnReceiveEditedMessage(AValue: TMessageEvent);
     procedure SetOnReceiveInlineQuery(AValue: TInlineQueryEvent);
     procedure SetOnReceiveMessage(AValue: TMessageEvent);
     procedure SetOnReceiveUpdate(AValue: TOnUpdateEvent);
@@ -263,8 +268,10 @@ type
     class function StringToJSONObject(const AString: String): TJSONObject;
   protected
     procedure DoReceiveMessageUpdate(AMessage: TTelegramMessageObj); virtual;
+    procedure DoReceiveEditedMessage(AMessage: TTelegramMessageObj); virtual;
     procedure DoReceiveCallbackQuery(ACallback: TCallbackQueryObj); virtual;
     procedure DoReceiveChannelPost(AChannelPost: TTelegramMessageObj); virtual;
+    procedure DoReceiveEditedChannelPost(AChannelPost: TTelegramMessageObj); virtual;
     procedure DoReceiveInlineQuery(AnInlineQuery: TTelegramInlineQueryObj);  virtual;
     procedure DoReceiveChosenInlineResult(AChosenInlineResult: TTelegramChosenInlineResultObj); virtual;
     procedure DebugMessage(const Msg: String); virtual; // будет отправлять в журнал все запросы и ответы. Полезно на время разработки
@@ -310,6 +317,7 @@ type
     property JSONResponse: TJSONData read FJSONResponse write SetJSONResponse;
     property CurrentChatId: Int64 read FCurrentChatId;
     property CurrentUser: TTelegramUserObj read FCurrentUser;
+    property CurrentChat: TTelegramChatObj read FCurrentChat;
     property CurrentMessage: TTelegramMessageObj read FCurrentMessage;
     property CurrentUpdate: TTelegramUpdateObj read FUpdate;
     property Language: string read FLanguage write SetLanguage;
@@ -336,8 +344,12 @@ type
 
     property OnReceiveUpdate: TOnUpdateEvent read FOnReceiveUpdate write SetOnReceiveUpdate;
     property OnReceiveMessage: TMessageEvent read FOnReceiveMessage write SetOnReceiveMessage;
-    property OnReceiveCallbackQuery: TCallbackEvent read FOnReceiveCallbackQuery write SetOnReceiveCallbackQuery;
+    property OnReceiveEditedMessage: TMessageEvent read FOnReceiveEditedMessage write SetOnReceiveEditedMessage;
+    property OnReceiveCallbackQuery: TCallbackEvent read FOnReceiveCallbackQuery
+      write SetOnReceiveCallbackQuery;
     property OnReceiveChannelPost: TMessageEvent read FOnReceiveChannelPost write SetOnReceiveChannelPost;
+    property OnReceiveEditedChannelPost: TMessageEvent read FOnReceiveEditedChannelPost
+      write SetOnReceiveEditedChannelPost;
     property OnReceiveInlineQuery: TInlineQueryEvent read FOnReceiveInlineQuery write SetOnReceiveInlineQuery;
     property OnReceiveChosenInlineResult: TChosenInlineResultEvent read FOnReceiveChosenInlineResult write SetOnReceiveChosenInlineResult;
   end;
@@ -982,6 +994,7 @@ procedure TTelegramSender.DoReceiveMessageUpdate(AMessage: TTelegramMessageObj);
 begin
   FCurrentMessage:=AMessage;
   FCurrentChatID:=AMessage.ChatId;
+  FCurrentChat:=AMessage.Chat;
   FCurrentUser:=AMessage.From;
   if CurrentIsBanned then
     Exit;
@@ -991,9 +1004,25 @@ begin
     FOnReceiveMessage(Self, AMessage);
 end;
 
+procedure TTelegramSender.DoReceiveEditedMessage(AMessage: TTelegramMessageObj);
+begin
+  FCurrentMessage:=AMessage;
+  FCurrentChatID:=AMessage.ChatId;
+  FCurrentChat:=AMessage.Chat;
+  FCurrentUser:=AMessage.From;
+  if CurrentIsBanned then
+    Exit;
+  SetLanguage(CurrentLanguage(AMessage));
+  ProcessCommands(AMessage, FCommandHandlers);
+  if Assigned(FOnReceiveEditedMessage) then
+    FOnReceiveEditedMessage(Self, AMessage);
+end;
+
 procedure TTelegramSender.DoReceiveCallbackQuery(ACallback: TCallbackQueryObj);
 begin
   FCurrentMessage:=ACallback.Message;
+  if Assigned(FCurrentMessage) then
+    FCurrentChat:=FCurrentMessage.Chat;
   FCurrentUser:=ACallback.From;
   FCurrentChatID:=FCurrentUser.ID; { Bot will send to private chat if in channel is called } {ACallback.Message.ChatId;}
   if CurrentIsBanned then
@@ -1009,6 +1038,7 @@ end;
 procedure TTelegramSender.DoReceiveChannelPost(AChannelPost: TTelegramMessageObj);
 begin
   FCurrentMessage:=AChannelPost;
+  FCurrentChat:=AChannelPost.Chat;
   FCurrentChatID:=AChannelPost.ChatId;
   FCurrentUser:=AChannelPost.From;
   if CurrentIsBanned then
@@ -1019,10 +1049,26 @@ begin
     FOnReceiveChannelPost(Self, AChannelPost);
 end;
 
+procedure TTelegramSender.DoReceiveEditedChannelPost(
+  AChannelPost: TTelegramMessageObj);
+begin
+  FCurrentMessage:=AChannelPost;
+  FCurrentChat:=AChannelPost.Chat;
+  FCurrentChatID:=AChannelPost.ChatId;
+  FCurrentUser:=AChannelPost.From;
+  if CurrentIsBanned then
+    Exit;
+  SetLanguage(CurrentLanguage(AChannelPost));
+  ProcessCommands(AChannelPost, FChannelCommandHandlers);
+  if Assigned(FOnReceiveEditedChannelPost) then
+    FOnReceiveChannelPost(Self, AChannelPost);
+end;
+
 procedure TTelegramSender.DoReceiveInlineQuery(
   AnInlineQuery: TTelegramInlineQueryObj);
 begin
   FCurrentMessage:=nil;
+  FCurrentChat:=nil;
   FCurrentChatID:=AnInlineQuery.From.ID; // This is doubtful. It will be necessary to re-check
   FCurrentUser:=AnInlineQuery.From;
   if CurrentIsBanned then
@@ -1036,6 +1082,7 @@ procedure TTelegramSender.DoReceiveChosenInlineResult(
   AChosenInlineResult: TTelegramChosenInlineResultObj);
 begin
   FCurrentMessage:=nil;
+  FCurrentChat:=nil;
   FCurrentChatID:=AChosenInlineResult.From.ID; // This is doubtful. It will be necessary to re-check
   FCurrentUser:=AChosenInlineResult.From;
   if CurrentIsBanned then
@@ -1048,11 +1095,12 @@ end;
 procedure TTelegramSender.DoReceiveUpdate(AnUpdate: TTelegramUpdateObj);
 begin
   if Assigned(FUpdate) then
-    FUpdate.Free;
+    FreeAndNil(FUpdate);
   FUpdate:=AnUpdate;
   FCurrentMessage:=nil;
   FCurrentChatId:=0;
   FCurrentUser:=nil;
+  FCurrentChat:=nil;
   FLanguage:='';
   if Assigned(AnUpdate) then
   begin
@@ -1060,8 +1108,10 @@ begin
     begin
       case AnUpdate.UpdateType of
         utMessage: DoReceiveMessageUpdate(AnUpdate.Message);
+        utEditedMessage: DoReceiveEditedMessage(AnUpdate.EditedMessage);
         utCallbackQuery: DoReceiveCallbackQuery(AnUpdate.CallbackQuery);
         utChannelPost: DoReceiveChannelPost(AnUpdate.ChannelPost);
+        utEditedChannelPost: DoReceiveEditedChannelPost(AnUpdate.EditedChannelPost);
         utInlineQuery: DoReceiveInlineQuery(AnUpdate.InlineQuery);
         utChosenInlineResult: DoReceiveChosenInlineResult(AnUpdate.ChosenInlineResult);
       end;
@@ -1322,6 +1372,18 @@ begin
   FOnReceiveChosenInlineResult:=AValue;
 end;
 
+procedure TTelegramSender.SetOnReceiveEditedChannelPost(AValue: TMessageEvent);
+begin
+  if FOnReceiveEditedChannelPost=AValue then Exit;
+  FOnReceiveEditedChannelPost:=AValue;
+end;
+
+procedure TTelegramSender.SetOnReceiveEditedMessage(AValue: TMessageEvent);
+begin
+  if FOnReceiveEditedMessage=AValue then Exit;
+  FOnReceiveEditedMessage:=AValue;
+end;
+
 procedure TTelegramSender.SetOnReceiveInlineQuery(AValue: TInlineQueryEvent);
 begin
   if FOnReceiveInlineQuery=AValue then Exit;
@@ -1440,7 +1502,7 @@ begin
   end;
 end;
 
-// todo for long polling receiver
+
 function TTelegramSender.getUpdates(offset: Int64; limit: Integer;
   timeout: Integer; allowed_updates: TUpdateSet): Boolean;
 var
