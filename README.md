@@ -18,16 +18,14 @@ Done:
   + answerInlineQuery
   + sendLocation
 + Update events handling
-  + Message & message commands
-  + Callback query
-  + Inline queries *(not tested)*
+  + All implemented    
 + Full json updates logging (without handling)
 + Simple statistcs (csv-format)
 
 Todo:
 + Extensive statistics *(Quantitative data on requests and unique users)*
 + Other bots API methods
-+ Other update events handling
+~~+ Other update events handling~~
 + Please suggest me other functionalities
 
 ***
