@@ -284,6 +284,8 @@ type
     constructor Create(const AToken: String);
     destructor Destroy; override;
     procedure DoReceiveUpdate(AnUpdate: TTelegramUpdateObj); virtual;
+    function answerCallbackQuery(const CallbackQueryId: String; const Text: String = '';
+      ShowAlert: Boolean=False; const Url: String = ''; CacheTime: Integer = 0): Boolean;
     function editMessageText(const AMessage: String; chat_id: Int64; message_id: Int64;
       ParseMode: TParseMode = pmDefault; DisableWebPagePreview: Boolean=False;
       inline_message_id: String = ''; ReplyMarkup: TReplyMarkup = nil): Boolean;
@@ -406,6 +408,9 @@ const
   s_Result = 'result';
   s_BotCommand = 'bot_command';
 
+  s_CallbackQueryID = 'callback_query_id';
+  s_ShowAlert = 'show_alert';
+
   s_ID = 'id';
   s_InputMessageContent = 'input_message_content';
   s_Type = 'type';
@@ -420,6 +425,8 @@ const
   s_NextOffset = 'next_offset';
   s_SwitchPmText = 'switch_pm_text';
   s_SwitchPmParameter = 'switch_pm_parameter';
+
+  s_answerCallbackQuery = 'answerCallbackQuery';
 
   s_PhotoUrl ='photo_url';
   s_ThumbUrl ='thumb_url';
@@ -1122,6 +1129,31 @@ begin
     if Assigned(FOnReceiveUpdate) then
       FOnReceiveUpdate(Self, AnUpdate);
   end;
+end;
+
+function TTelegramSender.answerCallbackQuery(const CallbackQueryId: String;
+  const Text: String; ShowAlert: Boolean; const Url: String; CacheTime: Integer
+  ): Boolean;
+var
+  sendObj: TJSONObject;
+begin
+  Result:=False;
+  sendObj:=TJSONObject.Create;
+  with sendObj do
+    try
+      Add(s_CallbackQueryID, CallbackQueryId);
+      if Text<>EmptyStr then
+        Add(s_Text, Text);
+      if ShowAlert then
+        Add(s_ShowAlert, ShowAlert);
+      if Url<>EmptyStr then
+        Add(s_Url, Url);
+      if CacheTime<>0 then
+        Add(s_CacheTime, CacheTime);
+      Result:=SendMethod(s_answerCallbackQuery, sendObj);
+    finally
+      Free;
+    end;
 end;
 
 procedure TTelegramSender.ErrorMessage(const Msg: String);
