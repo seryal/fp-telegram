@@ -16,6 +16,7 @@ Done:
   + sendVideo
   + getUpdates
   + answerInlineQuery
+  + answerCallbackQuery  
   + sendLocation
 + Update events handling
   + All implemented    
