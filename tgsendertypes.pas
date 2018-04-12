@@ -1506,7 +1506,7 @@ function TTelegramSender.editMessageText(const AMessage: String;
   ParseMode: TParseMode; DisableWebPagePreview: Boolean;
   ReplyMarkup: TReplyMarkup): Boolean;
 begin  { try to edit message if the message is present and chat is private with sender user }
-  if Assigned(FCurrentMessage) and (FCurrentChatId = FCurrentMessage.ChatId) then
+  if Assigned(FCurrentMessage) and (FCurrentChatId = FCurrentMessage.ChatId) and (FUpdate.UpdateType=utCallbackQuery) then
     Result:=editMessageText(AMessage, FCurrentChatId, FCurrentMessage.MessageId,
       ParseMode, DisableWebPagePreview, EmptyStr, ReplyMarkup)
   else

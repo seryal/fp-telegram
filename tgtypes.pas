@@ -317,9 +317,9 @@ end;
 destructor TTelegramChosenInlineResultObj.Destroy;
 begin
   if Assigned(FLocation) then
-    FLocation.Free;
+    FreeAndNil(FLocation);
   if Assigned(FFrom) then
-    FFrom.Free;
+    FreeAndNil(FFrom);
   inherited Destroy;
 end;
 
