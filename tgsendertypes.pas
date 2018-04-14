@@ -128,6 +128,7 @@ type
     constructor Create(const AButtonText, CallbackData: String); overload;
     constructor Create(const AButtons: array of String); overload;
     function AddButton(const AButtonText, CallbackData: String): Integer;
+    function AddButtonUrl(const AButtonText, AUrl: String): Integer;
     procedure AddButtons(const AButtons: array of String);
   end;
 
@@ -282,6 +283,7 @@ type
     procedure SetLanguage(const AValue: String); virtual;
   public
     constructor Create(const AToken: String);
+    function DeepLinkingUrl(const AParameter: String): String;
     destructor Destroy; override;
     procedure DoReceiveUpdate(AnUpdate: TTelegramUpdateObj); virtual;
     function answerCallbackQuery(const CallbackQueryId: String; const Text: String = '';
@@ -444,6 +446,7 @@ const
     ('article', 'photo', 'video', 'mpeg4_gif', '');
 
   API_URL='https://api.telegram.org/bot';
+  TgBotUrlStart = 'https://t.me/';
 
 function StringToIQRType(const S: String): TInlineQueryResultType;
 var
@@ -757,6 +760,16 @@ var
 begin
   btn:=TInlineKeyboardButton.Create(AButtonText);
   btn.callback_data:=CallbackData;
+  Result:=Add(btn);
+end;
+
+function TInlineKeyboardButtons.AddButtonUrl(const AButtonText, AUrl: String
+  ): Integer;
+var
+  btn: TInlineKeyboardButton;
+begin
+  btn:=TInlineKeyboardButton.Create(AButtonText);
+  btn.url:=AUrl;
   Result:=Add(btn);
 end;
 
@@ -1457,6 +1470,11 @@ begin
   FCommandHandlers:=TCommandHandlersMap.create;
   FChannelCommandHandlers:=TCommandHandlersMap.create;
 
+end;
+
+function TTelegramSender.DeepLinkingUrl(const AParameter: String): String;
+begin
+  Result:=TgBotUrlStart+FBotUsername+'?start='+AParameter;
 end;
 
 destructor TTelegramSender.Destroy;
