@@ -129,6 +129,7 @@ type
     constructor Create(const AButtons: array of String); overload;
     function AddButton(const AButtonText, CallbackData: String): Integer;
     function AddButtonUrl(const AButtonText, AUrl: String): Integer;
+    function AddButtonInline(const AButtonText, AQuery: String): Integer;
     procedure AddButtons(const AButtons: array of String);
   end;
 
@@ -770,6 +771,16 @@ var
 begin
   btn:=TInlineKeyboardButton.Create(AButtonText);
   btn.url:=AUrl;
+  Result:=Add(btn);
+end;
+
+function TInlineKeyboardButtons.AddButtonInline(const AButtonText,
+  AQuery: String): Integer;
+var
+  btn: TInlineKeyboardButton;
+begin
+  btn:=TInlineKeyboardButton.Create(AButtonText);
+  btn.switch_inline_query:=AQuery;
   Result:=Add(btn);
 end;
 
