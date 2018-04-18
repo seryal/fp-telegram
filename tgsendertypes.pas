@@ -213,6 +213,7 @@ type
     FCurrentMessage: TTelegramMessageObj;
     FCurrentUser: TTelegramUserObj;
     FBotUser: TTelegramUserObj;
+    FFileObj: TTelegramFile;
     FLanguage: string;
     FLastErrorCode: Integer;
     FLastErrorDescription: String;
@@ -245,6 +246,8 @@ type
     procedure SetCommandHandlers(const Command: String; AValue: TCommandEvent);
     function HTTPPostFile(const Method, FileField, FileName: String; AFormData: TStrings): Boolean;
     function HTTPPostJSON(const Method: String): Boolean;
+    function HTTPPostStream(const Method, FileField, FileName: String;
+      AStream: TStream; AFormData: TStrings): Boolean;
     procedure ProcessCommands(AMessage: TTelegramMessageObj; AHandlers: TCommandHandlersMap);
     function ResponseToJSONObject: TJSONObject;
     function ResponseHandle: Boolean;
@@ -252,6 +255,9 @@ type
       MethodParameters: TStrings): Boolean;
     function SendMethod(const Method: String; MethodParameters: array of const): Boolean;
     function SendMethod(const Method: String; MethodParameters: TJSONObject): Boolean; overload;
+    function SendStream(const AMethod, AFileField, AFileName: String; AStream: TStream;
+      MethodParameters: TStrings): Boolean;
+    procedure SetFileObj(AValue: TTelegramFile);
     procedure SetJSONResponse(AValue: TJSONData);
     procedure SetLastErrorCode(AValue: Integer);
     procedure SetLastErrorDescription(AValue: String);
@@ -287,6 +293,9 @@ type
     function DeepLinkingUrl(const AParameter: String): String;
     destructor Destroy; override;
     procedure DoReceiveUpdate(AnUpdate: TTelegramUpdateObj); virtual;
+    function CurrentIsSimpleUser: Boolean; overload;
+    function CurrentIsBanned: Boolean; overload;
+
     function answerCallbackQuery(const CallbackQueryId: String; const Text: String = '';
       ShowAlert: Boolean=False; const Url: String = ''; CacheTime: Integer = 0): Boolean;
     function editMessageText(const AMessage: String; chat_id: Int64; message_id: Int64;
@@ -297,27 +306,30 @@ type
     function getMe: Boolean;
     function getUpdates(offset: Int64 = 0; limit: Integer = 0; timeout: Integer = 0;
       allowed_updates: TUpdateSet = []): Boolean;
-
-    function CurrentIsSimpleUser: Boolean; overload;
-    function CurrentIsBanned: Boolean; overload;
     function sendDocumentByFileName(chat_id: Int64; const AFileName: String;
       const ACaption: String; ReplyMarkup: TReplyMarkup = nil): Boolean;
     function sendLocation(chat_id: Int64; Latitude, Longitude: Real; LivePeriod: Integer = 0;
       ParseMode: TParseMode = pmDefault; DisableWebPagePreview: Boolean=False;
       ReplyMarkup: TReplyMarkup = nil): Boolean;
     function sendMessage(chat_id: Int64; const AMessage: String; ParseMode: TParseMode = pmDefault;
-      DisableWebPagePreview: Boolean=False; ReplyMarkup: TReplyMarkup = nil): Boolean;
-    function sendMessage(const chat_id, AMessage: String; ParseMode: TParseMode = pmDefault;
-      DisableWebPagePreview: Boolean=False; ReplyMarkup: TReplyMarkup = nil): Boolean; overload;
+      DisableWebPagePreview: Boolean=False; ReplyMarkup: TReplyMarkup = nil;
+      ReplyToMessageID: Integer = 0): Boolean;
+    function sendMessageChannel(const chat_id, AMessage: String; ParseMode: TParseMode = pmDefault;
+      DisableWebPagePreview: Boolean=False; ReplyMarkup: TReplyMarkup = nil;
+      ReplyToMessageID: Integer = 0): Boolean;
     function sendMessage(const AMessage: String; ParseMode: TParseMode = pmDefault;
-      DisableWebPagePreview: Boolean=False; ReplyMarkup: TReplyMarkup = nil): Boolean; overload;
+      DisableWebPagePreview: Boolean=False; ReplyMarkup: TReplyMarkup = nil;
+      ReplyToMessageID: Integer = 0): Boolean; overload;
     function sendPhoto(chat_id: Int64; const APhoto: String; const ACaption: String = ''): Boolean;
     function sendPhoto(const APhoto: String; const ACaption: String = ''): Boolean; overload;
+    function sendPhotoStream(chat_id: Int64;  const AFileName: String; APhotoStream: TStream;
+      const ACaption: String; ReplyMarkup: TReplyMarkup = nil): Boolean; overload;
     function sendVideo(chat_id: Int64; const AVideo: String; const ACaption: String = ''): Boolean;
     function sendVideo(const AVideo: String; const ACaption: String = ''): Boolean; overload;
     function answerInlineQuery(const AnInlineQueryID: String; Results: TJSONArray;
       CacheTime: Integer = 300; IsPersonal: Boolean = False; const NextOffset: String = '';
       const SwitchPmText: String = ''; const SwitchPmParameter: String = ''): Boolean;
+    function getFile(const FileID: String): Boolean;
     property BotUser: TTelegramUserObj read FBotUser;
     property JSONResponse: TJSONData read FJSONResponse write SetJSONResponse;
     property CurrentChatId: Int64 read FCurrentChatId;
@@ -325,6 +337,7 @@ type
     property CurrentChat: TTelegramChatObj read FCurrentChat;
     property CurrentMessage: TTelegramMessageObj read FCurrentMessage;
     property CurrentUpdate: TTelegramUpdateObj read FUpdate;
+    property FileObj: TTelegramFile read FFileObj write SetFileObj;
     property Language: string read FLanguage write SetLanguage;
     property OnLogMessage: TLogMessageEvent read FOnLogMessage write FOnLogMessage;
     property RequestBody: String read FRequestBody write SetRequestBody;
@@ -375,6 +388,7 @@ const
   s_getUpdates='getUpdates';
   s_getMe='getMe';
   s_answerInlineQuery='answerInlineQuery';
+  s_getFile = 'getFile';
 
   s_Method='method';
   s_Url = 'url';
@@ -383,9 +397,11 @@ const
   s_MessageId = 'message_id';
   s_InlineMessageId = 'inline_message_id';
   s_Document = 'document';
+  s_Photo = 'photo';
   s_Caption = 'caption';
   s_ParseMode = 'parse_mode';
   s_ReplyMarkup = 'reply_markup';
+  s_ReplyToMessageID = 'reply_to_message_id';
   s_Latitude = 'latitude';
   s_Longitude = 'longitude';
   s_LivePeriod = 'live_period';
@@ -428,6 +444,8 @@ const
   s_NextOffset = 'next_offset';
   s_SwitchPmText = 'switch_pm_text';
   s_SwitchPmParameter = 'switch_pm_parameter';
+
+  s_FileID = 'file_id';
 
   s_answerCallbackQuery = 'answerCallbackQuery';
 
@@ -1252,6 +1270,26 @@ begin
   HTTP.Free;
 end;
 
+function TTelegramSender.HTTPPostStream(const Method, FileField, FileName: String;
+  AStream: TStream; AFormData: TStrings): Boolean;
+var
+  HTTP: TFPHTTPClient;
+  AStringStream: TStringStream;
+begin
+  HTTP:=TFPHTTPClient.Create(nil);
+  AStringStream:=TStringStream.Create(EmptyStr);
+  try
+    HTTP.AddHeader('Content-Type','multipart/form-data');
+    HTTP.StreamFormPost(API_URL+FToken+'/'+Method, AFormData, FileField, FileName, AStream, AStringStream);
+    FResponse:=AStringStream.DataString;
+    Result:=True;
+  except
+    Result:=False;
+  end;
+  AStringStream.Free;
+  HTTP.Free;
+end;
+
 procedure TTelegramSender.ProcessCommands(AMessage: TTelegramMessageObj;
   AHandlers: TCommandHandlersMap);
 var
@@ -1380,6 +1418,28 @@ begin
   end;
 end;
 
+function TTelegramSender.SendStream(const AMethod, AFileField, AFileName: String;
+  AStream: TStream; MethodParameters: TStrings): Boolean;
+begin
+  Result:=False;
+  DebugMessage('Request for method "'+AMethod+'": '+FRequestBody);
+  DebugMessage('Sending file '+AFileName);
+  try
+    Result:=HTTPPostStream(AMethod, AFileField, AFileName, AStream, MethodParameters);
+    DebugMessage('Response: '+FResponse);
+  except
+    ErrorMessage('It is not succesful request to API! Request body: '+FRequestBody);
+  end;
+end;
+
+procedure TTelegramSender.SetFileObj(AValue: TTelegramFile);
+begin
+  if FFileObj=AValue then Exit;
+  if Assigned(FFileObj) then
+    FreeAndNil(FFileObj);
+  FFileObj:=AValue;
+end;
+
 procedure TTelegramSender.SetJSONResponse(AValue: TJSONData);
 begin
   if FJSONResponse=AValue then Exit;
@@ -1476,6 +1536,8 @@ begin
   FUpdate:=nil;
   FUpdateLogger:=nil;
   FJSONResponse:=nil;
+  FBotUser:=nil;
+  FFileObj:=nil;
   FLanguage:='';
   BotUsername:='';
   FCommandHandlers:=TCommandHandlersMap.create;
@@ -1496,9 +1558,10 @@ begin
   FChannelCommandHandlers.Free;
   FCommandHandlers.Free;
   if Assigned(FBotUser) then
-    FBotUser.Free;
+    FreeAndNil(FBotUser);
+  FileObj:=nil;
   if Assigned(FUpdate) then
-    FUpdate.Free;
+    FreeAndNil(FUpdate);
   inherited Destroy;
 end;
 
@@ -1649,8 +1712,8 @@ end;
 
 {  https://core.telegram.org/bots/api#sendmessage  }
 function TTelegramSender.sendMessage(chat_id: Int64; const AMessage: String;
-  ParseMode: TParseMode = pmDefault; DisableWebPagePreview: Boolean=False;
-  ReplyMarkup: TReplyMarkup = nil): Boolean;
+  ParseMode: TParseMode; DisableWebPagePreview: Boolean;
+  ReplyMarkup: TReplyMarkup; ReplyToMessageID: Integer): Boolean;
 var
   sendObj: TJSONObject;
 begin
@@ -1665,15 +1728,17 @@ begin
       Add(s_DsblWbpgPrvw, DisableWebPagePreview);
       if Assigned(ReplyMarkup) then
         Add(s_ReplyMarkup, ReplyMarkup.Clone); // Clone of ReplyMarkup object will have released with sendObject
+      if ReplyToMessageID<>0 then
+        Add(s_ReplyToMessageID, ReplyToMessageID);
       Result:=SendMethod(s_sendMessage, sendObj);
     finally
       Free;
     end;
 end;
 
-function TTelegramSender.sendMessage(const chat_id, AMessage: String;
+function TTelegramSender.sendMessageChannel(const chat_id, AMessage: String;
   ParseMode: TParseMode; DisableWebPagePreview: Boolean;
-  ReplyMarkup: TReplyMarkup): Boolean;
+  ReplyMarkup: TReplyMarkup; ReplyToMessageID: Integer): Boolean;
 var
   sendObj: TJSONObject;
 begin
@@ -1688,6 +1753,8 @@ begin
     Add(s_DsblWbpgPrvw, DisableWebPagePreview);
     if Assigned(ReplyMarkup) then
       Add(s_ReplyMarkup, ReplyMarkup.Clone); // Clone of ReplyMarkup object will have released with sendObject
+    if ReplyToMessageID<>0 then
+      Add(s_ReplyToMessageID, ReplyToMessageID);
     Result:=SendMethod(s_sendMessage, sendObj);
   finally
     Free;
@@ -1696,9 +1763,10 @@ end;
 
 function TTelegramSender.sendMessage(const AMessage: String;
   ParseMode: TParseMode; DisableWebPagePreview: Boolean;
-  ReplyMarkup: TReplyMarkup): Boolean;
+  ReplyMarkup: TReplyMarkup; ReplyToMessageID: Integer): Boolean;
 begin
-  Result:=sendMessage(FCurrentChatId, AMessage, ParseMode, DisableWebPagePreview, ReplyMarkup);
+  Result:=sendMessage(FCurrentChatId, AMessage, ParseMode, DisableWebPagePreview, ReplyMarkup,
+    ReplyToMessageID);
 end;
 
 { https://core.telegram.org/bots/api#sendphoto }
@@ -1712,6 +1780,27 @@ function TTelegramSender.sendPhoto(const APhoto: String; const ACaption: String
   ): Boolean;
 begin
   Result:=sendPhoto(FCurrentChatId, APhoto, ACaption);
+end;
+                                                      // AFileName ??????
+function TTelegramSender.sendPhotoStream(chat_id: Int64; const AFileName: String;
+  APhotoStream: TStream; const ACaption: String; ReplyMarkup: TReplyMarkup
+  ): Boolean;
+var
+  sendObj: TStringList;
+begin
+  Result:=False;
+  sendObj:=TStringList.Create;
+  with sendObj do
+  try
+    Add(s_ChatId+'='+IntToStr(chat_id));
+    if ACaption<>EmptyStr then
+      Add(s_Caption+'='+ACaption);
+    if Assigned(ReplyMarkup) then
+      Add(s_ReplyMarkup+'='+ReplyMarkup.AsJSON);
+    Result:=SendStream(s_sendPhoto, s_Photo, AFileName, APhotoStream, sendObj);
+  finally
+    Free;
+  end;
 end;
 
 { https://core.telegram.org/bots/api#sendvideo }
@@ -1735,6 +1824,14 @@ begin  // todo: do not include default parameters... but is it really so necessa
   Result:=SendMethod(s_answerInlineQuery, [s_InlineQueryID, AnInlineQueryID, s_Results, Results.Clone,
     s_CacheTime, CacheTime, s_IsPersonal, IsPersonal, s_NextOffset, NextOffset,
     s_switchPmText, SwitchPmText, s_SwitchPmParameter, SwitchPmParameter]);
+end;
+
+function TTelegramSender.getFile(const FileID: String): Boolean;
+begin
+  Result:=SendMethod(s_getFile, [s_FileID, FileID]);
+  if Result then
+    if Assigned(JSONResponse) then
+      FileObj := TTelegramFile.CreateFromJSONObject(JSONResponse as TJSONObject) as TTelegramFile;
 end;
 
 end.

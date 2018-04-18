@@ -17,7 +17,10 @@ type
   TTelegramChatObj = class;
   TCallbackQueryObj = class;
   TTelegramLocation = class;
+  TArrayOfPhotoSize = class(TJSONArray);
+  TTelegramPhotoSize = class;
   TTelegramUpdateObjList = specialize TFPGObjectList<TTelegramMessageEntityObj>;
+  TTelegramPhotoSizeList = specialize TFPGObjectList<TTelegramPhotoSize>;
 
   TUpdateType = (utMessage, utEditedMessage, utChannelPost, utEditedChannelPost, utInlineQuery,
     utChosenInlineResult, utCallbackQuery, utShippingQuery, utPreCheckoutQuery, utUnknown);
@@ -76,6 +79,7 @@ type
     FLocation: TTelegramLocation;
     fMessageId: Integer;
     fChatId: Int64;
+    FPhoto: TTelegramPhotoSizeList;
     FReplyToMessage: TTelegramMessageObj;
     fText: string;
     fEntities: TTelegramUpdateObjList;
@@ -90,6 +94,7 @@ type
     property Text: string read fText;
     property Entities: TTelegramUpdateObjList read fEntities;
     property Location: TTelegramLocation read FLocation;
+    property Photo: TTelegramPhotoSizeList read FPhoto;
   end;
 
   { TTelegramMessageEntityObj }
@@ -122,7 +127,7 @@ type
     property From: TTelegramUserObj read FFrom;
     property Message: TTelegramMessageObj read FMessage;
     property ChatInstance: String read FChatInstance;
-    property Data: String read FData;  // optional
+    property Data: String read FData;  // optional 1-64 bytes!!!
   end;
 
   { TTelegramInlineQueryObj }
@@ -221,6 +226,40 @@ type
     property Latitude: Double read FLatitude write FLatitude;
   end;
 
+  { TTelegramPhotoSize }
+
+  TTelegramPhotoSize = class(TTelegramObj)
+  private
+    FFileID: String;
+    FFileSize: Integer;
+    FHeight: Integer;
+    FWidth: Integer;
+  public
+    constructor Create(JSONObject: TJSONObject); override;
+    property FileID: String read FFileID;
+    property Width: Integer read FWidth;
+    property Height: Integer read FHeight;
+    property FileSize: Integer read FFileSize;
+  end;
+
+  { TTelegramFile }
+
+  TTelegramFile = class(TTelegramObj)
+  private
+    FFileID: String;
+    FFilePath: String;
+    FFileSize: Integer;
+  public
+    constructor Create(JSONObject: TJSONObject); override;
+    class function DownloadLink(const AFilePath, AToken: String): String;
+    function DownloadLink(const AToken: String): String; overload;
+    property FileID: String read FFileID;
+    property FileSize: Integer read FFileSize;
+    property FilePath: String read FFilePath; //  https://api.telegram.org/file/bot<token>/<file_path>
+  end;
+
+
+
   TTelegramObjClass = class of TTelegramObj;
 
   const
@@ -236,6 +275,9 @@ function AllowedUpdatesToJSON(const AllowedUpdates: TUpdateSet): TJSONArray;
 
 implementation
 
+const
+  API_URL_FILE='https://api.telegram.org/file/bot';
+
 function AllowedUpdatesToJSON(const AllowedUpdates: TUpdateSet): TJSONArray;
 var
   u: TUpdateType;
@@ -243,6 +285,38 @@ begin
   Result:=TJSONArray.Create;
   for u in AllowedUpdates do
     Result.Add(UpdateTypeAliases[u]);
+end;
+
+{ TTelegramFile }
+
+constructor TTelegramFile.Create(JSONObject: TJSONObject);
+begin
+  inherited Create(JSONObject);
+  FFileID := fJSON.Strings['file_id'];
+  FFileSize := fJSON.Get('file_size', 0);
+  FFilePath := fJSON.Get('file_path', '');
+end;
+
+class function TTelegramFile.DownloadLink(const AFilePath, AToken: String
+  ): String;
+begin
+  Result:=API_URL_FILE+AToken+'/'+AFilePath;
+end;
+
+function TTelegramFile.DownloadLink(const AToken: String): String;
+begin
+  Result:=DownloadLink(FFilePath, AToken);
+end;
+
+{ TTelegramPhotoSize }
+
+constructor TTelegramPhotoSize.Create(JSONObject: TJSONObject);
+begin
+  inherited Create(JSONObject);
+  FFileID := fJSON.Strings['file_id'];
+  FWidth := fJSON.Integers['width'];
+  FHeight := fJSON.Integers['height'];
+  FFileSize:=fJSON.Get('file_size', 0);
 end;
 
 { TTelegramChatObj }
@@ -516,6 +590,7 @@ begin
 
   fText := fJSON.Get('text', '');
   fEntities := TTelegramUpdateObjList.Create;
+  FPhoto := TTelegramPhotoSizeList.Create;
 
 
   FChat:=TTelegramChatObj.CreateFromJSONObject(fJSON.Find('chat', jtObject) as TJSONObject) as TTelegramChatObj;
@@ -532,6 +607,11 @@ begin
   if Assigned(lJSONArray) then
     for lJSONEnum in lJSONArray do
       fEntities.Add(TTelegramMessageEntityObj.CreateFromJSONObject(lJSONEnum.Value as TJSONObject) as TTelegramMessageEntityObj);
+
+  lJSONArray := fJSON.Find('photo', jtArray) as TJSONArray;
+  if Assigned(lJSONArray) then
+    for lJSONEnum in lJSONArray do
+      FPhoto.Add(TTelegramPhotoSize.CreateFromJSONObject(lJSONEnum.Value as TJSONObject) as TTelegramPhotoSize);
 end;
 
 destructor TTelegramMessageObj.Destroy;
@@ -544,6 +624,7 @@ begin
     FChat.Free;
   if Assigned(FReplyToMessage) then
     FReplyToMessage.Free;
+  FPhoto.Free;
   fEntities.Free;
   inherited Destroy;
 end;
