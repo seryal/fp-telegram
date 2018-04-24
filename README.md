@@ -11,8 +11,12 @@ Done:
 + longpolling getting udates via getUpdates API method
 + Telegram bots API methods implemented:
   + getMe
+  + getFile
   + sendMessage
+  + sendDocument
   + sendPhoto
+  + sendAudio
+  + sendVoice
   + sendVideo
   + getUpdates
   + answerInlineQuery
