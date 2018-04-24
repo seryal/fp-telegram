@@ -306,7 +306,13 @@ type
     function getMe: Boolean;
     function getUpdates(offset: Int64 = 0; limit: Integer = 0; timeout: Integer = 0;
       allowed_updates: TUpdateSet = []): Boolean;
+    function SendAudio(chat_id: Int64; const audio: String; const Caption: String = '';
+      ParseMode: TParseMode = pmDefault; Duration: Integer = 0; DisableNotification: Boolean = False;
+      ReplyToMessageID: Integer = 0; const Performer:String = ''; const Title: String = '';
+      ReplyMarkup: TReplyMarkup = nil): Boolean;
     function sendDocumentByFileName(chat_id: Int64; const AFileName: String;
+      const ACaption: String; ReplyMarkup: TReplyMarkup = nil): Boolean;
+    function sendDocumentStream(chat_id: Int64;  const AFileName: String; ADocStream: TStream;
       const ACaption: String; ReplyMarkup: TReplyMarkup = nil): Boolean;
     function sendLocation(chat_id: Int64; Latitude, Longitude: Real; LivePeriod: Integer = 0;
       ParseMode: TParseMode = pmDefault; DisableWebPagePreview: Boolean=False;
@@ -326,6 +332,9 @@ type
       const ACaption: String; ReplyMarkup: TReplyMarkup = nil): Boolean; overload;
     function sendVideo(chat_id: Int64; const AVideo: String; const ACaption: String = ''): Boolean;
     function sendVideo(const AVideo: String; const ACaption: String = ''): Boolean; overload;
+    function sendVoice(chat_id: Int64; const Voice: String; const Caption: String = '';
+      ParseMode: TParseMode = pmDefault; Duration: Integer=0; DisableNotification: Boolean = False;
+      ReplyToMessageID: Integer = 0; ReplyMarkup: TReplyMarkup = nil): Boolean;
     function answerInlineQuery(const AnInlineQueryID: String; Results: TJSONArray;
       CacheTime: Integer = 300; IsPersonal: Boolean = False; const NextOffset: String = '';
       const SwitchPmText: String = ''; const SwitchPmParameter: String = ''): Boolean;
@@ -382,6 +391,8 @@ const
   s_editMessageText='editMessageText';
   s_sendMessage='sendMessage';
   s_sendPhoto='sendPhoto';
+  s_sendAudio='sendAudio';
+  s_sendVoice='sendVoice';
   s_sendVideo='sendVideo';
   s_sendDocument='sendDocument';
   s_sendLocation='sendLocation';
@@ -398,6 +409,8 @@ const
   s_InlineMessageId = 'inline_message_id';
   s_Document = 'document';
   s_Photo = 'photo';
+  s_Audio = 'audio';
+  s_Voice = 'voice';
   s_Caption = 'caption';
   s_ParseMode = 'parse_mode';
   s_ReplyMarkup = 'reply_markup';
@@ -406,6 +419,9 @@ const
   s_Longitude = 'longitude';
   s_LivePeriod = 'live_period';
   s_DsblWbpgPrvw = 'disable_web_page_preview';
+  s_DsblNtfctn = 'disable_notification';
+  s_Performer = 'performer';
+  s_Duration = 'duration';
   s_InlineKeyboard = 'inline_keyboard';
   s_Keyboard = 'keyboard';
   s_ResizeKeyboard = 'resize_keyboard';
@@ -1664,6 +1680,41 @@ begin
   end;
 end;
 
+function TTelegramSender.SendAudio(chat_id: Int64; const audio: String;
+  const Caption: String; ParseMode: TParseMode; Duration: Integer;
+  DisableNotification: Boolean; ReplyToMessageID: Integer; const Performer,
+  Title: String; ReplyMarkup: TReplyMarkup): Boolean;
+var
+  sendObj: TJSONObject;
+begin
+  Result:=False;
+  sendObj:=TJSONObject.Create;
+  with sendObj do
+  try
+    Add(s_ChatId, chat_id);
+    Add(s_Audio, audio);
+    if Caption<>EmptyStr then
+      Add(s_Caption, Caption);
+    if ParseMode<>pmDefault then
+      Add(s_ParseMode, ParseModes[ParseMode]);
+    if Duration<>0 then
+      Add(s_Duration, Duration);
+    if DisableNotification then
+      Add(s_DsblNtfctn, DisableNotification);
+    if ReplyToMessageID<>0 then
+      Add(s_ReplyToMessageID, ReplyToMessageID);
+    if Performer<>EmptyStr then
+      Add(s_Performer, Performer);
+    if Title<>EmptyStr then
+      Add(s_Title, Title);
+    if Assigned(ReplyMarkup) then
+      Add(s_ReplyMarkup, ReplyMarkup.Clone); // Clone of ReplyMarkup object will have released with sendObject
+    Result:=SendMethod(s_sendAudio, sendObj);
+  finally
+    Free;
+  end;
+end;
+
 function TTelegramSender.sendDocumentByFileName(chat_id: Int64; const AFileName: String;
   const ACaption: String; ReplyMarkup: TReplyMarkup): Boolean;
 var
@@ -1679,6 +1730,27 @@ begin
     if Assigned(ReplyMarkup) then
       Add(s_ReplyMarkup+'='+ReplyMarkup.AsJSON);
     Result:=SendFile(s_sendDocument, s_Document, AFileName, sendObj);
+  finally
+    Free;
+  end;
+end;
+
+function TTelegramSender.sendDocumentStream(chat_id: Int64;
+  const AFileName: String; ADocStream: TStream; const ACaption: String;
+  ReplyMarkup: TReplyMarkup): Boolean;
+var
+  sendObj: TStringList;
+begin
+  Result:=False;
+  sendObj:=TStringList.Create;
+  with sendObj do
+  try
+    Add(s_ChatId+'='+IntToStr(chat_id));
+    if ACaption<>EmptyStr then
+      Add(s_Caption+'='+ACaption);
+    if Assigned(ReplyMarkup) then
+      Add(s_ReplyMarkup+'='+ReplyMarkup.AsJSON);
+    Result:=SendStream(s_sendDocument, s_Document, AFileName, ADocStream, sendObj);
   finally
     Free;
   end;
@@ -1773,7 +1845,7 @@ end;
 function TTelegramSender.sendPhoto(chat_id: Int64; const APhoto: String;
   const ACaption: String): Boolean;
 begin
-  Result:=SendMethod(s_sendPhoto, ['chat_id', chat_id, 'photo', APhoto, 'caption', ACaption]);
+  Result:=SendMethod(s_sendPhoto, [s_ChatId, chat_id, s_Photo, APhoto, s_Caption, ACaption]);
 end;
 
 function TTelegramSender.sendPhoto(const APhoto: String; const ACaption: String
@@ -1814,6 +1886,37 @@ function TTelegramSender.sendVideo(const AVideo: String; const ACaption: String
   ): Boolean;
 begin
   Result:=sendVideo(FCurrentChatId, AVideo, ACaption);
+end;
+
+function TTelegramSender.sendVoice(chat_id: Int64; const Voice: String;
+  const Caption: String; ParseMode: TParseMode; Duration: Integer;
+  DisableNotification: Boolean; ReplyToMessageID: Integer;
+  ReplyMarkup: TReplyMarkup): Boolean;
+var
+  sendObj: TJSONObject;
+begin
+  Result:=False;
+  sendObj:=TJSONObject.Create;
+  with sendObj do
+  try
+    Add(s_ChatId, chat_id);
+    Add(s_Voice, Voice);
+    if Caption<>EmptyStr then
+      Add(s_Caption, Caption);
+    if ParseMode<>pmDefault then
+      Add(s_ParseMode, ParseModes[ParseMode]);
+    if Duration<>0 then
+      Add(s_Duration, Duration);
+    if DisableNotification then
+      Add(s_DsblNtfctn, DisableNotification);
+    if ReplyToMessageID<>0 then
+      Add(s_ReplyToMessageID, ReplyToMessageID);
+    if Assigned(ReplyMarkup) then
+      Add(s_ReplyMarkup, ReplyMarkup.Clone); // Clone of ReplyMarkup object will have released with sendObject
+    Result:=SendMethod(s_sendVoice, sendObj);
+  finally
+    Free;
+  end;
 end;
 
 function TTelegramSender.answerInlineQuery(const AnInlineQueryID: String;
