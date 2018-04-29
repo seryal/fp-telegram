@@ -207,6 +207,7 @@ type
 
   TTelegramSender = class
   private
+    FAPIEndPoint: String;
     FBotUsername: String;
     FCurrentChat: TTelegramChatObj;
     FCurrentChatId: Int64;
@@ -238,8 +239,10 @@ type
     FUpdateLogger: TtgStatLog;
     function CurrentLanguage(AUser: TTelegramUserObj): String;
     function CurrentLanguage(AMessage: TTelegramMessageObj): String;
+    function GetAPIEndPoint: String;
     function GetChannelCommandHandlers(const Command: String): TCommandEvent;
     function GetCommandHandlers(const Command: String): TCommandEvent;
+    procedure SetAPIEndPoint(AValue: String);
     procedure SetBotUsername(AValue: String);
     procedure SetChannelCommandHandlers(const Command: String;
       AValue: TCommandEvent);
@@ -339,6 +342,7 @@ type
       CacheTime: Integer = 300; IsPersonal: Boolean = False; const NextOffset: String = '';
       const SwitchPmText: String = ''; const SwitchPmParameter: String = ''): Boolean;
     function getFile(const FileID: String): Boolean;
+    property APIEndPoint: String read GetAPIEndPoint write SetAPIEndPoint;
     property BotUser: TTelegramUserObj read FBotUser;
     property JSONResponse: TJSONData read FJSONResponse write SetJSONResponse;
     property CurrentChatId: Int64 read FCurrentChatId;
@@ -346,6 +350,8 @@ type
     property CurrentChat: TTelegramChatObj read FCurrentChat;
     property CurrentMessage: TTelegramMessageObj read FCurrentMessage;
     property CurrentUpdate: TTelegramUpdateObj read FUpdate;
+    { If the bot works in a country where telegram API is not available, one of the easiest ways is
+      to change the API endpoint to its mirror proxy }
     property FileObj: TTelegramFile read FFileObj write SetFileObj;
     property Language: string read FLanguage write SetLanguage;
     property OnLogMessage: TLogMessageEvent read FOnLogMessage write FOnLogMessage;
@@ -1015,6 +1021,12 @@ begin
   Result:=FCommandHandlers.Items[Command];
 end;
 
+procedure TTelegramSender.SetAPIEndPoint(AValue: String);
+begin
+  if FAPIEndPoint=AValue then Exit;
+  FAPIEndPoint:=AValue;
+end;
+
 procedure TTelegramSender.SetBotUsername(AValue: String);
 begin
   if FBotUsername=AValue then Exit;
@@ -1035,6 +1047,14 @@ begin
     if Assigned(AMessage.ReplyToMessage) then
       Result:=CurrentLanguage(AMessage.ReplyToMessage)
   end;
+end;
+
+function TTelegramSender.GetAPIEndPoint: String;
+begin
+  if FAPIEndPoint=EmptyStr then
+    Result:=API_URL
+  else
+    Result:=FAPIEndPoint;
 end;
 
 function TTelegramSender.GetChannelCommandHandlers(const Command: String
@@ -1256,7 +1276,7 @@ begin
   AStream:=TStringStream.Create(EmptyStr);
   try
     HTTP.AddHeader('Content-Type','multipart/form-data');
-    HTTP.FileFormPost(API_URL+FToken+'/'+Method, AFormData, FileField, FileName, AStream);
+    HTTP.FileFormPost(APIEndPoint+FToken+'/'+Method, AFormData, FileField, FileName, AStream);
     FResponse:=AStream.DataString;
     Result:=True;
   except
@@ -1275,7 +1295,7 @@ begin
     HTTP.RequestBody:=TStringStream.Create(FRequestBody);
     try
       HTTP.AddHeader('Content-Type','application/json');
-      FResponse:=HTTP.Post(API_URL+FToken+'/'+Method);
+      FResponse:=HTTP.Post(FAPIEndPoint+FToken+'/'+Method);
     finally
       HTTP.RequestBody.Free;
     end;
@@ -1296,7 +1316,7 @@ begin
   AStringStream:=TStringStream.Create(EmptyStr);
   try
     HTTP.AddHeader('Content-Type','multipart/form-data');
-    HTTP.StreamFormPost(API_URL+FToken+'/'+Method, AFormData, FileField, FileName, AStream, AStringStream);
+    HTTP.StreamFormPost(FAPIEndPoint+FToken+'/'+Method, AFormData, FileField, FileName, AStream, AStringStream);
     FResponse:=AStringStream.DataString;
     Result:=True;
   except
@@ -1543,6 +1563,7 @@ end;
 constructor TTelegramSender.Create(const AToken: String);
 begin
   inherited Create;
+  FAPIEndPoint:=API_URL;
   FToken:=AToken;
   FRequestWhenAnswer:=False;
   FProcessUpdate:=True;
@@ -1682,8 +1703,9 @@ end;
 
 function TTelegramSender.SendAudio(chat_id: Int64; const audio: String;
   const Caption: String; ParseMode: TParseMode; Duration: Integer;
-  DisableNotification: Boolean; ReplyToMessageID: Integer; const Performer,
-  Title: String; ReplyMarkup: TReplyMarkup): Boolean;
+  DisableNotification: Boolean; ReplyToMessageID: Integer;
+  const Performer: String; const Title: String; ReplyMarkup: TReplyMarkup
+  ): Boolean;
 var
   sendObj: TJSONObject;
 begin
