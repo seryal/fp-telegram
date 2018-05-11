@@ -9,10 +9,11 @@ uses
 
 type
   TParseMode = (pmDefault, pmMarkdown, pmHTML);
-  TInlineQueryResultType = (qrtArticle, qrtPhoto, qrtVideo, qrtMpeg4Gif, qrtUnknown);
+  TInlineQueryResultType = (qrtArticle, qrtPhoto, qrtVideo, qrtAudio, qrtMpeg4Gif, qrtUnknown);
   TLogMessageEvent = procedure(ASender: TObject; LogType: TEventType; const Msg: String) of object;
   TInlineKeyboardButton = class;
   TKeyboardButton = class;
+  TInlineKeyboard = class;
 
   TOnUpdateEvent = procedure (ASender: TObject; AnUpdate: TTelegramUpdateObj) of object;
 
@@ -39,19 +40,21 @@ type
   TReplyMarkup = class(TJSONObject)
   private
     function GetForceReply: Boolean;
-    function GetInlineKeyBoard: TJSONArray;
+    function GetInlineKeyBoard: TInlineKeyboard;
     function GetOneTimeKeyboard: Boolean;
     function GetReplyKeyboardMarkup: TJSONArray;
     function GetResizeKeyboard: Boolean;
     function GetSelective: Boolean;
     procedure SetForceReply(AValue: Boolean);
-    procedure SetInlineKeyBoard(AValue: TJSONArray);
+    procedure SetInlineKeyBoard(AValue: TInlineKeyboard);
     procedure SetOneTimeKeyboard(AValue: Boolean);
     procedure SetReplyKeyboardMarkup(AValue: TJSONArray);
     procedure SetResizeKeyboard(AValue: Boolean);
     procedure SetSelective(AValue: Boolean);
-  public  { Only one from InlineKeyboard or ReplyMarkup is must to set }
-    property InlineKeyBoard: TJSONArray read GetInlineKeyBoard write SetInlineKeyBoard;
+  public
+    function CreateInlineKeyBoard: TInlineKeyboard;
+    { Only one from InlineKeyboard or ReplyMarkup is must to set }
+    property InlineKeyBoard: TInlineKeyboard read GetInlineKeyBoard write SetInlineKeyBoard;
 { ٌReplyKeyboard porerties }
     property ReplyKeyboardMarkup: TJSONArray read GetReplyKeyboardMarkup
       write SetReplyKeyboardMarkup;
@@ -133,6 +136,14 @@ type
     procedure AddButtons(const AButtons: array of String);
   end;
 
+  { TInlineKeyboard }
+
+  TInlineKeyboard = class(TJSONArray)
+  public
+    function Add(AButtons: TInlineKeyboardButtons): Integer; overload;
+    function Add: TInlineKeyboardButtons;
+  end;
+
   { TInputMessageContent }
 
   TInputMessageContent = class(TJSONObject)
@@ -151,6 +162,9 @@ type
 
   TInlineQueryResult = class(TJSONObject)
   private
+    function GetAudioDuration: Integer;
+    function GetAudioUrl: String;
+    function GetCaption: String;
     function GetDescription: String;
     function GetID: String;
     function GetInputMessageContent: TInputMessageContent;
@@ -159,6 +173,8 @@ type
     function GetMpeg4Height: Integer;
     function GetMpeg4Url: String;
     function GetMpeg4Width: Integer;
+    function GetParseMode: TParseMode;
+    function GetPerformer: String;
     function GetPhotoHeight: Integer;
     function GetPhotoUrl: String;
     function GetPhotoWidth: Integer;
@@ -166,6 +182,9 @@ type
     function GetThumbUrl: String;
     function GetTitle: String;
     function GetVideoUrl: String;
+    procedure SetAudioDuration(AValue: Integer);
+    procedure SetAudioUrl(AValue: String);
+    procedure SetCaption(AValue: String);
     procedure SetDescription(AValue: String);
     procedure SetID(AValue: String);
     procedure SetInputMessageContent(AValue: TInputMessageContent);
@@ -174,6 +193,8 @@ type
     procedure SetMpeg4Height(AValue: Integer);
     procedure SetMpeg4Url(AValue: String);
     procedure SetMpeg4Width(AValue: Integer);
+    procedure SetParseMode(AValue: TParseMode);
+    procedure SetPerformer(AValue: String);
     procedure SetPhotoHeight(AValue: Integer);
     procedure SetPhotoUrl(AValue: String);
     procedure SetPhotoWidth(AValue: Integer);
@@ -201,6 +222,13 @@ type
     property Mpeg4Url: String read GetMpeg4Url write SetMpeg4Url;
     property Mpeg4Height: Integer read GetMpeg4Height write SetMpeg4Height;
     property Mpeg4Width: Integer read GetMpeg4Width write SetMpeg4Width;
+
+    property AudioUrl: String read GetAudioUrl write SetAudioUrl;
+    property Caption: String read GetCaption write SetCaption;
+    property ParseMode: TParseMode read GetParseMode write SetParseMode;
+    property Performet: String read GetPerformer write SetPerformer;
+    property AudioDuration: Integer read GetAudioDuration write SetAudioDuration;
+
   end;
 
   { TTelegramSender }
@@ -481,10 +509,13 @@ const
   s_Mpeg4Width = 'mpeg4_width';
   s_Mpeg4Height = 'mpeg4_height';
 
+  s_AudioDuration = 'audio_duration';
+  s_AudioUrl = 'audio_url';
+
 
   ParseModes: array[TParseMode] of PChar = ('', 'Markdown', 'HTML');
   QueryResultTypeArray: array[TInlineQueryResultType] of PChar =
-    ('article', 'photo', 'video', 'mpeg4_gif', '');
+    ('article', 'photo', 'video', 'audio', 'mpeg4_gif', '');
 
   API_URL='https://api.telegram.org/bot';
   TgBotUrlStart = 'https://t.me/';
@@ -507,6 +538,19 @@ begin
   for pm:=Low(ParseModes) to High(ParseModes) do
     if SameStr(ParseModes[pm], S) then
       Exit(pm);
+end;
+
+{ TInlineKeyboard }
+
+function TInlineKeyboard.Add(AButtons: TInlineKeyboardButtons): Integer;
+begin
+  Result:=Add(AButtons as TJSONArray);
+end;
+
+function TInlineKeyboard.Add: TInlineKeyboardButtons;
+begin
+  Result:=TInlineKeyboardButtons.Create;
+  Add(Result);
 end;
 
 { TInputMessageContent }
@@ -542,6 +586,21 @@ end;
 
 { TInlineQueryResult }
 
+function TInlineQueryResult.GetAudioDuration: Integer;
+begin
+  Result:=Get(s_AudioDuration, 0);
+end;
+
+function TInlineQueryResult.GetAudioUrl: String;
+begin
+  Result:=Get(s_AudioUrl, EmptyStr);
+end;
+
+function TInlineQueryResult.GetCaption: String;
+begin
+  Result:=Get(s_Caption, EmptyStr);
+end;
+
 function TInlineQueryResult.GetDescription: String;
 begin
   Result:=Get(s_Description, EmptyStr);
@@ -564,7 +623,7 @@ end;
 
 function TInlineQueryResult.GetMimeType: String;
 begin
-  Result:=Get(s_MimeType, '');
+  Result:=Get(s_MimeType, EmptyStr);
 end;
 
 function TInlineQueryResult.GetMpeg4Height: Integer;
@@ -574,12 +633,22 @@ end;
 
 function TInlineQueryResult.GetMpeg4Url: String;
 begin
-  Result:=Get(s_Mpeg4Url, '');
+  Result:=Get(s_Mpeg4Url, EmptyStr);
 end;
 
 function TInlineQueryResult.GetMpeg4Width: Integer;
 begin
   Result:=Get(s_Mpeg4Width, 0);
+end;
+
+function TInlineQueryResult.GetParseMode: TParseMode;
+begin
+  Result:=StringToParseMode(Get(s_ParseMode, EmptyStr));
+end;
+
+function TInlineQueryResult.GetPerformer: String;
+begin
+  Result:=Get(s_Performer, EmptyStr);
 end;
 
 function TInlineQueryResult.GetPhotoHeight: Integer;
@@ -615,6 +684,21 @@ end;
 function TInlineQueryResult.GetVideoUrl: String;
 begin
   Result:=Get(s_VideoUrl, '');
+end;
+
+procedure TInlineQueryResult.SetAudioDuration(AValue: Integer);
+begin
+  Integers[s_AudioDuration]:=AValue;
+end;
+
+procedure TInlineQueryResult.SetAudioUrl(AValue: String);
+begin
+  Strings[s_AudioUrl]:=AValue;
+end;
+
+procedure TInlineQueryResult.SetCaption(AValue: String);
+begin
+  Strings[s_Caption]:=AValue;
 end;
 
 procedure TInlineQueryResult.SetDescription(AValue: String);
@@ -656,6 +740,16 @@ end;
 procedure TInlineQueryResult.SetMpeg4Width(AValue: Integer);
 begin
   Integers[s_Mpeg4Height]:=AValue;
+end;
+
+procedure TInlineQueryResult.SetParseMode(AValue: TParseMode);
+begin
+  Strings[s_ParseMode]:=ParseModes[AValue];
+end;
+
+procedure TInlineQueryResult.SetPerformer(AValue: String);
+begin
+  Strings[s_Performer]:=AValue;
 end;
 
 procedure TInlineQueryResult.SetPhotoHeight(AValue: Integer);
@@ -845,9 +939,9 @@ begin
   Result:=Booleans[s_ForceReply];
 end;
 
-function TReplyMarkup.GetInlineKeyBoard: TJSONArray;
+function TReplyMarkup.GetInlineKeyBoard: TInlineKeyboard;
 begin
-  Result:=Arrays[s_InlineKeyboard];
+  Result:=Arrays[s_InlineKeyboard] as TInlineKeyboard;
 end;
 
 function TReplyMarkup.GetOneTimeKeyboard: Boolean;
@@ -883,7 +977,7 @@ begin
     Booleans[s_ForceReply]:=True;
 end;
 
-procedure TReplyMarkup.SetInlineKeyBoard(AValue: TJSONArray);
+procedure TReplyMarkup.SetInlineKeyBoard(AValue: TInlineKeyboard);
 begin
   Arrays[s_InlineKeyboard]:=AValue;
 end;
@@ -909,6 +1003,12 @@ begin
     if not ForceReply then
       ForceReply:=True;
   Booleans[s_Selective]:=AValue;
+end;
+
+function TReplyMarkup.CreateInlineKeyBoard: TInlineKeyboard;
+begin
+  Result:=TInlineKeyboard.Create;
+  InlineKeyBoard:=Result;
 end;
 
 { TInlineKeyboardButton }
