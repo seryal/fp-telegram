@@ -9,6 +9,7 @@ uses
 
 type
   TParseMode = (pmDefault, pmMarkdown, pmHTML);
+  TMediaType = (mtPhoto, mtVideo, mtUnknown);
   TInlineQueryResultType = (qrtArticle, qrtPhoto, qrtVideo, qrtAudio, qrtMpeg4Gif, qrtUnknown);
   TLogMessageEvent = procedure(ASender: TObject; LogType: TEventType; const Msg: String) of object;
   TInlineKeyboardButton = class;
@@ -226,9 +227,66 @@ type
     property AudioUrl: String read GetAudioUrl write SetAudioUrl;
     property Caption: String read GetCaption write SetCaption;
     property ParseMode: TParseMode read GetParseMode write SetParseMode;
-    property Performet: String read GetPerformer write SetPerformer;
+    property Performer: String read GetPerformer write SetPerformer;
     property AudioDuration: Integer read GetAudioDuration write SetAudioDuration;
 
+  end;
+
+  { TInputMedia }
+
+  TInputMedia = class(TJSONObject)
+  private
+    function GetCaption: String;
+    function GetMedia: String;
+    function GetMediaType: TMediaType;
+    function GetParseMode: TParseMode;
+    procedure SetCaption(AValue: String);
+    procedure SetMedia(AValue: String);
+    procedure SetMediaType(AValue: TMediaType);
+    procedure SetParseMode(AValue: TParseMode);
+  public
+    property MediaType: TMediaType read GetMediaType write SetMediaType;
+    property Media: String read GetMedia write SetMedia;
+    property Caption: String read GetCaption write SetCaption;
+    property ParseMode: TParseMode read GetParseMode write SetParseMode;
+  end;
+
+  { TInputMediaPhoto }
+
+  TInputMediaPhoto = class(TInputMedia)
+  public
+    constructor Create; reintroduce;
+  end;
+
+  { TInputMediaVideo }
+
+  TInputMediaVideo = class(TInputMedia)
+  private
+    function GetDuration: Integer;
+    function GetHeight: Integer;
+    function GetSupportsStreaming: Boolean;
+    function GetWidth: Integer;
+    procedure SetDuration(AValue: Integer);
+    procedure SetHeight(AValue: Integer);
+    procedure SetSupportsStreaming(AValue: Boolean);
+    procedure SetWidth(AValue: Integer);
+  public
+    constructor Create; reintroduce;
+    property Width: Integer read GetWidth write SetWidth;
+    property Height: Integer read GetHeight write SetHeight;
+    property Duration: Integer read GetDuration write SetDuration;
+    property SupportsStreaming: Boolean read GetSupportsStreaming write SetSupportsStreaming;
+  end;
+
+  { TInputMediaArray }
+
+  TInputMediaArray = class(TJSONArray)
+  public
+    function Add(AMedia: TInputMedia): Integer; overload;
+    function AddPhoto: TInputMediaPhoto;
+    function AddPhoto(const APhoto: String): Integer; overload;
+    function AddVideo: TInputMediaVideo;
+    function AddVideo(const AVideo: String): Integer; overload;
   end;
 
   { TTelegramSender }
@@ -348,6 +406,8 @@ type
     function sendLocation(chat_id: Int64; Latitude, Longitude: Real; LivePeriod: Integer = 0;
       ParseMode: TParseMode = pmDefault; DisableWebPagePreview: Boolean=False;
       ReplyMarkup: TReplyMarkup = nil): Boolean;
+    function sendMediaGroup(chat_id: Int64; media: TInputMediaArray;
+      DisableWebPagePreview: Boolean=False; ReplyToMessageID: Integer = 0): Boolean;
     function sendMessage(chat_id: Int64; const AMessage: String; ParseMode: TParseMode = pmDefault;
       DisableWebPagePreview: Boolean=False; ReplyMarkup: TReplyMarkup = nil;
       ReplyToMessageID: Integer = 0): Boolean;
@@ -430,6 +490,7 @@ const
   s_sendVideo='sendVideo';
   s_sendDocument='sendDocument';
   s_sendLocation='sendLocation';
+  s_sendMediaGroup='sendMediaGroup';
   s_getUpdates='getUpdates';
   s_getMe='getMe';
   s_answerInlineQuery='answerInlineQuery';
@@ -446,6 +507,7 @@ const
   s_Audio = 'audio';
   s_Voice = 'voice';
   s_Caption = 'caption';
+  s_Media = 'media';
   s_ParseMode = 'parse_mode';
   s_ReplyMarkup = 'reply_markup';
   s_ReplyToMessageID = 'reply_to_message_id';
@@ -456,6 +518,7 @@ const
   s_DsblNtfctn = 'disable_notification';
   s_Performer = 'performer';
   s_Duration = 'duration';
+  s_SupportsStreaming = 'supports_streaming';
   s_InlineKeyboard = 'inline_keyboard';
   s_Keyboard = 'keyboard';
   s_ResizeKeyboard = 'resize_keyboard';
@@ -508,12 +571,15 @@ const
   s_Mpeg4Url = 'mpeg4_url';
   s_Mpeg4Width = 'mpeg4_width';
   s_Mpeg4Height = 'mpeg4_height';
+  s_Width = 'width';
+  s_Height = 'height';
 
   s_AudioDuration = 'audio_duration';
   s_AudioUrl = 'audio_url';
 
 
   ParseModes: array[TParseMode] of PChar = ('', 'Markdown', 'HTML');
+  MediaTypes: array[TMediaType] of PChar = ('photo', 'video', '');
   QueryResultTypeArray: array[TInlineQueryResultType] of PChar =
     ('article', 'photo', 'video', 'audio', 'mpeg4_gif', '');
 
@@ -538,6 +604,151 @@ begin
   for pm:=Low(ParseModes) to High(ParseModes) do
     if SameStr(ParseModes[pm], S) then
       Exit(pm);
+end;
+
+function StringToMediaType(const S: String): TMediaType;
+var
+  mt: TMediaType;
+begin
+  Result:=mtUnknown;
+  for mt:=Low(MediaTypes) to High(MediaTypes) do
+    if SameStr(MediaTypes[mt], S) then
+      Exit(mt);
+end;
+
+{ TInputMediaPhoto }
+
+constructor TInputMediaPhoto.Create;
+begin
+  inherited Create;
+  MediaType:=mtPhoto;
+end;
+
+{ TInputMediaArray }
+
+function TInputMediaArray.Add(AMedia: TInputMedia): Integer;
+begin
+  Result:=Add(AMedia as TJSONObject);
+end;
+
+function TInputMediaArray.AddPhoto: TInputMediaPhoto;
+begin
+  Result:=TInputMediaPhoto.Create;
+  Add(Result);
+end;
+
+function TInputMediaArray.AddPhoto(const APhoto: String): Integer;
+var
+  AnInputMedia: TInputMedia;
+begin
+  AnInputMedia:=TInputMediaPhoto.Create;
+  AnInputMedia.Media:=APhoto;
+  Result:=Add(AnInputMedia);
+end;
+
+function TInputMediaArray.AddVideo: TInputMediaVideo;
+begin
+  Result:=TInputMediaVideo.Create;
+  Add(Result);
+end;
+
+function TInputMediaArray.AddVideo(const AVideo: String): Integer;
+var
+  AnInputMedia: TInputMedia;
+begin
+  AnInputMedia:=TInputMediaVideo.Create;
+  AnInputMedia.Media:=AVideo;
+  Result:=Add(AnInputMedia);
+end;
+
+{ TInputMediaVideo }
+
+function TInputMediaVideo.GetDuration: Integer;
+begin
+  Result:=Get(s_Duration, 0);
+end;
+
+function TInputMediaVideo.GetHeight: Integer;
+begin
+  Result:=Get(s_Height, 0);
+end;
+
+function TInputMediaVideo.GetSupportsStreaming: Boolean;
+begin
+  Result:=Get(s_SupportsStreaming, False);
+end;
+
+function TInputMediaVideo.GetWidth: Integer;
+begin
+  Result:=Get(s_Width, 0);
+end;
+
+procedure TInputMediaVideo.SetDuration(AValue: Integer);
+begin
+  Integers[s_Duration]:=AValue;
+end;
+
+procedure TInputMediaVideo.SetHeight(AValue: Integer);
+begin
+  Integers[s_Height]:=AValue;
+end;
+
+procedure TInputMediaVideo.SetSupportsStreaming(AValue: Boolean);
+begin
+  Booleans[s_SupportsStreaming]:=AValue;
+end;
+
+procedure TInputMediaVideo.SetWidth(AValue: Integer);
+begin
+  Integers[s_Width]:=AValue;
+end;
+
+constructor TInputMediaVideo.Create;
+begin
+  inherited Create;
+  MediaType:=mtVideo;
+end;
+
+{ TInputMedia }
+
+function TInputMedia.GetCaption: String;
+begin
+  Result:=Get(s_Caption, EmptyStr);
+end;
+
+function TInputMedia.GetMedia: String;
+begin
+  Result:=Get(s_Media, EmptyStr);
+end;
+
+function TInputMedia.GetMediaType: TMediaType;
+begin
+  Result:=StringToMediaType(Get(s_Type, EmptyStr));
+end;
+
+function TInputMedia.GetParseMode: TParseMode;
+begin
+  Result:=StringToParseMode(Get(s_ParseMode, EmptyStr));
+end;
+
+procedure TInputMedia.SetCaption(AValue: String);
+begin
+  Strings[s_Caption]:=AValue;
+end;
+
+procedure TInputMedia.SetMedia(AValue: String);
+begin
+  Strings[s_Media]:=AValue;
+end;
+
+procedure TInputMedia.SetMediaType(AValue: TMediaType);
+begin
+  Strings[s_Type]:=MediaTypes[AValue];
+end;
+
+procedure TInputMedia.SetParseMode(AValue: TParseMode);
+begin
+  Strings[s_ParseMode]:=ParseModes[AValue];
 end;
 
 { TInlineKeyboard }
@@ -1902,6 +2113,28 @@ begin
   finally
     Free;
   end;
+end;
+
+function TTelegramSender.sendMediaGroup(chat_id: Int64;
+  media: TInputMediaArray; DisableWebPagePreview: Boolean;
+  ReplyToMessageID: Integer): Boolean;
+var
+  sendObj: TJSONObject;
+begin
+  Result:=False;
+  sendObj:=TJSONObject.Create;
+  with sendObj do
+    try
+      Add(s_ChatId, chat_id);
+      if Assigned(media) then
+        Add(s_Media, media.Clone);
+      Add(s_DsblWbpgPrvw, DisableWebPagePreview);
+      if ReplyToMessageID<>0 then
+        Add(s_ReplyToMessageID, ReplyToMessageID);
+      Result:=SendMethod(s_sendMediaGroup, sendObj);
+    finally
+      Free;
+    end;
 end;
 
 {  https://core.telegram.org/bots/api#sendmessage  }
