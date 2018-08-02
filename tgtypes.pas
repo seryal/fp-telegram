@@ -37,6 +37,7 @@ type
     destructor Destroy; override;
     class function CreateFromJSONObject(JSONObject: TJSONObject): TTelegramObj;
     function AsString: String;
+    function Clone: TTelegramObj;
   end;
 
   { TTelegramUpdateObj }
@@ -492,6 +493,11 @@ end;
 function TTelegramObj.AsString: String;
 begin
   Result:=fJSON.AsJSON;
+end;
+
+function TTelegramObj.Clone: TTelegramObj;
+begin
+  Result:=CreateFromJSONObject(fJSON);
 end;
 
 { TTelegramUpdateObj }

@@ -4,7 +4,7 @@
     <PathDelim Value="\"/>
     <Version Value="10"/>
     <BuildModes Active="Debug"/>
-    <Units Count="11">
+    <Units Count="12">
       <Unit0>
         <Filename Value="LongPollingDesktop.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -12,7 +12,7 @@
         <WindowIndex Value="-1"/>
         <TopLine Value="-1"/>
         <CursorPos X="-1" Y="-1"/>
-        <UsageCount Value="36"/>
+        <UsageCount Value="40"/>
       </Unit0>
       <Unit1>
         <Filename Value="mainform.pas"/>
@@ -22,9 +22,9 @@
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="MainForm"/>
         <IsVisibleTab Value="True"/>
-        <TopLine Value="88"/>
-        <CursorPos Y="101"/>
-        <UsageCount Value="36"/>
+        <TopLine Value="28"/>
+        <CursorPos Y="136"/>
+        <UsageCount Value="40"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
       </Unit1>
@@ -32,9 +32,9 @@
         <Filename Value="..\tgsendertypes.pas"/>
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="1085"/>
-        <CursorPos X="22" Y="1097"/>
-        <UsageCount Value="30"/>
+        <TopLine Value="2156"/>
+        <CursorPos Y="1207"/>
+        <UsageCount Value="34"/>
         <Loaded Value="True"/>
       </Unit2>
       <Unit3>
@@ -45,17 +45,17 @@
       <Unit4>
         <Filename Value="..\longpoll_mthread.pas"/>
         <EditorIndex Value="4"/>
-        <TopLine Value="67"/>
-        <CursorPos Y="77"/>
-        <UsageCount Value="17"/>
+        <TopLine Value="120"/>
+        <CursorPos Y="139"/>
+        <UsageCount Value="19"/>
         <Loaded Value="True"/>
       </Unit4>
       <Unit5>
         <Filename Value="..\tgtypes.pas"/>
         <EditorIndex Value="3"/>
-        <TopLine Value="406"/>
-        <CursorPos Y="416"/>
-        <UsageCount Value="17"/>
+        <TopLine Value="28"/>
+        <CursorPos X="14" Y="40"/>
+        <UsageCount Value="19"/>
         <Loaded Value="True"/>
       </Unit5>
       <Unit6>
@@ -63,7 +63,7 @@
         <EditorIndex Value="2"/>
         <TopLine Value="429"/>
         <CursorPos X="15" Y="441"/>
-        <UsageCount Value="17"/>
+        <UsageCount Value="19"/>
         <Loaded Value="True"/>
       </Unit6>
       <Unit7>
@@ -90,137 +90,144 @@
       <Unit10>
         <Filename Value="..\flqueue.pas"/>
         <EditorIndex Value="5"/>
-        <TopLine Value="87"/>
-        <CursorPos X="16" Y="97"/>
-        <UsageCount Value="10"/>
+        <TopLine Value="92"/>
+        <CursorPos X="16" Y="102"/>
+        <UsageCount Value="12"/>
         <Loaded Value="True"/>
       </Unit10>
+      <Unit11>
+        <Filename Value="C:\lazarus32\fpcsrc\rtl\objpas\classes\classesh.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="1658"/>
+        <CursorPos X="16" Y="1669"/>
+        <UsageCount Value="10"/>
+      </Unit11>
     </Units>
-    <JumpHistory Count="30" HistoryIndex="28">
+    <JumpHistory Count="30" HistoryIndex="29">
       <Position1>
         <Filename Value="..\longpoll_mthread.pas"/>
-        <Caret Line="77" TopLine="67"/>
+        <Caret Line="139" TopLine="120"/>
       </Position1>
       <Position2>
-        <Filename Value="..\longpoll_mthread.pas"/>
-        <Caret Line="109" TopLine="99"/>
+        <Filename Value="..\tgsendertypes.pas"/>
+        <Caret Line="1908" TopLine="1896"/>
       </Position2>
       <Position3>
         <Filename Value="..\longpoll_mthread.pas"/>
-        <Caret Line="77" TopLine="67"/>
+        <Caret Line="92" TopLine="80"/>
       </Position3>
       <Position4>
-        <Filename Value="..\longpoll_mthread.pas"/>
-        <Caret Line="109" TopLine="99"/>
+        <Filename Value="..\tgsendertypes.pas"/>
+        <Caret Line="1908" TopLine="1896"/>
       </Position4>
       <Position5>
-        <Filename Value="..\longpoll_mthread.pas"/>
-        <Caret Line="77" TopLine="67"/>
+        <Filename Value="..\tgsendertypes.pas"/>
+        <Caret Line="1306" TopLine="1294"/>
       </Position5>
       <Position6>
         <Filename Value="..\longpoll_mthread.pas"/>
-        <Caret Line="109" TopLine="99"/>
+        <Caret Line="139" TopLine="120"/>
       </Position6>
       <Position7>
-        <Filename Value="..\longpoll_mthread.pas"/>
-        <Caret Line="77" TopLine="67"/>
+        <Filename Value="mainform.pas"/>
+        <Caret Line="164" TopLine="152"/>
       </Position7>
       <Position8>
         <Filename Value="..\longpoll_mthread.pas"/>
-        <Caret Line="109" TopLine="99"/>
+        <Caret Line="92" TopLine="80"/>
       </Position8>
       <Position9>
-        <Filename Value="..\longpoll_mthread.pas"/>
-        <Caret Line="110" TopLine="99"/>
+        <Filename Value="..\tgsendertypes.pas"/>
+        <Caret Line="1306" TopLine="1294"/>
       </Position9>
       <Position10>
-        <Filename Value="..\tgsendertypes.pas"/>
-        <Caret Line="1125" TopLine="1113"/>
+        <Filename Value="..\longpoll_mthread.pas"/>
+        <Caret Line="139" TopLine="120"/>
       </Position10>
       <Position11>
-        <Filename Value="..\longpoll_mthread.pas"/>
-        <Caret Line="77" TopLine="67"/>
+        <Filename Value="mainform.pas"/>
+        <Caret Line="164" TopLine="152"/>
       </Position11>
       <Position12>
-        <Filename Value="..\tgsendertypes.pas"/>
-        <Caret Line="1125" TopLine="1113"/>
+        <Filename Value="..\longpoll_mthread.pas"/>
+        <Caret Line="92" TopLine="80"/>
       </Position12>
       <Position13>
         <Filename Value="..\tgsendertypes.pas"/>
-        <Caret Line="1096" TopLine="1085"/>
+        <Caret Line="1306" TopLine="1294"/>
       </Position13>
       <Position14>
-        <Filename Value="..\tgsendertypes.pas"/>
-        <Caret Line="1125" TopLine="1116"/>
+        <Filename Value="..\longpoll_mthread.pas"/>
+        <Caret Line="139" TopLine="120"/>
       </Position14>
       <Position15>
-        <Filename Value="..\flqueue.pas"/>
-        <Caret Line="166" Column="10" TopLine="156"/>
+        <Filename Value="mainform.pas"/>
+        <Caret Line="164" TopLine="152"/>
       </Position15>
       <Position16>
-        <Filename Value="..\flqueue.pas"/>
-        <Caret Line="102" Column="17" TopLine="92"/>
+        <Filename Value="..\tgsendertypes.pas"/>
+        <Caret Line="1306" TopLine="1294"/>
       </Position16>
       <Position17>
-        <Filename Value="..\flqueue.pas"/>
-        <Caret Line="182" Column="3" TopLine="181"/>
+        <Filename Value="..\longpoll_mthread.pas"/>
+        <Caret Line="139" TopLine="120"/>
       </Position17>
       <Position18>
-        <Filename Value="..\flqueue.pas"/>
-        <Caret Line="97" Column="16" TopLine="86"/>
+        <Filename Value="mainform.pas"/>
+        <Caret Line="164" TopLine="170"/>
       </Position18>
       <Position19>
-        <Filename Value="..\flqueue.pas"/>
-        <Caret Line="96" Column="16" TopLine="86"/>
+        <Filename Value="mainform.pas"/>
+        <Caret Line="176" TopLine="169"/>
       </Position19>
       <Position20>
-        <Filename Value="..\flqueue.pas"/>
-        <Caret Line="141" Column="3" TopLine="139"/>
+        <Filename Value="..\tgsendertypes.pas"/>
+        <Caret Line="1306" TopLine="1294"/>
       </Position20>
       <Position21>
-        <Filename Value="..\flqueue.pas"/>
-        <Caret Line="96" Column="17" TopLine="86"/>
+        <Filename Value="..\longpoll_mthread.pas"/>
+        <Caret Line="139" TopLine="120"/>
       </Position21>
       <Position22>
-        <Filename Value="..\flqueue.pas"/>
-        <Caret Line="141" Column="3" TopLine="139"/>
+        <Filename Value="mainform.pas"/>
+        <Caret Line="176" TopLine="169"/>
       </Position22>
       <Position23>
-        <Filename Value="..\flqueue.pas"/>
-        <Caret Line="100" Column="17" TopLine="86"/>
+        <Filename Value="mainform.pas"/>
+        <Caret Line="182" TopLine="169"/>
       </Position23>
       <Position24>
-        <Filename Value="..\flqueue.pas"/>
-        <Caret Line="131" Column="3" TopLine="129"/>
+        <Filename Value="mainform.pas"/>
+        <Caret Line="188" TopLine="169"/>
       </Position24>
       <Position25>
-        <Filename Value="..\flqueue.pas"/>
-        <Caret Line="101" Column="19" TopLine="91"/>
+        <Filename Value="..\tgsendertypes.pas"/>
+        <Caret Line="1306" TopLine="1294"/>
       </Position25>
       <Position26>
-        <Filename Value="..\flqueue.pas"/>
-        <Caret Line="160" Column="3" TopLine="160"/>
+        <Filename Value="mainform.pas"/>
+        <Caret Line="176" TopLine="169"/>
       </Position26>
       <Position27>
-        <Filename Value="..\flqueue.pas"/>
-        <Caret Line="102" Column="17" TopLine="92"/>
+        <Filename Value="mainform.pas"/>
+        <Caret Line="182" TopLine="169"/>
       </Position27>
       <Position28>
-        <Filename Value="..\flqueue.pas"/>
-        <Caret Line="182" Column="3" TopLine="183"/>
+        <Filename Value="mainform.pas"/>
+        <Caret Line="176" TopLine="169"/>
       </Position28>
       <Position29>
-        <Filename Value="..\flqueue.pas"/>
-        <Caret Line="97" Column="16" TopLine="87"/>
+        <Filename Value="mainform.pas"/>
+        <Caret Line="178" TopLine="169"/>
       </Position29>
       <Position30>
-        <Filename Value="..\flqueue.pas"/>
-        <Caret Line="86" Column="3" TopLine="76"/>
+        <Filename Value="mainform.pas"/>
+        <Caret Line="179" TopLine="169"/>
       </Position30>
     </JumpHistory>
   </ProjectSession>
   <Debugging>
-    <BreakPoints Count="5">
+    <BreakPoints Count="2">
       <Item1>
         <Kind Value="bpkSource"/>
         <WatchScope Value="wpsLocal"/>
@@ -233,49 +240,16 @@
         <WatchScope Value="wpsLocal"/>
         <WatchKind Value="wpkWrite"/>
         <Source Value="..\tgtypes.pas"/>
-        <Line Value="427"/>
+        <Line Value="428"/>
       </Item2>
-      <Item3>
-        <Kind Value="bpkSource"/>
-        <WatchScope Value="wpsLocal"/>
-        <WatchKind Value="wpkWrite"/>
-        <Source Value="..\longpoll_mthread.pas"/>
-        <Line Value="77"/>
-      </Item3>
-      <Item4>
-        <Kind Value="bpkSource"/>
-        <WatchScope Value="wpsLocal"/>
-        <WatchKind Value="wpkWrite"/>
-        <Source Value="mainform.pas"/>
-        <Line Value="101"/>
-      </Item4>
-      <Item5>
-        <Kind Value="bpkSource"/>
-        <WatchScope Value="wpsLocal"/>
-        <WatchKind Value="wpkWrite"/>
-        <Source Value="..\tgsendertypes.pas"/>
-        <Line Value="1207"/>
-      </Item5>
     </BreakPoints>
-    <Watches Count="6">
+    <Watches Count="2">
       <Item1>
-        <Expression Value="Result"/>
+        <Expression Value="FBot"/>
       </Item1>
       <Item2>
-        <Expression Value="FUpdateParameter"/>
-      </Item2>
-      <Item3>
-        <Expression Value="lUpdateObj"/>
-      </Item3>
-      <Item4>
         <Expression Value="FUpdate"/>
-      </Item4>
-      <Item5>
-        <Expression Value="AnUpdate"/>
-      </Item5>
-      <Item6>
-        <Expression Value="FProcessUpdate"/>
-      </Item6>
+      </Item2>
     </Watches>
   </Debugging>
 </CONFIG>

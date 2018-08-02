@@ -1611,8 +1611,10 @@ begin
       HTTP.RequestBody.Free;
     end;
     Result:=True;
+    DebugMessage('Response: '+FResponse);
   except
     Result:=False;
+    ErrorMessage('It is not succesful request to API! Request body: '+FRequestBody);
   end;
   HTTP.Free;
 end;
@@ -1742,12 +1744,7 @@ begin
   begin
     RequestBody:=MethodParameters.AsJSON;
     DebugMessage('Request for method "'+Method+'": '+FRequestBody);
-    try
-      Result:=HTTPPostJson(Method);
-      DebugMessage('Response: '+FResponse);
-    except
-      ErrorMessage('It is not succesful request to API! Request body: '+FRequestBody);
-    end;
+    Result:=HTTPPostJson(Method);
 
     if Result then
       if not ResponseHandle then

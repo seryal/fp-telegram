@@ -13,7 +13,6 @@ Type
   TtgStatLog = Class(TComponent)
   Private
     fAppendContent : Boolean;
-    FDateTimeFormat: String;
     FDirectory: String;
     FFieldDelimiter: String;
     FFilePostfix: String;

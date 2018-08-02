@@ -2,14 +2,14 @@ object FrmMain: TFrmMain
   Left = 266
   Height = 461
   Top = 181
-  Width = 621
+  Width = 608
   Caption = 'FrmMain'
   ClientHeight = 461
-  ClientWidth = 621
+  ClientWidth = 608
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   SessionProperties = 'EdtToken.Text'
-  LCLVersion = '1.8.0.6'
+  LCLVersion = '1.8.4.0'
   object EdtToken: TLabeledEdit
     Left = 16
     Height = 23
@@ -51,7 +51,7 @@ object FrmMain: TFrmMain
     Left = 0
     Height = 373
     Top = 88
-    Width = 621
+    Width = 608
     Align = alBottom
     Anchors = [akTop, akLeft, akRight]
     ScrollBars = ssAutoVertical
@@ -59,7 +59,7 @@ object FrmMain: TFrmMain
   end
   object InPrpStrg: TIniPropStorage
     StoredValues = <>
-    left = 456
-    top = 16
+    left = 512
+    top = 104
   end
 end

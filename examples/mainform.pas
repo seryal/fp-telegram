@@ -25,7 +25,7 @@ type
   private
     FLongPollThread: TTGLongPollThread;
     FProcessorThread: TTGQueneProcessorThread;
-    procedure BotLogMessage(ASender: TObject; LogType: TEventType; const Msg: String);
+    procedure BotLogMessage({%H-}ASender: TObject; LogType: TEventType; const Msg: String);
   public
 
   end;
@@ -36,9 +36,9 @@ type
   private
     FLogMsg: String;
     procedure SynWriteLog;
-    procedure BotStartCommandHandler(ASender: TObject; const ACommand: String;
-      AMessage: TTelegramMessageObj);
-    procedure BotLogMessage(ASender: TObject; LogType: TEventType; const Msg: String);
+    procedure BotStartCommandHandler({%H-}ASender: TObject; const {%H-}ACommand: String;
+      {%H-}AMessage: TTelegramMessageObj);
+    procedure BotLogMessage({%H-}ASender: TObject; LogType: TEventType; const Msg: String);
   public
     constructor Create(const aToken: string; aPower: NativeInt=10); override;
   end;
@@ -49,7 +49,7 @@ type
   private
     FLogMsg: String;
     procedure SynWriteLog;
-    procedure BotLogMessage(ASender: TObject; LogType: TEventType; const Msg: String);
+    procedure BotLogMessage({%H-}ASender: TObject; LogType: TEventType; const Msg: String);
   public
     constructor Create(const aToken: string); override;
   end;
@@ -85,6 +85,7 @@ end;
 constructor TReceiverThread.Create(const aToken: string);
 begin
   inherited Create(aToken);
+  Bot.APIEndPoint:='https://api.telegram.org/bot';
   Bot.OnLogMessage:=@BotLogMessage;
 end;
 
@@ -112,6 +113,7 @@ end;
 constructor TProcessorThread.Create(const aToken: string; aPower: NativeInt);
 begin
   inherited Create(aToken, aPower);
+  Bot.APIEndPoint:='https://api.telegram.org/bot';
   Bot.CommandHandlers['/start']:=@BotStartCommandHandler;
   Bot.OnLogMessage:=@BotLogMessage;
 end;
@@ -131,22 +133,7 @@ begin
   FLongPollThread:=TReceiverThread.Create(EdtToken.Text);
   FLongPollThread.Processor:=FProcessorThread;
   FLongPollThread.Start;
-  {Bot:=TTelegramSender.Create(EdtToken.Text);
-  Bot.OnReceiveUpdate:=@SenderReceiveUpdate;
-  Bot.OnLogMessage:=@BotLogMessage;
-  AnOffset:=0;
-  try
-//    while not Terminated do
-//    begin
 
-      Bot.getUpdates(AnOffset, 0, 30);
-
-      if AnOffset > 0 then
-        Inc(AnOffset);
-//    end;
-  finally
-    Bot.Free;
-  end; }
   BtnStart.Enabled:=False;
   BtnStop.Enabled:=True;
 end;

@@ -74,7 +74,7 @@ begin
     while fQueue.length <> 0 do
     begin
       lUpdateObj := fQueue.pop as TTelegramUpdateObj;
-      FBot.DoReceiveUpdate(lUpdateObj);
+      FBot.DoReceiveUpdate(TTelegramUpdateObj(lUpdateObj.Clone));
     end;
 end;
 
