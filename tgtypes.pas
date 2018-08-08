@@ -37,7 +37,6 @@ type
     destructor Destroy; override;
     class function CreateFromJSONObject(JSONObject: TJSONObject): TTelegramObj;
     function AsString: String;
-    function Clone: TTelegramObj;
   end;
 
   { TTelegramUpdateObj }
@@ -59,6 +58,7 @@ type
     function ParseUpdateParameter: TUpdateType;
   public
     constructor Create(JSONObject: TJSONObject); override;
+    function Clone: TTelegramUpdateObj;
     destructor Destroy; override;
     property UpdateId: Integer read fUpdateId;
     property UpdateType: TUpdateType read FUpdateType;
@@ -495,11 +495,6 @@ begin
   Result:=fJSON.AsJSON;
 end;
 
-function TTelegramObj.Clone: TTelegramObj;
-begin
-  Result:=CreateFromJSONObject(fJSON);
-end;
-
 { TTelegramUpdateObj }
 
 function TTelegramUpdateObj.ParseUpdateParameter: TUpdateType;
@@ -575,6 +570,11 @@ begin
   inherited Create(JSONObject);
   fUpdateId := fJSON.Integers['update_id'];
   FUpdateType:=ParseUpdateParameter;
+end;
+
+function TTelegramUpdateObj.Clone: TTelegramUpdateObj;
+begin
+  Result:=TTelegramUpdateObj.Create(fJSON);
 end;
 
 destructor TTelegramUpdateObj.Destroy;
