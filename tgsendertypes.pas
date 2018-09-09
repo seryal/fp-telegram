@@ -5,7 +5,7 @@ unit tgsendertypes;
 interface
 
 uses
-  Classes, SysUtils, fphttpclient, fpjson, tgtypes, ghashmap, tgstatlog;
+  Classes, SysUtils, fphttpclient, fpjson, tgtypes, ghashmap, ghashset, tgstatlog;
 
 type
   TParseMode = (pmDefault, pmMarkdown, pmHTML);
@@ -35,6 +35,14 @@ type
   generic TStringHashMap<T> = class(specialize THashMap<String,T,TStringHash>) end;
 
   TCommandHandlersMap = specialize TStringHashMap<TCommandEvent>;
+
+  { TIntegerHash }
+
+  TIntegerHash = class
+    class function hash(i: Int64; n: Integer): Integer;
+  end;
+
+  TIntegerHashSet = specialize THashSet<Int64,TIntegerHash>;
 
   { TReplyMarkup }
 
@@ -614,6 +622,13 @@ begin
   for mt:=Low(MediaTypes) to High(MediaTypes) do
     if SameStr(MediaTypes[mt], S) then
       Exit(mt);
+end;
+
+{ TIntegerHash }
+
+class function TIntegerHash.hash(i: Int64; n: Integer): Integer;
+begin
+  Result:=i mod n;
 end;
 
 { TInputMediaPhoto }
