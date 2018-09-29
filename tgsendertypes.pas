@@ -5,7 +5,7 @@ unit tgsendertypes;
 interface
 
 uses
-  Classes, SysUtils, fphttpclient, fpjson, tgtypes, ghashmap, ghashset, tgstatlog;
+  Classes, SysUtils, fphttpclient, fpjson, tgtypes, ghashmap, ghashset, tgstatlog, eventlog;
 
 type
   TParseMode = (pmDefault, pmMarkdown, pmHTML);
@@ -312,6 +312,8 @@ type
     FLanguage: string;
     FLastErrorCode: Integer;
     FLastErrorDescription: String;
+    FLogDebug: Boolean;
+    FLogger: TEventLog;
     FOnReceiveCallbackQuery: TCallbackEvent;
     FOnReceiveChannelPost: TMessageEvent;
     FOnReceiveChosenInlineResult: TChosenInlineResultEvent;
@@ -358,6 +360,8 @@ type
     procedure SetJSONResponse(AValue: TJSONData);
     procedure SetLastErrorCode(AValue: Integer);
     procedure SetLastErrorDescription(AValue: String);
+    procedure SetLogDebug(AValue: Boolean);
+    procedure SetLogger(AValue: TEventLog);
     procedure SetOnReceiveCallbackQuery(AValue: TCallbackEvent);
     procedure SetOnReceiveChannelPost(AValue: TMessageEvent);
     procedure SetOnReceiveChosenInlineResult(AValue: TChosenInlineResultEvent);
@@ -450,6 +454,7 @@ type
       to change the API endpoint to its mirror proxy }
     property FileObj: TTelegramFile read FFileObj write SetFileObj;
     property Language: string read FLanguage write SetLanguage;
+    property LogDebug: Boolean read FLogDebug write SetLogDebug;
     property OnLogMessage: TLogMessageEvent read FOnLogMessage write FOnLogMessage;
     property RequestBody: String read FRequestBody write SetRequestBody;
     property Response: String read FResponse;
@@ -468,6 +473,7 @@ type
     property BotUsername: String read FBotUsername write SetBotUsername;
     property LastErrorCode: Integer read FLastErrorCode write SetLastErrorCode;
     property LastErrorDescription: String read FLastErrorDescription write SetLastErrorDescription;
+    property Logger: TEventLog read FLogger write SetLogger;
 
     property UpdateLogger: TtgStatLog read FUpdateLogger write SetUpdateLogger; //We will log the update object completely if need
 
@@ -1337,8 +1343,13 @@ end;
 
 procedure TTelegramSender.DebugMessage(const Msg: String);
 begin
-  if Assigned(FOnLogMessage) then
-    FOnLogMessage(Self, etDebug, Msg);
+  if FLogDebug then
+  begin
+    if Assigned(FLogger) then
+      FLogger.Debug(Msg);
+    if Assigned(FOnLogMessage) then
+      FOnLogMessage(Self, etDebug, Msg);
+  end;
 end;
 
 function TTelegramSender.GetCommandHandlers(const Command: String
@@ -1562,12 +1573,16 @@ end;
 
 procedure TTelegramSender.ErrorMessage(const Msg: String);
 begin
+  if Assigned(FLogger) then
+    FLogger.Error(Msg);
   if Assigned(FOnLogMessage) then
     FOnLogMessage(Self, etError, Msg);
 end;
 
 procedure TTelegramSender.InfoMessage(const Msg: String);
 begin
+  if Assigned(FLogger) then
+    FLogger.Info(Msg);
   if Assigned(FOnLogMessage) then
     FOnLogMessage(Self, etInfo, Msg);
 end;
@@ -1822,6 +1837,18 @@ begin
   FLastErrorDescription:=AValue;
 end;
 
+procedure TTelegramSender.SetLogDebug(AValue: Boolean);
+begin
+  if FLogDebug=AValue then Exit;
+  FLogDebug:=AValue;
+end;
+
+procedure TTelegramSender.SetLogger(AValue: TEventLog);
+begin
+  if FLogger=AValue then Exit;
+  FLogger:=AValue;
+end;
+
 procedure TTelegramSender.SetLanguage(const AValue: String);
 begin
   if FLanguage=AValue then Exit;
@@ -1899,10 +1926,11 @@ begin
   FBotUser:=nil;
   FFileObj:=nil;
   FLanguage:='';
+  FLogger:=nil;
   BotUsername:='';
   FCommandHandlers:=TCommandHandlersMap.create;
   FChannelCommandHandlers:=TCommandHandlersMap.create;
-
+  FLogDebug:=False;
 end;
 
 function TTelegramSender.DeepLinkingUrl(const AParameter: String): String;
