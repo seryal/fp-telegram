@@ -18,7 +18,7 @@
       </Linking>
     </CompilerOptions>
     <Description Value="Telegram API library"/>
-    <Version Build="9"/>
+    <Version Build="10"/>
     <Files Count="5">
       <Item1>
         <Filename Value="tgsendertypes.pas"/>

@@ -314,6 +314,7 @@ type
     FLastErrorDescription: String;
     FLogDebug: Boolean;
     FLogger: TEventLog;
+    FOnAfterParseUpdate: TNotifyEvent;
     FOnReceiveCallbackQuery: TCallbackEvent;
     FOnReceiveChannelPost: TMessageEvent;
     FOnReceiveChosenInlineResult: TChosenInlineResultEvent;
@@ -362,6 +363,7 @@ type
     procedure SetLastErrorDescription(AValue: String);
     procedure SetLogDebug(AValue: Boolean);
     procedure SetLogger(AValue: TEventLog);
+    procedure SetOnAfterParseUpdate(AValue: TNotifyEvent);
     procedure SetOnReceiveCallbackQuery(AValue: TCallbackEvent);
     procedure SetOnReceiveChannelPost(AValue: TMessageEvent);
     procedure SetOnReceiveChosenInlineResult(AValue: TChosenInlineResultEvent);
@@ -376,6 +378,7 @@ type
     procedure SetUpdateLogger(AValue: TtgStatLog);
     class function StringToJSONObject(const AString: String): TJSONObject;
   protected
+    procedure DoAfterParseUpdate; // After the parse of the update object prior to calling all custom handlers (OnReceive...)
     procedure DoReceiveMessageUpdate(AMessage: TTelegramMessageObj); virtual;
     procedure DoReceiveEditedMessage(AMessage: TTelegramMessageObj); virtual;
     procedure DoReceiveCallbackQuery(ACallback: TCallbackQueryObj); virtual;
@@ -383,7 +386,7 @@ type
     procedure DoReceiveEditedChannelPost(AChannelPost: TTelegramMessageObj); virtual;
     procedure DoReceiveInlineQuery(AnInlineQuery: TTelegramInlineQueryObj);  virtual;
     procedure DoReceiveChosenInlineResult(AChosenInlineResult: TTelegramChosenInlineResultObj); virtual;
-    procedure DebugMessage(const Msg: String); virtual; // будет отправлять в журнал все запросы и ответы. Полезно на время разработки
+    procedure DebugMessage(const Msg: String); virtual; // it will send all requests and responses to the log. Useful during development
     procedure ErrorMessage(const Msg: String); virtual;
     procedure InfoMessage(const Msg: String); virtual;
     function IsBanned({%H-}ChatID: Int64): Boolean; virtual;
@@ -393,7 +396,7 @@ type
     constructor Create(const AToken: String);
     function DeepLinkingUrl(const AParameter: String): String;
     destructor Destroy; override;
-    procedure DoReceiveUpdate(AnUpdate: TTelegramUpdateObj); virtual;
+    procedure DoReceiveUpdate(AnUpdate: TTelegramUpdateObj); virtual; // After calling the rest of handlers OnReceive...
     function CurrentIsSimpleUser: Boolean; overload;
     function CurrentIsBanned: Boolean; overload;
 
@@ -477,6 +480,9 @@ type
 
     property UpdateLogger: TtgStatLog read FUpdateLogger write SetUpdateLogger; //We will log the update object completely if need
 
+{ After the parse of the update object prior to calling all other custom events (OnReceive...) }
+    property OnAfterParseUpdate: TNotifyEvent read FOnAfterParseUpdate write SetOnAfterParseUpdate;
+{ After calling the rest of events OnReceive... }
     property OnReceiveUpdate: TOnUpdateEvent read FOnReceiveUpdate write SetOnReceiveUpdate;
     property OnReceiveMessage: TMessageEvent read FOnReceiveMessage write SetOnReceiveMessage;
     property OnReceiveEditedMessage: TMessageEvent read FOnReceiveEditedMessage write SetOnReceiveEditedMessage;
@@ -1341,6 +1347,12 @@ begin
   end;
 end;
 
+procedure TTelegramSender.DoAfterParseUpdate;
+begin
+  if Assigned(FOnAfterParseUpdate) then
+    FOnAfterParseUpdate(Self);
+end;
+
 procedure TTelegramSender.DebugMessage(const Msg: String);
 begin
   if FLogDebug then
@@ -1421,6 +1433,7 @@ begin
   if CurrentIsBanned then
     Exit;
   SetLanguage(CurrentLanguage(AMessage));
+  DoAfterParseUpdate;
   ProcessCommands(AMessage, FCommandHandlers);
   if Assigned(FOnReceiveMessage) then
     FOnReceiveMessage(Self, AMessage);
@@ -1435,6 +1448,7 @@ begin
   if CurrentIsBanned then
     Exit;
   SetLanguage(CurrentLanguage(AMessage));
+  DoAfterParseUpdate;
   ProcessCommands(AMessage, FCommandHandlers);
   if Assigned(FOnReceiveEditedMessage) then
     FOnReceiveEditedMessage(Self, AMessage);
@@ -1453,6 +1467,7 @@ begin
   if Assigned(FCurrentMessage) then
     if Assigned(FCurrentMessage.From) then
       FBotUsername:=FCurrentMessage.From.Username;
+  DoAfterParseUpdate;
   if Assigned(FOnReceiveCallbackQuery) then
     FOnReceiveCallbackQuery(Self, ACallback);
 end;
@@ -1466,6 +1481,7 @@ begin
   if CurrentIsBanned then
     Exit;
   SetLanguage(CurrentLanguage(AChannelPost));
+  DoAfterParseUpdate;
   ProcessCommands(AChannelPost, FChannelCommandHandlers);
   if Assigned(FOnReceiveChannelPost) then
     FOnReceiveChannelPost(Self, AChannelPost);
@@ -1481,6 +1497,7 @@ begin
   if CurrentIsBanned then
     Exit;
   SetLanguage(CurrentLanguage(AChannelPost));
+  DoAfterParseUpdate;
   ProcessCommands(AChannelPost, FChannelCommandHandlers);
   if Assigned(FOnReceiveEditedChannelPost) then
     FOnReceiveChannelPost(Self, AChannelPost);
@@ -1491,11 +1508,12 @@ procedure TTelegramSender.DoReceiveInlineQuery(
 begin
   FCurrentMessage:=nil;
   FCurrentChat:=nil;
-  FCurrentChatID:=AnInlineQuery.From.ID; // This is doubtful. It will be necessary to re-check
+  FCurrentChatID:=AnInlineQuery.From.ID;
   FCurrentUser:=AnInlineQuery.From;
   if CurrentIsBanned then
     Exit;
   SetLanguage(CurrentLanguage(AnInlineQuery.From));
+  DoAfterParseUpdate;
   if Assigned(FOnReceiveInlineQuery) then
     FOnReceiveInlineQuery(Self, AnInlineQuery);
 end;
@@ -1505,11 +1523,12 @@ procedure TTelegramSender.DoReceiveChosenInlineResult(
 begin
   FCurrentMessage:=nil;
   FCurrentChat:=nil;
-  FCurrentChatID:=AChosenInlineResult.From.ID; // This is doubtful. It will be necessary to re-check
+  FCurrentChatID:=AChosenInlineResult.From.ID;
   FCurrentUser:=AChosenInlineResult.From;
   if CurrentIsBanned then
     Exit;
   SetLanguage(CurrentLanguage(AChosenInlineResult.From));
+  DoAfterParseUpdate;
   if Assigned(FOnReceiveChosenInlineResult) then
     FOnReceiveChosenInlineResult(Self, AChosenInlineResult);
 end;
@@ -1847,6 +1866,12 @@ procedure TTelegramSender.SetLogger(AValue: TEventLog);
 begin
   if FLogger=AValue then Exit;
   FLogger:=AValue;
+end;
+
+procedure TTelegramSender.SetOnAfterParseUpdate(AValue: TNotifyEvent);
+begin
+  if FOnAfterParseUpdate=AValue then Exit;
+  FOnAfterParseUpdate:=AValue;
 end;
 
 procedure TTelegramSender.SetLanguage(const AValue: String);
