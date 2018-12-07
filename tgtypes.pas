@@ -569,6 +569,7 @@ constructor TTelegramUpdateObj.Create(JSONObject: TJSONObject);
 begin
   inherited Create(JSONObject);
   fUpdateId := fJSON.Integers['update_id'];
+  FUpdateParameter:=nil;
   FUpdateType:=ParseUpdateParameter;
 end;
 
@@ -579,8 +580,7 @@ end;
 
 destructor TTelegramUpdateObj.Destroy;
 begin
-  if Assigned(FUpdateParameter) then
-    FUpdateParameter.Free;
+  FUpdateParameter.Free;
   inherited Destroy;
 end;
 
@@ -622,14 +622,10 @@ end;
 
 destructor TTelegramMessageObj.Destroy;
 begin
-  if Assigned(FFrom) then
-    FFrom.Free;
-  if Assigned(FLocation) then
-    FLocation.Free;
-  if Assigned(FChat) then
-    FChat.Free;
-  if Assigned(FReplyToMessage) then
-    FReplyToMessage.Free;
+  FFrom.Free;
+  FLocation.Free;
+  FChat.Free;
+  FReplyToMessage.Free;
   FPhoto.Free;
   fEntities.Free;
   inherited Destroy;

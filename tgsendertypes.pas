@@ -1535,8 +1535,7 @@ end;
 
 procedure TTelegramSender.DoReceiveUpdate(AnUpdate: TTelegramUpdateObj);
 begin
-  if Assigned(FUpdate) then
-    FreeAndNil(FUpdate);
+  FreeAndNil(FUpdate);
   FUpdate:=AnUpdate;
   FCurrentMessage:=nil;
   FCurrentChatId:=0;
@@ -1828,20 +1827,16 @@ end;
 procedure TTelegramSender.SetFileObj(AValue: TTelegramFile);
 begin
   if FFileObj=AValue then Exit;
-  if Assigned(FFileObj) then
-    FreeAndNil(FFileObj);
+  FreeAndNil(FFileObj);
   FFileObj:=AValue;
 end;
 
 procedure TTelegramSender.SetJSONResponse(AValue: TJSONData);
 begin
   if FJSONResponse=AValue then Exit;
-  if Assigned(FJSONResponse) then
-    FJSONResponse.Free;
+  FreeAndNil(FJSONResponse);
   if Assigned(AValue) then
-    FJSONResponse:=AValue.Clone
-  else
-    FJSONResponse:=nil;
+    FJSONResponse:=AValue.Clone;
 end;
 
 procedure TTelegramSender.SetLastErrorCode(AValue: Integer);
@@ -1966,15 +1961,12 @@ end;
 destructor TTelegramSender.Destroy;
 begin
   JSONResponse:=nil;
-  if Assigned(FUpdateLogger) then
-    FreeAndNil(FUpdateLogger);
-  FChannelCommandHandlers.Free;
-  FCommandHandlers.Free;
-  if Assigned(FBotUser) then
-    FreeAndNil(FBotUser);
+  FreeAndNil(FUpdateLogger);
+  FreeAndNil(FChannelCommandHandlers);
+  FreeAndNil(FCommandHandlers);
+  FreeAndNil(FBotUser);
   FileObj:=nil;
-  if Assigned(FUpdate) then
-    FreeAndNil(FUpdate);
+  FreeAndNil(FUpdate);
   inherited Destroy;
 end;
 

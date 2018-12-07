@@ -64,6 +64,9 @@ implementation
 uses
   tgsendertypes;
 
+const
+  API_END='https://api.telegram.org/bot';
+
 var
   Logger: TEventLog;
 
@@ -85,7 +88,7 @@ end;
 constructor TReceiverThread.Create(const aToken: string);
 begin
   inherited Create(aToken);
-  Bot.APIEndPoint:='https://api.telegram.org/bot';
+  Bot.APIEndPoint:=API_END;
   Bot.OnLogMessage:=@BotLogMessage;
 end;
 
@@ -113,8 +116,9 @@ end;
 constructor TProcessorThread.Create(const aToken: string; aPower: NativeInt);
 begin
   inherited Create(aToken, aPower);
-  Bot.APIEndPoint:='https://api.telegram.org/bot';
+  Bot.APIEndPoint:=API_END;
   Bot.CommandHandlers['/start']:=@BotStartCommandHandler;
+  Bot.LogDebug:=True;
   Bot.OnLogMessage:=@BotLogMessage;
 end;
 
