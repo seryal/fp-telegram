@@ -1,9 +1,14 @@
+*.log
+*.ini
+~*
+*.zip
+*.dat
+*.csv
 # Lazarus compiler-generated binaries (safe to delete)
 *.exe
 *.dll
 *.so
 *.dylib
-*.lrs
 *.res
 *.compiled
 *.dbg
