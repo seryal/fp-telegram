@@ -5,13 +5,13 @@ unit testsender;
 interface
 
 uses
-  Classes, SysUtils, fpcunit, testregistry, tgsendertypes, testbase;
+  Classes, SysUtils, fpcunit, testregistry, fpjson, tgsendertypes, testbase;
 
 type
 
   { TTestSender }
 
-  TTestSender= class(TTestTelegramBase)
+  TTestSender= class(TTestTelegramClass)
   private
     FChatID: Int64;
   protected
@@ -21,11 +21,35 @@ type
     procedure InlineKeyboard;
   end;
 
+  { TTestSenderProcedure }
+
+  TTestSenderProcedure=class(TTestTelegramBase)
+  published
+    procedure sendMessage;
+  end;
+
 implementation
 
 const
   Msg='Test message sent from %s. Test procedure: %s';
   Msg_md='Test message sent from %s. Test procedure: _%s_';
+
+{ TTestSenderProcedure }
+
+procedure TTestSenderProcedure.sendMessage;
+var
+  AToken: String;
+  AChatID: Int64;
+  AReply: String;
+begin
+  AToken:=Conf.ReadString('Bot', 'Token', EmptyStr);
+  AChatID:=Conf.ReadInt64('Chat', 'ID', 0);
+  if not TgBotSendMessage(AToken, AChatID, Format(Msg, [Self.ClassName, TestName]), AReply) then
+    Fail('Fail to send message from telegram bot!');
+  SaveString(AReply, '~JSONResponce.json');
+end;
+
+{ TTestSender }
 
 procedure TTestSender.SetUp;
 begin
@@ -70,6 +94,6 @@ end;
 
 initialization
 
-  RegisterTest(TTestSender);
+  RegisterTests([TTestSender, TTestSenderProcedure]);
 end.
 

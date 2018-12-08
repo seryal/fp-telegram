@@ -495,6 +495,15 @@ type
     property OnReceiveChosenInlineResult: TChosenInlineResultEvent read FOnReceiveChosenInlineResult write SetOnReceiveChosenInlineResult;
   end;
 
+ { Procedure style method to send message from Bot to chat/user }
+function TgBotSendMessage(const AToken: String; chat_id: Int64; const AMessage: String;
+  out AReply: String;
+  ParseMode: TParseMode = pmDefault; DisableWebPagePreview: Boolean=False;
+  AReplyMarkup: TReplyMarkup = nil; ReplyToMessageID: Integer = 0): Boolean;
+
+var
+  TelegramAPI_URL: String ='https://api.telegram.org/bot';
+
 implementation
 
 uses
@@ -603,7 +612,6 @@ const
   QueryResultTypeArray: array[TInlineQueryResultType] of PChar =
     ('article', 'photo', 'video', 'audio', 'mpeg4_gif', '');
 
-  API_URL='https://api.telegram.org/bot';
   TgBotUrlStart = 'https://t.me/';
 
 function StringToIQRType(const S: String): TInlineQueryResultType;
@@ -634,6 +642,24 @@ begin
   for mt:=Low(MediaTypes) to High(MediaTypes) do
     if SameStr(MediaTypes[mt], S) then
       Exit(mt);
+end;
+
+function TgBotSendMessage(const AToken: String; chat_id: Int64;
+  const AMessage: String; out AReply: String; ParseMode: TParseMode;
+  DisableWebPagePreview: Boolean; AReplyMarkup: TReplyMarkup;
+  ReplyToMessageID: Integer): Boolean;
+var
+  ABot: TTelegramSender;
+begin
+  Result:=False;
+  ABot:=TTelegramSender.Create(AToken);
+  try
+    ABot.APIEndPoint:=TelegramAPI_URL;
+    Result:=ABot.sendMessage(chat_id, AMessage, ParseMode, DisableWebPagePreview, AReplyMarkup, ReplyToMessageID);
+    AReply:=ABot.Response;
+  finally
+    ABot.Free;
+  end;
 end;
 
 { TIntegerHash }
@@ -1401,7 +1427,7 @@ end;
 function TTelegramSender.GetAPIEndPoint: String;
 begin
   if FAPIEndPoint=EmptyStr then
-    Result:=API_URL
+    Result:=TelegramAPI_URL
   else
     Result:=FAPIEndPoint;
 end;
@@ -1933,7 +1959,7 @@ end;
 constructor TTelegramSender.Create(const AToken: String);
 begin
   inherited Create;
-  FAPIEndPoint:=API_URL;
+  FAPIEndPoint:=TelegramAPI_URL;
   FToken:=AToken;
   FRequestWhenAnswer:=False;
   FProcessUpdate:=True;
