@@ -27,10 +27,12 @@ type
   TTestTelegramClass= class(TTestTelegramBase)
   private
     FBot: TTelegramSender;
+    FChatID: Int64;
   protected
     procedure SetUp; override;
     procedure TearDown; override;
     property Bot: TTelegramSender read FBot;
+    property ChatID: Int64 read FChatID;
   end;
 
 implementation
@@ -43,6 +45,9 @@ begin
   FBot:=TTelegramSender.Create(FConf.ReadString('Bot', 'Token', EmptyStr));
   if FBot.Token=EmptyStr then
     Fail('Please, specify bot token in testtelegram.ini! See readme.md');
+  FChatID:=Conf.ReadInt64('Chat', 'ID', 0);
+  if FChatID=0 then
+    Fail('Please, specify chat ID in testtelegram.ini! See readme.md');
 end;
 
 procedure TTestTelegramClass.TearDown;
