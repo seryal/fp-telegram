@@ -29,14 +29,11 @@ type
     immediately before running the test! }
   TTestReceiveLongPolling=class(TTestTelegramClass)
   private
-    FOffset: Int64;
     FReceived: Boolean;
     procedure BotReceiveUpdate({%H-}ASender: TObject; AnUpdate: TTelegramUpdateObj);
-    procedure SetOffset(AValue: Int64);
     procedure SetReceived(AValue: Boolean);
   protected
     procedure SetUp; override;
-    property Offset: Int64 read FOffset write SetOffset;
     property Received: Boolean read FReceived write SetReceived;
   published
     procedure ReceiveUpdate;
@@ -52,22 +49,10 @@ const
 
 procedure TTestReceiveLongPolling.BotReceiveUpdate(ASender: TObject;
   AnUpdate: TTelegramUpdateObj);
-var
-  AnUpdateID: int64;
 begin
   SaveJSONData(Bot.JSONResponse, '~responce.json');
   SaveString(AnUpdate.AsString, '~update.json');
-  AnUpdateID:=AnUpdate.UpdateId;
-  if AnUpdateID > FOffset then
-    FOffset:=AnUpdateID;
-  Inc(FOffset);
   Received:=True;
-end;
-
-procedure TTestReceiveLongPolling.SetOffset(AValue: Int64);
-begin
-  if FOffset=AValue then Exit;
-  FOffset:=AValue;
 end;
 
 procedure TTestReceiveLongPolling.SetReceived(AValue: Boolean);
@@ -89,7 +74,7 @@ begin
   if not Received then
     Fail('No updates were received. Send, for example, a message to the test bot')
   else
-    Bot.getUpdates(Offset, 100, 1); //
+    Bot.getUpdatesEx(100, 1); //
 end;
 
 { TTestSenderProcedure }

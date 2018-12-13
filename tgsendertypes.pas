@@ -333,6 +333,7 @@ type
     FRequestWhenAnswer: Boolean;
     FCommandHandlers: TCommandHandlersMap; 
     FChannelCommandHandlers: TCommandHandlersMap;
+    FUpdateID: Int64;
     FUpdateLogger: TtgStatLog;
     function CurrentLanguage(AUser: TTelegramUserObj): String;
     function CurrentLanguage(AMessage: TTelegramMessageObj): String;
@@ -375,6 +376,7 @@ type
     procedure SetProcessUpdate(AValue: Boolean);
     procedure SetRequestBody(AValue: String);
     procedure SetRequestWhenAnswer(AValue: Boolean);
+    procedure SetUpdateID(AValue: Int64);
     procedure SetUpdateLogger(AValue: TtgStatLog);
     class function StringToJSONObject(const AString: String): TJSONObject;
   protected
@@ -409,6 +411,10 @@ type
       DisableWebPagePreview: Boolean=False; ReplyMarkup: TReplyMarkup = nil): Boolean; overload;
     function getMe: Boolean;
     function getUpdates(offset: Int64 = 0; limit: Integer = 0; timeout: Integer = 0;
+      allowed_updates: TUpdateSet = []): Boolean;
+ { To receive updates (LongPolling) You do not need to recalculate Offset in procedure below.
+      The offset itself will take it from the previous UpdateID and increment by one }
+    function getUpdatesEx(limit: Integer = 0; timeout: Integer = 0;
       allowed_updates: TUpdateSet = []): Boolean;
     function SendAudio(chat_id: Int64; const audio: String; const Caption: String = '';
       ParseMode: TParseMode = pmDefault; Duration: Integer = 0; DisableNotification: Boolean = False;
@@ -459,6 +465,7 @@ type
     property Language: string read FLanguage write SetLanguage;
     property LogDebug: Boolean read FLogDebug write SetLogDebug;
     property OnLogMessage: TLogMessageEvent read FOnLogMessage write FOnLogMessage;
+    property UpdateID: Int64 read FUpdateID write SetUpdateID;
     property RequestBody: String read FRequestBody write SetRequestBody;
     property Response: String read FResponse;
     property Token: String read FToken write FToken;
@@ -1570,6 +1577,7 @@ begin
   FLanguage:='';
   if Assigned(AnUpdate) then
   begin
+    FUpdateID:=AnUpdate.UpdateId;
     if FProcessUpdate then
     begin
       case AnUpdate.UpdateType of
@@ -1791,6 +1799,12 @@ procedure TTelegramSender.SetRequestWhenAnswer(AValue: Boolean);
 begin
   if FRequestWhenAnswer=AValue then Exit;
   FRequestWhenAnswer:=AValue;
+end;
+
+procedure TTelegramSender.SetUpdateID(AValue: Int64);
+begin
+  if FUpdateID=AValue then Exit;
+  FUpdateID:=AValue;
 end;
 
 procedure TTelegramSender.SetUpdateLogger(AValue: TtgStatLog);
@@ -2093,6 +2107,14 @@ begin
   finally
     Free;
   end;
+end;
+
+function TTelegramSender.getUpdatesEx(limit: Integer; timeout: Integer;
+  allowed_updates: TUpdateSet): Boolean;
+begin
+  if FUpdateID<>0 then
+    Inc(FUpdateID);
+  Result:=getUpdates(FUpdateID, limit, timeout, allowed_updates);
 end;
 
 function TTelegramSender.SendAudio(chat_id: Int64; const audio: String;
