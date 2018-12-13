@@ -10,3 +10,4 @@ Token=
 ;; Enter Your user/chat ID
 ID=
 ```
+In order to test receiving updates via longpolling, send a message or other \[action\] to the bot just before testing (procedure `TTestReceiveLongPolling.Receive`).

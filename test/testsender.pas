@@ -31,7 +31,7 @@ type
   private
     FOffset: Int64;
     FReceived: Boolean;
-    procedure BotReceiveUpdate(ASender: TObject; AnUpdate: TTelegramUpdateObj);
+    procedure BotReceiveUpdate({%H-}ASender: TObject; AnUpdate: TTelegramUpdateObj);
     procedure SetOffset(AValue: Int64);
     procedure SetReceived(AValue: Boolean);
   protected
@@ -87,7 +87,9 @@ procedure TTestReceiveLongPolling.ReceiveUpdate;
 begin
   Bot.getUpdates;
   if not Received then
-    Fail('No updates were received. Send, for example, a message to the test bot');
+    Fail('No updates were received. Send, for example, a message to the test bot')
+  else
+    Bot.getUpdates(Offset, 100, 1); //
 end;
 
 { TTestSenderProcedure }
