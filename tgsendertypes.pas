@@ -11,7 +11,7 @@ type
   TParseMode = (pmDefault, pmMarkdown, pmHTML);
   TMediaType = (mtPhoto, mtVideo, mtUnknown);
   TInlineQueryResultType = (qrtArticle, qrtPhoto, qrtVideo, qrtAudio, qrtMpeg4Gif, qrtUnknown);
-  TLogMessageEvent = procedure(ASender: TObject; LogType: TEventType; const Msg: String) of object;
+  TLogMessageEvent = procedure(ASender: TObject; EventType: TEventType; const Msg: String) of object;
   TInlineKeyboardButton = class;
   TKeyboardButton = class;
   TInlineKeyboard = class;
@@ -1768,6 +1768,7 @@ begin
       Result:=True;
     end
     else begin
+      JSONResponse:=nil;
       FLastErrorCode:=lJSON.Integers[s_ErrorCode];
       FLastErrorDescription:=lJSON.Get(s_Description, EmptyStr);
     end;
@@ -2097,11 +2098,15 @@ begin
     if Result then
       if Assigned(JSONResponse) then
       begin
-        lJSONArray:=JSONResponse as TJSONArray;
-        for lJSONEnum in lJSONArray do
-        begin
-          lUpdateObj := TTelegramUpdateObj.CreateFromJSONObject(lJSONEnum.Value as TJSONObject) as TTelegramUpdateObj;
-          DoReceiveUpdate(lUpdateObj);
+        lJSONArray:=(JSONResponse.Clone as TJSONArray);  // jsonResponse maybe changed or freed in OnReceive event
+        try
+          for lJSONEnum in lJSONArray do
+          begin
+            lUpdateObj := TTelegramUpdateObj.CreateFromJSONObject(lJSONEnum.Value as TJSONObject) as TTelegramUpdateObj;
+            DoReceiveUpdate(lUpdateObj);
+          end;
+        finally
+          lJSONArray.Free;
         end;
       end;
   finally
