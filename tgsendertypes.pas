@@ -1768,7 +1768,7 @@ begin
       Result:=True;
     end
     else begin
-      JSONResponse:=nil;
+      JSONResponse:=lJSON;
       FLastErrorCode:=lJSON.Integers[s_ErrorCode];
       FLastErrorDescription:=lJSON.Get(s_Description, EmptyStr);
     end;
