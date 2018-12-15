@@ -335,6 +335,7 @@ type
     FChannelCommandHandlers: TCommandHandlersMap;
     FUpdateID: Int64;
     FUpdateLogger: TtgStatLog;
+    FUpdateProcessed: Boolean;
     function CurrentLanguage(AUser: TTelegramUserObj): String;
     function CurrentLanguage(AMessage: TTelegramMessageObj): String;
     function GetAPIEndPoint: String;
@@ -378,6 +379,7 @@ type
     procedure SetRequestWhenAnswer(AValue: Boolean);
     procedure SetUpdateID(AValue: Int64);
     procedure SetUpdateLogger(AValue: TtgStatLog);
+    procedure SetUpdateProcessed(AValue: Boolean);
     class function StringToJSONObject(const AString: String): TJSONObject;
   protected
     procedure DoAfterParseUpdate; // After the parse of the update object prior to calling all custom handlers (OnReceive...)
@@ -466,6 +468,7 @@ type
     property LogDebug: Boolean read FLogDebug write SetLogDebug;
     property OnLogMessage: TLogMessageEvent read FOnLogMessage write FOnLogMessage;
     property UpdateID: Int64 read FUpdateID write SetUpdateID;
+    property UpdateProcessed: Boolean read FUpdateProcessed write SetUpdateProcessed;
     property RequestBody: String read FRequestBody write SetRequestBody;
     property Response: String read FResponse;
     property Token: String read FToken write FToken;
@@ -1468,7 +1471,7 @@ begin
   SetLanguage(CurrentLanguage(AMessage));
   DoAfterParseUpdate;
   ProcessCommands(AMessage, FCommandHandlers);
-  if Assigned(FOnReceiveMessage) then
+  if Assigned(FOnReceiveMessage) and not FUpdateProcessed then
     FOnReceiveMessage(Self, AMessage);
 end;
 
@@ -1575,6 +1578,7 @@ begin
   FCurrentUser:=nil;
   FCurrentChat:=nil;
   FLanguage:='';
+  FUpdateProcessed:=False;
   if Assigned(AnUpdate) then
   begin
     FUpdateID:=AnUpdate.UpdateId;
@@ -1593,7 +1597,7 @@ begin
         if CurrentIsSimpleUser then  // This is to ensure that admins and moderators do not affect the statistics
           FUpdateLogger.Log(FUpdate.AsString);
     end;
-    if Assigned(FOnReceiveUpdate) then
+    if Assigned(FOnReceiveUpdate) and not FUpdateProcessed then
       FOnReceiveUpdate(Self, AnUpdate);
   end;
 end;
@@ -1812,6 +1816,12 @@ procedure TTelegramSender.SetUpdateLogger(AValue: TtgStatLog);
 begin
   if FUpdateLogger=AValue then Exit;
   FUpdateLogger:=AValue;
+end;
+
+procedure TTelegramSender.SetUpdateProcessed(AValue: Boolean);
+begin
+  if FUpdateProcessed=AValue then Exit;
+  FUpdateProcessed:=AValue;
 end;
 
 function TTelegramSender.SendMethod(const Method: String;
