@@ -4,13 +4,18 @@
     <PathDelim Value="\"/>
     <Name Value="fptelegram"/>
     <Type Value="RunTimeOnly"/>
-    <Author Value="Al-muhandis (Renat Suleymanov), MstrVLT"/>
+    <Author Value="Al-muhandis (Renat Suleymanov)"/>
     <CompilerOptions>
       <Version Value="11"/>
       <PathDelim Value="\"/>
       <SearchPaths>
         <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
       </SearchPaths>
+      <CodeGeneration>
+        <Optimizations>
+          <OptimizationLevel Value="2"/>
+        </Optimizations>
+      </CodeGeneration>
       <Linking>
         <Debugging>
           <GenerateDebugInfo Value="False"/>
@@ -18,7 +23,7 @@
       </Linking>
     </CompilerOptions>
     <Description Value="Telegram API library"/>
-    <Version Build="11"/>
+    <Version Build="12"/>
     <Files Count="5">
       <Item1>
         <Filename Value="tgsendertypes.pas"/>

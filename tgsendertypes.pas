@@ -25,6 +25,11 @@ type
   TInlineQueryEvent = procedure (ASender: TObject; AnInlineQuery: TTelegramInlineQueryObj) of object;
   TChosenInlineResultEvent = procedure (ASender: TObject;
     AChosenInlineResult: TTelegramChosenInlineResultObj) of object;
+  TPreCheckoutQueryEvent = procedure (ASender: TObject;
+    APreCheckoutQuery: TTelegramPreCheckOutQuery) of object;
+  TSuccessfulPaymentEvent = procedure (ASender: TObject;
+    ASuccessfulPayment: TTelegramSuccessfulPayment) of object;
+
 
   { TStringHash }
 
@@ -297,6 +302,27 @@ type
     function AddVideo(const AVideo: String): Integer; overload;
   end;
 
+  { TLabeledPrice }
+
+  TLabeledPrice = class(TJSONObject)
+  private
+    function GetPortionAmount: Integer;
+    function GetPortionLabel: String;
+    procedure SetPortionAmount(AValue: Integer);
+    procedure SetPortionLabel(AValue: String);
+  public
+    property PortionLabel: String read GetPortionLabel write SetPortionLabel;
+    property PortionAmount: Integer read GetPortionAmount write SetPortionAmount;
+  end;
+
+  { TLabeledPriceArray }
+
+  TLabeledPriceArray = class(TJSONArray)
+  public
+    constructor Create(const APortionLabel: String; APortionAmount: Integer);
+    function AddLabeledPrice: TLabeledPrice;
+  end;
+
   { TTelegramSender }
 
   TTelegramSender = class
@@ -322,6 +348,8 @@ type
     FOnReceiveEditedMessage: TMessageEvent;
     FOnReceiveInlineQuery: TInlineQueryEvent;
     FOnReceiveMessage: TMessageEvent;
+    FOnReceivePreCheckoutQuery: TPreCheckoutQueryEvent;
+    FOnReceiveSuccessfulPayment: TMessageEvent;
     FUpdate: TTelegramUpdateObj;
     FJSONResponse: TJSONData;
     FOnLogMessage: TLogMessageEvent;
@@ -366,14 +394,6 @@ type
     procedure SetLogDebug(AValue: Boolean);
     procedure SetLogger(AValue: TEventLog);
     procedure SetOnAfterParseUpdate(AValue: TNotifyEvent);
-    procedure SetOnReceiveCallbackQuery(AValue: TCallbackEvent);
-    procedure SetOnReceiveChannelPost(AValue: TMessageEvent);
-    procedure SetOnReceiveChosenInlineResult(AValue: TChosenInlineResultEvent);
-    procedure SetOnReceiveEditedChannelPost(AValue: TMessageEvent);
-    procedure SetOnReceiveEditedMessage(AValue: TMessageEvent);
-    procedure SetOnReceiveInlineQuery(AValue: TInlineQueryEvent);
-    procedure SetOnReceiveMessage(AValue: TMessageEvent);
-    procedure SetOnReceiveUpdate(AValue: TOnUpdateEvent);
     procedure SetProcessUpdate(AValue: Boolean);
     procedure SetRequestBody(AValue: String);
     procedure SetRequestWhenAnswer(AValue: Boolean);
@@ -390,6 +410,8 @@ type
     procedure DoReceiveEditedChannelPost(AChannelPost: TTelegramMessageObj); virtual;
     procedure DoReceiveInlineQuery(AnInlineQuery: TTelegramInlineQueryObj);  virtual;
     procedure DoReceiveChosenInlineResult(AChosenInlineResult: TTelegramChosenInlineResultObj); virtual;
+    procedure DoReceivePreCheckoutQuery(APreCheckoutQuery: TTelegramPreCheckOutQuery); virtual;
+    procedure DoReceiveSuccessfulPayment(AMessage: TTelegramMessageObj); virtual;
     procedure DebugMessage(const Msg: String); virtual; // it will send all requests and responses to the log. Useful during development
     procedure ErrorMessage(const Msg: String); virtual;
     procedure InfoMessage(const Msg: String); virtual;
@@ -406,6 +428,8 @@ type
 
     function answerCallbackQuery(const CallbackQueryId: String; const Text: String = '';
       ShowAlert: Boolean=False; const Url: String = ''; CacheTime: Integer = 0): Boolean;
+    function answerPreCheckoutQuery(const PreCheckoutQueryID: String; Ok: Boolean;
+      AnErrorMessage: String = ''): Boolean;
     function editMessageText(const AMessage: String; chat_id: Int64; message_id: Int64;
       ParseMode: TParseMode = pmDefault; DisableWebPagePreview: Boolean=False;
       inline_message_id: String = ''; ReplyMarkup: TReplyMarkup = nil): Boolean;
@@ -426,6 +450,14 @@ type
       const ACaption: String; ReplyMarkup: TReplyMarkup = nil): Boolean;
     function sendDocumentStream(chat_id: Int64;  const AFileName: String; ADocStream: TStream;
       const ACaption: String; ReplyMarkup: TReplyMarkup = nil): Boolean;
+    function sendInvoice(chat_id: Int64; const Title, Description, Payload, ProviderToken,
+      StartParameter, Currency: String; Prices: TLabeledPriceArray; ProviderData: TJSONData = nil;
+      const PhotoUrl: String = ''; PhotoSize: Integer = 0; PhotoWidth: Integer = 0; PhotoHeight: Integer = 0;
+      NeedName: Boolean = False; NeedPhoneNumber: Boolean = False; NeedEmail: Boolean = False; NeedShippingAddress: Boolean = False;
+      SendPhoneNumberToProvider: Boolean = False; SendEmailToProvider: Boolean = False;
+      IsFlexible: Boolean = False;
+      DisableNotification: Boolean = False; ReplyToMessageID: Integer = 0;
+      ReplyMarkup: TReplyMarkup = nil): Boolean;
     function sendLocation(chat_id: Int64; Latitude, Longitude: Real; LivePeriod: Integer = 0;
       ParseMode: TParseMode = pmDefault; DisableWebPagePreview: Boolean=False;
       ReplyMarkup: TReplyMarkup = nil): Boolean;
@@ -493,16 +525,23 @@ type
 { After the parse of the update object prior to calling all other custom events (OnReceive...) }
     property OnAfterParseUpdate: TNotifyEvent read FOnAfterParseUpdate write SetOnAfterParseUpdate;
 { After calling the rest of events OnReceive... }
-    property OnReceiveUpdate: TOnUpdateEvent read FOnReceiveUpdate write SetOnReceiveUpdate;
-    property OnReceiveMessage: TMessageEvent read FOnReceiveMessage write SetOnReceiveMessage;
-    property OnReceiveEditedMessage: TMessageEvent read FOnReceiveEditedMessage write SetOnReceiveEditedMessage;
+    property OnReceiveUpdate: TOnUpdateEvent read FOnReceiveUpdate write FOnReceiveUpdate;
+    property OnReceiveMessage: TMessageEvent read FOnReceiveMessage write FOnReceiveMessage;
+    property OnReceiveEditedMessage: TMessageEvent read FOnReceiveEditedMessage
+      write FOnReceiveEditedMessage;
     property OnReceiveCallbackQuery: TCallbackEvent read FOnReceiveCallbackQuery
-      write SetOnReceiveCallbackQuery;
-    property OnReceiveChannelPost: TMessageEvent read FOnReceiveChannelPost write SetOnReceiveChannelPost;
+      write FOnReceiveCallbackQuery;
+    property OnReceiveChannelPost: TMessageEvent read FOnReceiveChannelPost write FOnReceiveChannelPost;
     property OnReceiveEditedChannelPost: TMessageEvent read FOnReceiveEditedChannelPost
-      write SetOnReceiveEditedChannelPost;
-    property OnReceiveInlineQuery: TInlineQueryEvent read FOnReceiveInlineQuery write SetOnReceiveInlineQuery;
-    property OnReceiveChosenInlineResult: TChosenInlineResultEvent read FOnReceiveChosenInlineResult write SetOnReceiveChosenInlineResult;
+      write FOnReceiveEditedChannelPost;
+    property OnReceiveInlineQuery: TInlineQueryEvent read FOnReceiveInlineQuery
+      write FOnReceiveInlineQuery;
+    property OnReceiveChosenInlineResult: TChosenInlineResultEvent read FOnReceiveChosenInlineResult
+      write FOnReceiveChosenInlineResult;
+    property OnReceivePreCheckoutQuery: TPreCheckoutQueryEvent read FOnReceivePreCheckoutQuery
+      write FOnReceivePreCheckoutQuery;
+    property OnReceiveSuccessfulPayment: TMessageEvent read FOnReceiveSuccessfulPayment
+      write FOnReceiveSuccessfulPayment;
   end;
 
  { Procedure style method to send message from Bot to chat/user }
@@ -529,10 +568,12 @@ const
   s_sendVideo='sendVideo';
   s_sendDocument='sendDocument';
   s_sendLocation='sendLocation';
+  s_sendInvoice='sendInvoice';
   s_sendMediaGroup='sendMediaGroup';
   s_getUpdates='getUpdates';
   s_getMe='getMe';
   s_answerInlineQuery='answerInlineQuery';
+  s_answerPreCheckoutQuery='answerPreCheckoutQuery';
   s_getFile = 'getFile';
 
   s_Method='method';
@@ -575,9 +616,19 @@ const
   s_AllowedUpdates = 'allowed_updates';
   s_Ok = 'ok';
   s_ErrorCode = 'error_code';
+  s_ErrorMessage = 'error_message';
   s_Description = 'description';
   s_Result = 'result';
   s_BotCommand = 'bot_command';
+  s_Amount = 'amount';
+  s_Label = 'label';
+  s_Payload = 'payload';
+  s_ProviderToken = 'provider_token';
+  s_ProviderData = 'provider_data';
+  s_StartParameter = 'start_parameter';
+  s_Currency = 'currency';
+  s_Prices = 'prices';
+  s_PreCheckoutQueryID = 'pre_checkout_query_id';
 
   s_CallbackQueryID = 'callback_query_id';
   s_ShowAlert = 'show_alert';
@@ -607,11 +658,20 @@ const
   s_MimeType ='mime_type';
   s_PhotoHeight = 'photo_height';
   s_PhotoWidth = 'photo_width';
+  s_PhotoSize = 'photo_size';
   s_Mpeg4Url = 'mpeg4_url';
   s_Mpeg4Width = 'mpeg4_width';
   s_Mpeg4Height = 'mpeg4_height';
   s_Width = 'width';
   s_Height = 'height';
+
+  s_NeedName = 'need_name';
+  s_NeedPhoneNumber = 'need_phone_number';
+  s_NeedEmail = 'need_email';
+  s_NeedShippingAddress = 'need_shipping_address';
+  s_SendPhoneNumber2Provider = 'send_phone_number_to_provider';
+  s_SendEmail2Provider = 'send_email_to_provider';
+  s_IsFlexible = 'is_flexible';
 
   s_AudioDuration = 'audio_duration';
   s_AudioUrl = 'audio_url';
@@ -670,6 +730,47 @@ begin
   finally
     ABot.Free;
   end;
+end;
+
+{ TLabeledPriceArray }
+
+constructor TLabeledPriceArray.Create(const APortionLabel: String;
+  APortionAmount: Integer);
+var
+  ALabeledPrice: TLabeledPrice;
+begin
+  inherited Create;
+  ALabeledPrice:=AddLabeledPrice;
+  ALabeledPrice.PortionLabel:=APortionLabel;
+  ALabeledPrice.PortionAmount:=APortionAmount;
+end;
+
+function TLabeledPriceArray.AddLabeledPrice: TLabeledPrice;
+begin
+  Result:=TLabeledPrice.Create;
+  Add(Result);
+end;
+
+{ TLabeledPrice }
+
+function TLabeledPrice.GetPortionAmount: Integer;
+begin
+  Result:=Integers[s_Amount];
+end;
+
+function TLabeledPrice.GetPortionLabel: String;
+begin
+  Result:=Strings[s_Label];
+end;
+
+procedure TLabeledPrice.SetPortionAmount(AValue: Integer);
+begin
+  Integers[s_Amount]:=AValue;
+end;
+
+procedure TLabeledPrice.SetPortionLabel(AValue: String);
+begin
+  Strings[s_Label]:=AValue;
 end;
 
 { TIntegerHash }
@@ -1471,6 +1572,8 @@ begin
   SetLanguage(CurrentLanguage(AMessage));
   DoAfterParseUpdate;
   ProcessCommands(AMessage, FCommandHandlers);
+  if Assigned(AMessage.SuccessfulPayment) and not FUpdateProcessed then
+    DoReceiveSuccessfulPayment(AMessage);
   if Assigned(FOnReceiveMessage) and not FUpdateProcessed then
     FOnReceiveMessage(Self, AMessage);
 end;
@@ -1569,6 +1672,29 @@ begin
     FOnReceiveChosenInlineResult(Self, AChosenInlineResult);
 end;
 
+procedure TTelegramSender.DoReceivePreCheckoutQuery(
+  APreCheckoutQuery: TTelegramPreCheckOutQuery);
+begin
+  FCurrentUser:=APreCheckoutQuery.From;
+  FCurrentChatID:=FCurrentUser.ID;
+  if CurrentIsBanned then
+    Exit;
+  SetLanguage(CurrentLanguage(APreCheckoutQuery.From));
+  DoAfterParseUpdate;
+  if Assigned(FOnReceivePreCheckoutQuery) then
+    FOnReceivePreCheckoutQuery(Self, APreCheckoutQuery);
+end;
+
+procedure TTelegramSender.DoReceiveSuccessfulPayment(
+  AMessage: TTelegramMessageObj);
+begin
+  if CurrentIsBanned then
+    Exit;
+  DoAfterParseUpdate;
+  if Assigned(FOnReceiveSuccessfulPayment) then
+    FOnReceiveSuccessfulPayment(Self, AMessage);
+end;
+
 procedure TTelegramSender.DoReceiveUpdate(AnUpdate: TTelegramUpdateObj);
 begin
   FreeAndNil(FUpdate);
@@ -1592,6 +1718,7 @@ begin
         utEditedChannelPost: DoReceiveEditedChannelPost(AnUpdate.EditedChannelPost);
         utInlineQuery: DoReceiveInlineQuery(AnUpdate.InlineQuery);
         utChosenInlineResult: DoReceiveChosenInlineResult(AnUpdate.ChosenInlineResult);
+        utPreCheckoutQuery: DoReceivePreCheckoutQuery(AnUpdate.PreCheckoutQuery);
       end;
       if Assigned(FUpdateLogger) then
         if CurrentIsSimpleUser then  // This is to ensure that admins and moderators do not affect the statistics
@@ -1622,6 +1749,26 @@ begin
       if CacheTime<>0 then
         Add(s_CacheTime, CacheTime);
       Result:=SendMethod(s_answerCallbackQuery, sendObj);
+    finally
+      Free;
+    end;
+end;
+
+function TTelegramSender.answerPreCheckoutQuery(
+  const PreCheckoutQueryID: String; Ok: Boolean; AnErrorMessage: String
+  ): Boolean;
+var
+  sendObj: TJSONObject;
+begin
+  Result:=False;
+  sendObj:=TJSONObject.Create;
+  with sendObj do
+    try
+      Add(s_PreCheckoutQueryID, PreCheckoutQueryID);
+      Add(s_Ok, Ok);
+      if AnErrorMessage<>EmptyStr then
+        Add(s_ErrorMessage, AnErrorMessage);
+      Result:=SendMethod(s_answerPreCheckoutQuery, sendObj);
     finally
       Free;
     end;
@@ -1926,55 +2073,6 @@ begin
   FLanguage:=AValue;
 end;
 
-procedure TTelegramSender.SetOnReceiveCallbackQuery(AValue: TCallbackEvent);
-begin
-  if FOnReceiveCallbackQuery=AValue then Exit;
-  FOnReceiveCallbackQuery:=AValue;
-end;
-
-procedure TTelegramSender.SetOnReceiveChannelPost(AValue: TMessageEvent);
-begin
-  if FOnReceiveChannelPost=AValue then Exit;
-  FOnReceiveChannelPost:=AValue;
-end;
-
-procedure TTelegramSender.SetOnReceiveChosenInlineResult(
-  AValue: TChosenInlineResultEvent);
-begin
-  if FOnReceiveChosenInlineResult=AValue then Exit;
-  FOnReceiveChosenInlineResult:=AValue;
-end;
-
-procedure TTelegramSender.SetOnReceiveEditedChannelPost(AValue: TMessageEvent);
-begin
-  if FOnReceiveEditedChannelPost=AValue then Exit;
-  FOnReceiveEditedChannelPost:=AValue;
-end;
-
-procedure TTelegramSender.SetOnReceiveEditedMessage(AValue: TMessageEvent);
-begin
-  if FOnReceiveEditedMessage=AValue then Exit;
-  FOnReceiveEditedMessage:=AValue;
-end;
-
-procedure TTelegramSender.SetOnReceiveInlineQuery(AValue: TInlineQueryEvent);
-begin
-  if FOnReceiveInlineQuery=AValue then Exit;
-  FOnReceiveInlineQuery:=AValue;
-end;
-
-procedure TTelegramSender.SetOnReceiveMessage(AValue: TMessageEvent);
-begin
-  if FOnReceiveMessage=AValue then Exit;
-  FOnReceiveMessage:=AValue;
-end;
-
-procedure TTelegramSender.SetOnReceiveUpdate(AValue: TOnUpdateEvent);
-begin
-  if FOnReceiveUpdate=AValue then Exit;
-  FOnReceiveUpdate:=AValue;
-end;
-
 procedure TTelegramSender.SetProcessUpdate(AValue: Boolean);
 begin
   if FProcessUpdate=AValue then Exit;
@@ -2204,6 +2302,66 @@ begin
     if Assigned(ReplyMarkup) then
       Add(s_ReplyMarkup+'='+ReplyMarkup.AsJSON);
     Result:=SendStream(s_sendDocument, s_Document, AFileName, ADocStream, sendObj);
+  finally
+    Free;
+  end;
+end;
+
+function TTelegramSender.sendInvoice(chat_id: Int64; const Title, Description,
+  Payload, ProviderToken, StartParameter, Currency: String;
+  Prices: TLabeledPriceArray; ProviderData: TJSONData; const PhotoUrl: String;
+  PhotoSize: Integer; PhotoWidth: Integer; PhotoHeight: Integer;
+  NeedName: Boolean; NeedPhoneNumber: Boolean; NeedEmail: Boolean;
+  NeedShippingAddress: Boolean; SendPhoneNumberToProvider: Boolean;
+  SendEmailToProvider: Boolean; IsFlexible: Boolean;
+  DisableNotification: Boolean; ReplyToMessageID: Integer;
+  ReplyMarkup: TReplyMarkup): Boolean;
+var
+  sendObj: TJSONObject;
+begin
+  Result:=False;
+  sendObj:=TJSONObject.Create;
+  with sendObj do
+  try
+    Add(s_ChatId, chat_id);
+    Add(s_Title, Title);
+    Add(s_Description, Description);
+    Add(s_Payload, Payload);
+    Add(s_ProviderToken, ProviderToken);
+    Add(s_StartParameter, StartParameter);
+    Add(s_Currency, Currency);
+    Add(s_Prices, Prices.Clone);
+    if Assigned(ProviderData) then
+      Add(s_ProviderData, ProviderData);
+    if PhotoUrl<>EmptyStr then
+      Add(s_PhotoUrl, PhotoUrl);
+    if PhotoSize<>0 then
+      Add(s_PhotoSize, PhotoSize);
+    if PhotoWidth<>0 then
+      Add(s_PhotoWidth, PhotoWidth);
+    if PhotoHeight<>0 then
+      Add(s_PhotoHeight, PhotoHeight);
+    if NeedName then
+      Add(s_NeedName, NeedName);
+    if NeedPhoneNumber then
+      Add(s_NeedPhoneNumber, NeedPhoneNumber);
+    if NeedEmail then
+      Add(s_NeedEmail, NeedEmail);
+    if NeedShippingAddress then
+      Add(s_NeedShippingAddress, NeedShippingAddress);
+    if SendPhoneNumberToProvider then
+      Add(s_SendPhoneNumber2Provider, SendPhoneNumberToProvider);
+    if SendEmailToProvider then
+      Add(s_SendEmail2Provider, SendEmailToProvider);
+    if IsFlexible then
+      Add(s_IsFlexible, IsFlexible);
+    if DisableNotification then
+      Add(s_DsblNtfctn, DisableNotification);
+    if ReplyToMessageID<>0 then
+      Add(s_ReplyToMessageID, ReplyToMessageID);
+    if Assigned(ReplyMarkup) then
+      Add(s_ReplyMarkup, ReplyMarkup.Clone);
+    Result:=SendMethod(s_sendInvoice, sendObj);
   finally
     Free;
   end;

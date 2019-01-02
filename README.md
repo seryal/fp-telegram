@@ -22,6 +22,8 @@ Done:
   + answerInlineQuery
   + answerCallbackQuery  
   + sendLocation
+  + sendInvoice
+  + answerPreCheckOutQuery
 + Update events handling
   + All implemented    
 + Full json updates logging (without handling)

@@ -19,6 +19,8 @@ type
   TTelegramLocation = class;
   TArrayOfPhotoSize = class(TJSONArray);
   TTelegramPhotoSize = class;
+  TTelegramPreCheckOutQuery = class;
+  TTelegramSuccessfulPayment = class;
   TTelegramUpdateObjList = specialize TFPGObjectList<TTelegramMessageEntityObj>;
   TTelegramPhotoSizeList = specialize TFPGObjectList<TTelegramPhotoSize>;
 
@@ -55,6 +57,7 @@ type
     function GetEditedMessage: TTelegramMessageObj;
     function GetInlineQuery: TTelegramInlineQueryObj;
     function GetMessage: TTelegramMessageObj;
+    function GetPreCheckoutQuery: TTelegramPreCheckOutQuery;
     function ParseUpdateParameter: TUpdateType;
   public
     constructor Create(JSONObject: TJSONObject); override;
@@ -69,6 +72,7 @@ type
     property ChosenInlineResult: TTelegramChosenInlineResultObj read GetChosenInlineResult;
     property ChannelPost: TTelegramMessageObj read GetChannelPost;
     property EditedChannelPost: TTelegramMessageObj read GetEditedChannelPost;
+    property PreCheckoutQuery: TTelegramPreCheckOutQuery read GetPreCheckoutQuery;
   end;
 
   { TTelegramMessageObj }
@@ -82,6 +86,7 @@ type
     fChatId: Int64;
     FPhoto: TTelegramPhotoSizeList;
     FReplyToMessage: TTelegramMessageObj;
+    FSuccessfulPayment: TTelegramSuccessfulPayment;
     fText: string;
     fEntities: TTelegramUpdateObjList;
   public
@@ -96,6 +101,7 @@ type
     property Entities: TTelegramUpdateObjList read fEntities;
     property Location: TTelegramLocation read FLocation;
     property Photo: TTelegramPhotoSizeList read FPhoto;
+    property SuccessfulPayment: TTelegramSuccessfulPayment read FSuccessfulPayment;
   end;
 
   { TTelegramMessageEntityObj }
@@ -259,7 +265,66 @@ type
     property FilePath: String read FFilePath; //  https://api.telegram.org/file/bot<token>/<file_path>
   end;
 
+  { TOrderInfo }
 
+  TOrderInfo = class(TTelegramObj)
+  private
+    FEmail: String;
+    FName: String;
+    FPhoneNumber: String;
+  public
+    constructor Create(JSONObject: TJSONObject); override;
+    property Name: String read FName;
+    property PhoneNumber: String read FPhoneNumber;
+    property Email: String read FEmail;
+  end;
+
+  { TTelegramPreCheckOutQuery }
+
+  TTelegramPreCheckOutQuery = class(TTelegramObj)
+  private
+    FCurrency: String;
+    FFrom: TTelegramUserObj;
+    FID: String;
+    FInvoicePayload: String;
+    FOrderInfo: TOrderInfo;
+    FShippingOptionID: String;
+    FTotalAmount: Integer;
+  public
+    constructor Create(JSONObject: TJSONObject); override;
+    destructor Destroy; override;
+    property ID: String read FID; // Unique query identifier
+    property From: TTelegramUserObj read FFrom;  // User who sent the query
+    property Currency: String read FCurrency;  // Three-letter ISO 4217 currency code
+{ Total price in the smallest units of the currency (integer, not float/double).
+    For example, for a price of US$ 1.45 pass amount = 145. See the exp parameter in https://core.telegram.org/bots/payments/currencies.json,
+    it shows the number of digits past the decimal point for each currency (2 for the majority of currencies). }
+    property TotalAmount: Integer read FTotalAmount;
+    property InvoicePayload: String read FInvoicePayload; // Bot specified invoice payload
+    property ShippingOptionID: String read FShippingOptionID;  // Optional. Identifier of the shipping option chosen by the user
+    property OrderInfo: TOrderInfo read FOrderInfo; // Optional. Order info provided by the user
+  end;
+
+  { TTelegramSuccessfulPayment }
+
+  TTelegramSuccessfulPayment = class(TTelegramObj)
+  private
+    FCurrency: String;
+    FInvoicePayload: String;
+    FOrderInfo: TOrderInfo;
+    FProviderPaymentChargeID: String;
+    FTelegramPaymentChargeID: String;
+    FTotalAmount: Integer;
+  public
+    constructor Create(JSONObject: TJSONObject); override;
+    destructor Destroy; override;
+    property Currency: String read FCurrency;
+    property TotalAmount: Integer read FTotalAmount;
+    property InvoicePayload: String read FInvoicePayload;
+    property OrderInfo: TOrderInfo read FOrderInfo;
+    property TelegramPaymentChargeID: String read FTelegramPaymentChargeID;
+    property ProviderPaymentChargeID: String read FProviderPaymentChargeID;
+  end;
 
   TTelegramObjClass = class of TTelegramObj;
 
@@ -270,7 +335,8 @@ type
       'shipping_query', 'pre_checkout_query', '');
     UpdateTypeClasses: array[TUpdateType] of TTelegramObjClass = (TTelegramMessageObj,
       TTelegramMessageObj, TTelegramMessageObj, TTelegramMessageObj, TTelegramInlineQueryObj,
-      TTelegramChosenInlineResultObj, TCallbackQueryObj, TTelegramObj, TTelegramObj, TTelegramObj);
+      TTelegramChosenInlineResultObj, TCallbackQueryObj, TTelegramObj, TTelegramPreCheckOutQuery,
+      TTelegramObj);
 
 function AllowedUpdatesToJSON(const AllowedUpdates: TUpdateSet): TJSONArray;
 
@@ -286,6 +352,58 @@ begin
   Result:=TJSONArray.Create;
   for u in AllowedUpdates do
     Result.Add(UpdateTypeAliases[u]);
+end;
+
+{ TTelegramSuccessfulPayment }
+
+constructor TTelegramSuccessfulPayment.Create(JSONObject: TJSONObject);
+begin
+  inherited Create(JSONObject);
+  FCurrency:=fJSON.Strings['currency'];
+  FTotalAmount:=fJSON.Integers['total_amount'];
+  FInvoicePayload:=fJSON.Strings['invoice_payload'];
+  FOrderInfo:=TOrderInfo.CreateFromJSONObject(
+    fJSON.Find('order_info', jtObject) as TJSONObject) as TOrderInfo;
+  FTelegramPaymentChargeID:=fJSON.Strings['telegram_payment_charge_id'];
+  FProviderPaymentChargeID:=fJSON.Strings['provider_payment_charge_id'];
+end;
+
+destructor TTelegramSuccessfulPayment.Destroy;
+begin
+  FreeAndNil(FOrderInfo);
+  inherited Destroy;
+end;
+
+{ TOrderInfo }
+
+constructor TOrderInfo.Create(JSONObject: TJSONObject);
+begin
+  inherited Create(JSONObject);
+  FName := fJSON.Get('name', EmptyStr);
+  FPhoneNumber := fJSON.Get('phone_number', EmptyStr);
+  FEmail := fJSON.Get('email', EmptyStr);
+end;
+
+{ TTelegramPreCheckOutQuery }
+
+constructor TTelegramPreCheckOutQuery.Create(JSONObject: TJSONObject);
+begin
+  inherited Create(JSONObject);
+  FID:=fJSON.Strings['id'];
+  FFrom:=TTelegramUserObj.CreateFromJSONObject(fJSON.Find('from', jtObject) as TJSONObject) as TTelegramUserObj;;
+  FCurrency:=fJSON.Strings['currency'];
+  FTotalAmount:=fJSON.Integers['total_amount'];
+  FInvoicePayload:=fJSON.Strings['invoice_payload'];
+  FShippingOptionID:=fJSON.Get('shipping_option_id', EmptyStr);
+  FOrderInfo:=TOrderInfo.CreateFromJSONObject(
+    fJSON.Find('order_info', jtObject) as TJSONObject) as TOrderInfo;
+end;
+
+destructor TTelegramPreCheckOutQuery.Destroy;
+begin
+  FreeAndNil(FOrderInfo);
+  FreeAndNil(FFrom);
+  inherited Destroy;
 end;
 
 { TTelegramFile }
@@ -391,10 +509,8 @@ end;
 
 destructor TTelegramChosenInlineResultObj.Destroy;
 begin
-  if Assigned(FLocation) then
-    FreeAndNil(FLocation);
-  if Assigned(FFrom) then
-    FreeAndNil(FFrom);
+  FreeAndNil(FLocation);
+  FreeAndNil(FFrom);
   inherited Destroy;
 end;
 
@@ -517,6 +633,14 @@ begin
     Result:=nil;
 end;
 
+function TTelegramUpdateObj.GetPreCheckoutQuery: TTelegramPreCheckOutQuery;
+begin
+  if FUpdateType=utPreCheckoutQuery then
+    Result:=TTelegramPreCheckOutQuery(FUpdateParameter)
+  else
+    Result:=nil;
+end;
+
 function TTelegramUpdateObj.GetCallbackQuery: TCallbackQueryObj;
 begin
   if FUpdateType=utCallbackQuery then
@@ -618,10 +742,16 @@ begin
   if Assigned(lJSONArray) then
     for lJSONEnum in lJSONArray do
       FPhoto.Add(TTelegramPhotoSize.CreateFromJSONObject(lJSONEnum.Value as TJSONObject) as TTelegramPhotoSize);
+
+  FSuccessfulPayment:=
+    TTelegramSuccessfulPayment.CreateFromJSONObject(fJSON.Find('successful_payment', jtObject) as TJSONObject)
+    as TTelegramSuccessfulPayment;
+
 end;
 
 destructor TTelegramMessageObj.Destroy;
 begin
+  FSuccessfulPayment.Free;
   FFrom.Free;
   FLocation.Free;
   FChat.Free;

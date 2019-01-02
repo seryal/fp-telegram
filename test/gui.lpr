@@ -3,7 +3,7 @@ program gui;
 {$mode objfpc}{$H+}
 
 uses
-  Interfaces, Forms, GuiTestRunner, {testlongpolling, }testsender;
+  Interfaces, Forms, GuiTestRunner, testtelegram;
 
 {$R *.res}
 
