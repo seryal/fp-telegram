@@ -25,4 +25,7 @@ PricePortionLabel=
 PricePortionAmount=10000
 ```
 In order to test receiving updates via longpolling, send a message or other \[action\] to the bot just before testing (procedure `TTestReceiveLongPolling.Receive`).
-In order to test payments wiring, run sendInvoice test. Test the payment via telegram than run the ReceivePreCheckOutQuery
+
+In order to test payments wiring, run sendInvoice test. Test the payment via telegram than run the ReceivePreCheckOutQuery (You must run the test during 10 seconds after the payment test!).
+The program will send answerPreCheckOutQuery as soon as it receives PreCheckOutQuery update from telegram API. 
+At the end of the wiring the telegram API will send a successfulpayment update, the reception of which you can also run using ReceiveSuccessfulPayment test
