@@ -500,6 +500,8 @@ type
     property LogDebug: Boolean read FLogDebug write SetLogDebug;
     property OnLogMessage: TLogMessageEvent read FOnLogMessage write FOnLogMessage;
     property UpdateID: Int64 read FUpdateID write SetUpdateID;
+    { Gives a flag that the Update object is processed and there is no need for further processing
+      and for calling the appropriate events }
     property UpdateProcessed: Boolean read FUpdateProcessed write SetUpdateProcessed;
     property RequestBody: String read FRequestBody write SetRequestBody;
     property Response: String read FResponse;
@@ -1708,6 +1710,7 @@ begin
   if Assigned(AnUpdate) then
   begin
     FUpdateID:=AnUpdate.UpdateId;
+    DebugMessage('Receive the update: '+FUpdate.AsString);
     if FProcessUpdate then
     begin
       case AnUpdate.UpdateType of
