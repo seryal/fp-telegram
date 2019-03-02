@@ -12,9 +12,16 @@ type
   { TTestSender }
   { Test sending messages. Object style }
   TTestSender= class(TTestTelegramClass)
+  private
+    FVideoUrl: String;
+  protected
+    procedure SetUp; override;
+  public
+    property VideoUrl: String read FVideoUrl;
   published
     procedure sendMessage;
     procedure InlineKeyboard;
+    procedure sendVideo;
   end;
 
   { TTestSenderProcedure }
@@ -69,6 +76,7 @@ implementation
 
 const
   Msg='Test message sent from %s. Test procedure: %s';
+  vd_cptn='Test video sent from %s. Test procedure: %s';
   Msg_md='Test message sent from %s. Test procedure: _%s_';
 
 { TTestReceiveLongPolling }
@@ -181,6 +189,12 @@ end;
 
 { TTestSender }
 
+procedure TTestSender.SetUp;
+begin
+  inherited SetUp;
+  FVideoUrl:=Conf.ReadString('Send', 'videourl', EmptyStr);
+end;
+
 procedure TTestSender.sendMessage;
 begin
   Bot.sendMessage(ChatID, Format(Msg, [Self.ClassName, TestName]));
@@ -209,6 +223,14 @@ begin
   finally
     ReplyMarkup.Free;
   end;
+  if Bot.LastErrorCode<>0 then
+    Fail('Error from telegram API server. Error code: '+IntToStr(Bot.LastErrorCode)+
+      '. Description: '+Bot.LastErrorDescription);
+end;
+
+procedure TTestSender.sendVideo;
+begin
+  Bot.sendVideo(ChatID, VideoUrl, Format(vd_cptn, [Self.ClassName, TestName]));
   if Bot.LastErrorCode<>0 then
     Fail('Error from telegram API server. Error code: '+IntToStr(Bot.LastErrorCode)+
       '. Description: '+Bot.LastErrorDescription);

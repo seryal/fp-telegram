@@ -7,6 +7,9 @@ interface
 uses
   Classes, SysUtils, strutils;
 
+const
+  mdCode='`';
+
 function MarkdownEscape(const S: String): String;
 
 implementation
