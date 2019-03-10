@@ -430,6 +430,8 @@ type
       ShowAlert: Boolean=False; const Url: String = ''; CacheTime: Integer = 0): Boolean;
     function answerPreCheckoutQuery(const PreCheckoutQueryID: String; Ok: Boolean;
       AnErrorMessage: String = ''): Boolean;
+    function editMessageReplyMarkup(chat_id: Int64 = 0; message_id: Int64 = 0;
+      const inline_message_id: String = ''; ReplyMarkup: TReplyMarkup = nil): Boolean;
     function editMessageText(const AMessage: String; chat_id: Int64; message_id: Int64;
       ParseMode: TParseMode = pmDefault; DisableWebPagePreview: Boolean=False;
       inline_message_id: String = ''; ReplyMarkup: TReplyMarkup = nil): Boolean;
@@ -563,6 +565,7 @@ const
 //  API names constants
 
   s_editMessageText='editMessageText';
+  s_editMessageReplyMarkup='editMessageReplyMarkup';
   s_sendMessage='sendMessage';
   s_sendPhoto='sendPhoto';
   s_sendAudio='sendAudio';
@@ -1775,6 +1778,28 @@ begin
     finally
       Free;
     end;
+end;
+
+function TTelegramSender.editMessageReplyMarkup(chat_id: Int64; message_id: Int64;
+  const inline_message_id: String; ReplyMarkup: TReplyMarkup): Boolean;
+var
+  sendObj: TJSONObject;
+begin
+  Result:=False;
+  sendObj:=TJSONObject.Create;
+  with sendObj do
+  try
+    if chat_id<>0 then
+      Add(s_ChatId, chat_id);
+    if message_id<>0 then
+      Add(s_MessageId, message_id);
+    if inline_message_id<>EmptyStr then
+      Add(s_InlineMessageId, inline_message_id);
+    if Assigned(ReplyMarkup) then
+      Add(s_ReplyMarkup, ReplyMarkup.Clone);
+    Result:=SendMethod(s_editMessageReplyMarkup, sendObj);
+  finally
+  end;
 end;
 
 procedure TTelegramSender.ErrorMessage(const Msg: String);
