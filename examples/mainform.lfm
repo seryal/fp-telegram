@@ -9,19 +9,13 @@ object FrmMain: TFrmMain
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   SessionProperties = 'EdtToken.Text'
-  LCLVersion = '1.8.4.0'
+  LCLVersion = '2.0.0.4'
   object EdtToken: TLabeledEdit
     Left = 16
     Height = 23
     Top = 24
     Width = 328
-    EditLabel.AnchorSideLeft.Control = EdtToken
-    EditLabel.AnchorSideRight.Control = EdtToken
-    EditLabel.AnchorSideRight.Side = asrBottom
-    EditLabel.AnchorSideBottom.Control = EdtToken
-    EditLabel.Left = 16
     EditLabel.Height = 15
-    EditLabel.Top = 6
     EditLabel.Width = 328
     EditLabel.Caption = 'Token'
     EditLabel.ParentColor = False

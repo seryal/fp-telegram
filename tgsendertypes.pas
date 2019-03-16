@@ -695,7 +695,7 @@ var
 begin
   Result:=qrtUnknown;
   for iqrt:=Low(QueryResultTypeArray) to High(QueryResultTypeArray) do
-    if SameStr(QueryResultTypeArray[iqrt], S) then
+    if AnsiSameStr(QueryResultTypeArray[iqrt], S) then
       Exit(iqrt);
 end;
 
@@ -705,7 +705,7 @@ var
 begin
   Result:=pmDefault;
   for pm:=Low(ParseModes) to High(ParseModes) do
-    if SameStr(ParseModes[pm], S) then
+    if AnsiSameStr(ParseModes[pm], S) then
       Exit(pm);
 end;
 
@@ -715,7 +715,7 @@ var
 begin
   Result:=mtUnknown;
   for mt:=Low(MediaTypes) to High(MediaTypes) do
-    if SameStr(MediaTypes[mt], S) then
+    if AnsiSameStr(MediaTypes[mt], S) then
       Exit(mt);
 end;
 
@@ -1476,7 +1476,7 @@ begin
   Result := nil;
   if AString<>EmptyStr then
   begin
-    lParser := TJSONParser.Create(AString, DefaultOptions);
+    lParser := TJSONParser.Create(AString{$IF FPC_FULLVERSION > 30002}, DefaultOptions{$ENDIF});
     try
       try
         Result := lParser.Parse as TJSONObject

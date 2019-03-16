@@ -15,7 +15,7 @@ function MarkdownEscape(const S: String): String;
 implementation
 
 const
-  MarkdownSpChars: array[0..2] of AnsiChar = ('\', '_', '*');
+  MarkdownSpChars: array[0..3] of AnsiChar = ('\', '_', '*', '`');
 
 function MarkdownEscape(const S: String): String;
 var
