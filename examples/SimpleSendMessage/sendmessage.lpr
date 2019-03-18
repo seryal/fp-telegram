@@ -58,7 +58,7 @@ begin
     Write('Now found out your (or other known to the bot user) user private or group ID');
     Write('And after please enter this user/chat ID (it is integer value [Int64]): ');
     Readln(AChatID);
-//    ABot.APIEndPoint:='https://api.telegram.org/bot';
+    //ABot.APIEndPoint:='https://api.telegram.org/bot';
     repeat
       Write('Please enter message string: ');
       Readln(AMsg);
