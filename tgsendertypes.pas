@@ -427,7 +427,7 @@ type
     function CurrentIsBanned: Boolean; overload;
 
     function answerCallbackQuery(const CallbackQueryId: String; const Text: String = '';
-      ShowAlert: Boolean=False; const Url: String = ''; CacheTime: Integer = 0): Boolean;
+      ShowAlert: Boolean=False; const Url: String = ''; CacheTime: Integer = 0): Boolean; virtual;
     function answerPreCheckoutQuery(const PreCheckoutQueryID: String; Ok: Boolean;
       AnErrorMessage: String = ''): Boolean;
     function editMessageReplyMarkup(chat_id: Int64 = 0; message_id: Int64 = 0;
@@ -2114,17 +2114,6 @@ begin
   FToken:=AToken;
   FRequestWhenAnswer:=False;
   FProcessUpdate:=True;
-  FCurrentChatId:=0;
-  FCurrentUser:=nil;
-  FCurrentMessage:=nil;
-  FUpdate:=nil;
-  FUpdateLogger:=nil;
-  FJSONResponse:=nil;
-  FBotUser:=nil;
-  FFileObj:=nil;
-  FLanguage:='';
-  FLogger:=nil;
-  BotUsername:='';
   FCommandHandlers:=TCommandHandlersMap.create;
   FChannelCommandHandlers:=TCommandHandlersMap.create;
   FLogDebug:=False;
