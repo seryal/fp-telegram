@@ -143,7 +143,6 @@ type
   TInlineKeyboardButtons = class(TJSONArray)
   public
     constructor Create(const AButtonText, CallbackData: String); overload;
-    constructor Create(const AButtons: array of String); overload;
     function AddButton(const AButtonText, CallbackData: String): Integer;
     function AddButtonUrl(const AButtonText, AUrl: String): Integer;
     function AddButtonInline(const AButtonText, AQuery: String): Integer;
@@ -156,6 +155,9 @@ type
   public
     function Add(AButtons: TInlineKeyboardButtons): Integer; overload;
     function Add: TInlineKeyboardButtons;
+    { Added to the last row of buttons. If you specify a MaxColsinRow then
+      a new row of buttons is automatically created if needed }
+    procedure AddButton(aButton: TInlineKeyboardButton; MaxColsinRow: Integer = 0);
   end;
 
   { TInputMessageContent }
@@ -933,6 +935,19 @@ begin
   Add(Result);
 end;
 
+procedure TInlineKeyboard.AddButton(aButton: TInlineKeyboardButton; MaxColsinRow: Integer);
+var
+  aInlnKybrdBtns: TInlineKeyboardButtons;
+begin
+  if Count=0 then
+    aInlnKybrdBtns:=Add
+  else
+    aInlnKybrdBtns:=TInlineKeyboardButtons(Items[Count-1]);
+  if (MaxColsinRow<>0) and (aInlnKybrdBtns.Count>=MaxColsinRow) then
+    aInlnKybrdBtns:=Add;
+  aInlnKybrdBtns.Add(aButton);
+end;
+
 { TInputMessageContent }
 
 function TInputMessageContent.GetMessageText: String;
@@ -1261,12 +1276,6 @@ constructor TInlineKeyboardButtons.Create(const AButtonText,
 begin
   inherited Create;
   AddButton(AButtonText, CallbackData);
-end;
-
-constructor TInlineKeyboardButtons.Create(const AButtons: array of String);
-begin
-  inherited Create;
-  AddButtons(AButtons);
 end;
 
 function TInlineKeyboardButtons.AddButton(const AButtonText, CallbackData: String): Integer;
