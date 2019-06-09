@@ -1583,8 +1583,9 @@ begin
   FCurrentUser:=AMessage.From;
   if CurrentIsBanned then
     Exit;
-  SetLanguage(CurrentLanguage(AMessage));
   DoAfterParseUpdate;
+  if FLanguage=EmptyStr then
+    SetLanguage(CurrentLanguage(AMessage));
   ProcessCommands(AMessage, FCommandHandlers);
   if Assigned(AMessage.SuccessfulPayment) and not FUpdateProcessed then
     DoReceiveSuccessfulPayment(AMessage);
@@ -1600,8 +1601,9 @@ begin
   FCurrentUser:=AMessage.From;
   if CurrentIsBanned then
     Exit;
-  SetLanguage(CurrentLanguage(AMessage));
   DoAfterParseUpdate;
+  if FLanguage=EmptyStr then
+    SetLanguage(CurrentLanguage(AMessage));
   ProcessCommands(AMessage, FCommandHandlers);
   if Assigned(FOnReceiveEditedMessage) then
     FOnReceiveEditedMessage(Self, AMessage);
@@ -1616,11 +1618,12 @@ begin
   FCurrentChatID:=FCurrentUser.ID; { Bot will send to private chat if in channel is called } {ACallback.Message.ChatId;}
   if CurrentIsBanned then
     Exit;
-  SetLanguage(CurrentLanguage(ACallback.From));
   if Assigned(FCurrentMessage) then
     if Assigned(FCurrentMessage.From) then
       FBotUsername:=FCurrentMessage.From.Username;
   DoAfterParseUpdate;
+  if FLanguage=EmptyStr then
+    SetLanguage(CurrentLanguage(ACallback.From));
   if Assigned(FOnReceiveCallbackQuery) then
     FOnReceiveCallbackQuery(Self, ACallback);
 end;
@@ -1633,8 +1636,9 @@ begin
   FCurrentUser:=AChannelPost.From;
   if CurrentIsBanned then
     Exit;
-  SetLanguage(CurrentLanguage(AChannelPost));
   DoAfterParseUpdate;
+  if FLanguage=EmptyStr then
+    SetLanguage(CurrentLanguage(AChannelPost));
   ProcessCommands(AChannelPost, FChannelCommandHandlers);
   if Assigned(FOnReceiveChannelPost) then
     FOnReceiveChannelPost(Self, AChannelPost);
@@ -1649,8 +1653,9 @@ begin
   FCurrentUser:=AChannelPost.From;
   if CurrentIsBanned then
     Exit;
-  SetLanguage(CurrentLanguage(AChannelPost));
   DoAfterParseUpdate;
+  if FLanguage=EmptyStr then
+    SetLanguage(CurrentLanguage(AChannelPost));
   ProcessCommands(AChannelPost, FChannelCommandHandlers);
   if Assigned(FOnReceiveEditedChannelPost) then
     FOnReceiveChannelPost(Self, AChannelPost);
@@ -1665,8 +1670,9 @@ begin
   FCurrentUser:=AnInlineQuery.From;
   if CurrentIsBanned then
     Exit;
-  SetLanguage(CurrentLanguage(AnInlineQuery.From));
   DoAfterParseUpdate;
+  if FLanguage=EmptyStr then
+    SetLanguage(CurrentLanguage(AnInlineQuery.From));
   if Assigned(FOnReceiveInlineQuery) then
     FOnReceiveInlineQuery(Self, AnInlineQuery);
 end;
@@ -1680,8 +1686,9 @@ begin
   FCurrentUser:=AChosenInlineResult.From;
   if CurrentIsBanned then
     Exit;
-  SetLanguage(CurrentLanguage(AChosenInlineResult.From));
   DoAfterParseUpdate;
+  if FLanguage=EmptyStr then
+    SetLanguage(CurrentLanguage(AChosenInlineResult.From));
   if Assigned(FOnReceiveChosenInlineResult) then
     FOnReceiveChosenInlineResult(Self, AChosenInlineResult);
 end;
@@ -1693,8 +1700,9 @@ begin
   FCurrentChatID:=FCurrentUser.ID;
   if CurrentIsBanned then
     Exit;
-  SetLanguage(CurrentLanguage(APreCheckoutQuery.From));
   DoAfterParseUpdate;
+  if FLanguage=EmptyStr then
+    SetLanguage(CurrentLanguage(APreCheckoutQuery.From));
   if Assigned(FOnReceivePreCheckoutQuery) then
     FOnReceivePreCheckoutQuery(Self, APreCheckoutQuery);
 end;
