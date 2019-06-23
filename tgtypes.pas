@@ -79,6 +79,7 @@ type
 
   TTelegramMessageObj = class(TTelegramObj)
   private
+    FCaption: String;
     FChat: TTelegramChatObj;
     FFrom: TTelegramUserObj;
     FLocation: TTelegramLocation;
@@ -92,6 +93,7 @@ type
   public
     constructor Create(JSONObject: TJSONObject); override;
     destructor Destroy; override;
+    property Caption: String read FCaption;
     property MessageId: Integer read fMessageId;
     property From: TTelegramUserObj read FFrom;
     property Chat: TTelegramChatObj read FChat;
@@ -718,9 +720,10 @@ begin
   inherited Create(JSONObject);
   fMessageId := fJSON.Integers['message_id'];
 
-  fText := fJSON.Get('text', '');
+  fText := fJSON.Get('text', EmptyStr);
   fEntities := TTelegramUpdateObjList.Create;
   FPhoto := TTelegramPhotoSizeList.Create;
+  FCaption := fJSON.Get('caption', EmptyStr);
 
 
   FChat:=TTelegramChatObj.CreateFromJSONObject(fJSON.Find('chat', jtObject) as TJSONObject) as TTelegramChatObj;

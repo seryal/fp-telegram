@@ -158,6 +158,9 @@ type
     { Added to the last row of buttons. If you specify a MaxColsinRow then
       a new row of buttons is automatically created if needed }
     procedure AddButton(aButton: TInlineKeyboardButton; MaxColsinRow: Integer = 0);
+    { Add button with callback data to the last row of buttons. If you specify a MaxColsinRow then
+      a new row of buttons is automatically created if needed  }
+    procedure AddButton(const AButtonText, CallbackData: String; MaxColsinRow: Integer = 0);
   end;
 
   { TInputMessageContent }
@@ -476,8 +479,12 @@ type
     function sendMessage(const AMessage: String; ParseMode: TParseMode = pmDefault;
       DisableWebPagePreview: Boolean=False; ReplyMarkup: TReplyMarkup = nil;
       ReplyToMessageID: Integer = 0): Boolean; overload;
-    function sendPhoto(chat_id: Int64; const APhoto: String; const ACaption: String = ''): Boolean;
-    function sendPhoto(const APhoto: String; const ACaption: String = ''): Boolean; overload;
+    function sendPhoto(chat_id: Int64; const APhoto: String; const ACaption: String = '';
+      ParseMode: TParseMode = pmDefault; ReplyMarkup: TReplyMarkup = nil;
+      ReplyToMessageID: Integer = 0): Boolean;
+    function sendPhoto(const APhoto: String; const ACaption: String = '';
+      ParseMode: TParseMode = pmDefault; ReplyMarkup: TReplyMarkup = nil;
+      ReplyToMessageID: Integer = 0): Boolean; overload;
     function sendPhotoStream(chat_id: Int64;  const AFileName: String; APhotoStream: TStream;
       const ACaption: String; ReplyMarkup: TReplyMarkup = nil): Boolean; overload;
     function sendVideo(chat_id: Int64; const AVideo: String; const ACaption: String = ''): Boolean;
@@ -946,6 +953,16 @@ begin
   if (MaxColsinRow<>0) and (aInlnKybrdBtns.Count>=MaxColsinRow) then
     aInlnKybrdBtns:=Add;
   aInlnKybrdBtns.Add(aButton);
+end;
+
+procedure TInlineKeyboard.AddButton(const AButtonText, CallbackData: String;
+  MaxColsinRow: Integer);
+var
+  aButton: TInlineKeyboardButton;
+begin
+  aButton:=TInlineKeyboardButton.Create(AButtonText);
+  aButton.callback_data:=CallbackData;
+  AddButton(aButton, MaxColsinRow);
 end;
 
 { TInputMessageContent }
@@ -2510,15 +2527,35 @@ end;
 
 { https://core.telegram.org/bots/api#sendphoto }
 function TTelegramSender.sendPhoto(chat_id: Int64; const APhoto: String;
-  const ACaption: String): Boolean;
+  const ACaption: String; ParseMode: TParseMode; ReplyMarkup: TReplyMarkup;
+  ReplyToMessageID: Integer): Boolean;
+var
+  sendObj: TJSONObject;
 begin
-  Result:=SendMethod(s_sendPhoto, [s_ChatId, chat_id, s_Photo, APhoto, s_Caption, ACaption]);
+  Result:=False;
+  sendObj:=TJSONObject.Create;
+  with sendObj do
+    try
+      Add(s_ChatId, chat_id);
+      Add(s_Photo, APhoto);
+      Add(s_Photo, ACaption);
+      if ParseMode<>pmDefault then
+        Add(s_ParseMode, ParseModes[ParseMode]);
+      if Assigned(ReplyMarkup) then
+        Add(s_ReplyMarkup, ReplyMarkup.Clone); // Clone of ReplyMarkup object will have released with sendObject
+      if ReplyToMessageID<>0 then
+        Add(s_ReplyToMessageID, ReplyToMessageID);
+      Result:=SendMethod(s_sendPhoto, sendObj);
+    finally
+      Free;
+    end;
 end;
 
-function TTelegramSender.sendPhoto(const APhoto: String; const ACaption: String
-  ): Boolean;
+function TTelegramSender.sendPhoto(const APhoto: String;
+  const ACaption: String; ParseMode: TParseMode; ReplyMarkup: TReplyMarkup;
+  ReplyToMessageID: Integer): Boolean;
 begin
-  Result:=sendPhoto(FCurrentChatId, APhoto, ACaption);
+  Result:=sendPhoto(FCurrentChatId, APhoto, ACaption, ParseMode, ReplyMarkup, ReplyToMessageID);
 end;
                                                       // AFileName ??????
 function TTelegramSender.sendPhotoStream(chat_id: Int64; const AFileName: String;
