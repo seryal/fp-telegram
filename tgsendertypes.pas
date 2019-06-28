@@ -14,6 +14,7 @@ type
   TLogMessageEvent = procedure(ASender: TObject; EventType: TEventType; const Msg: String) of object;
   TInlineKeyboardButton = class;
   TKeyboardButton = class;
+  TKeybordButtonArray = class;
   TInlineKeyboard = class;
 
   TOnUpdateEvent = procedure (ASender: TObject; AnUpdate: TTelegramUpdateObj) of object;
@@ -56,13 +57,13 @@ type
     function GetForceReply: Boolean;
     function GetInlineKeyBoard: TInlineKeyboard;
     function GetOneTimeKeyboard: Boolean;
-    function GetReplyKeyboardMarkup: TJSONArray;
+    function GetReplyKeyboardMarkup: TKeybordButtonArray;
     function GetResizeKeyboard: Boolean;
     function GetSelective: Boolean;
     procedure SetForceReply(AValue: Boolean);
     procedure SetInlineKeyBoard(AValue: TInlineKeyboard);
     procedure SetOneTimeKeyboard(AValue: Boolean);
-    procedure SetReplyKeyboardMarkup(AValue: TJSONArray);
+    procedure SetReplyKeyboardMarkup(AValue: TKeybordButtonArray);
     procedure SetResizeKeyboard(AValue: Boolean);
     procedure SetSelective(AValue: Boolean);
   public
@@ -70,7 +71,7 @@ type
     { Only one from InlineKeyboard or ReplyMarkup is must to set }
     property InlineKeyBoard: TInlineKeyboard read GetInlineKeyBoard write SetInlineKeyBoard;
 { ٌReplyKeyboard porerties }
-    property ReplyKeyboardMarkup: TJSONArray read GetReplyKeyboardMarkup
+    property ReplyKeyboardMarkup: TKeybordButtonArray read GetReplyKeyboardMarkup
       write SetReplyKeyboardMarkup;
 { Only if ReplyKeyboard is present then optional}
     property ResizeKeyboard: Boolean read GetResizeKeyboard write SetResizeKeyboard;
@@ -163,6 +164,14 @@ type
     procedure AddButton(const AButtonText, CallbackData: String; MaxColsinRow: Integer = 0);
   end;
 
+  { TKeybordButtonArray }
+
+  TKeybordButtonArray = class(TJSONArray)
+  public
+    function Add(aButtons: TKeyboardButtons): Integer; overload;
+    function Add: TKeyboardButtons;
+  end;
+
   { TInputMessageContent }
 
   TInputMessageContent = class(TJSONObject)
@@ -194,6 +203,7 @@ type
     function GetMpeg4Width: Integer;
     function GetParseMode: TParseMode;
     function GetPerformer: String;
+    function GetPhotoFileID: String;
     function GetPhotoHeight: Integer;
     function GetPhotoUrl: String;
     function GetPhotoWidth: Integer;
@@ -214,6 +224,7 @@ type
     procedure SetMpeg4Width(AValue: Integer);
     procedure SetParseMode(AValue: TParseMode);
     procedure SetPerformer(AValue: String);
+    procedure SetPhotoFileID(AValue: String);
     procedure SetPhotoHeight(AValue: Integer);
     procedure SetPhotoUrl(AValue: String);
     procedure SetPhotoWidth(AValue: Integer);
@@ -228,6 +239,8 @@ type
     property InputMessageContent: TInputMessageContent read GetInputMessageContent write SetInputMessageContent;
     property ReplyMarkup: TReplyMarkup read GetReplyMarkup write SetReplyMarkup;
     property Description: String read GetDescription write SetDescription;
+
+    property PhotoFileID: String read GetPhotoFileID write SetPhotoFileID;
 
     property PhotoUrl: String read GetPhotoUrl write SetPhotoUrl;
     property ThumbUrl: String read GetThumbUrl write SetThumbUrl;
@@ -247,7 +260,14 @@ type
     property ParseMode: TParseMode read GetParseMode write SetParseMode;
     property Performer: String read GetPerformer write SetPerformer;
     property AudioDuration: Integer read GetAudioDuration write SetAudioDuration;
+  end;
 
+  { TInlineQueryResultArray }
+
+  TInlineQueryResultArray = class(TJSONArray)
+  public
+    function Add(aInlineQueryResult: TInlineQueryResult): Integer; overload;
+    function Add: TInlineQueryResult;
   end;
 
   { TInputMedia }
@@ -492,7 +512,7 @@ type
     function sendVoice(chat_id: Int64; const Voice: String; const Caption: String = '';
       ParseMode: TParseMode = pmDefault; Duration: Integer=0; DisableNotification: Boolean = False;
       ReplyToMessageID: Integer = 0; ReplyMarkup: TReplyMarkup = nil): Boolean;
-    function answerInlineQuery(const AnInlineQueryID: String; Results: TJSONArray;
+    function answerInlineQuery(const AnInlineQueryID: String; Results: TInlineQueryResultArray;
       CacheTime: Integer = 300; IsPersonal: Boolean = False; const NextOffset: String = '';
       const SwitchPmText: String = ''; const SwitchPmParameter: String = ''): Boolean;
     function getFile(const FileID: String): Boolean;
@@ -673,6 +693,7 @@ const
   s_PhotoHeight = 'photo_height';
   s_PhotoWidth = 'photo_width';
   s_PhotoSize = 'photo_size';
+  s_PhotoFileID = 'photo_file_id';
   s_Mpeg4Url = 'mpeg4_url';
   s_Mpeg4Width = 'mpeg4_width';
   s_Mpeg4Height = 'mpeg4_height';
@@ -744,6 +765,33 @@ begin
   finally
     ABot.Free;
   end;
+end;
+
+{ TKeybordButtonArray }
+
+function TKeybordButtonArray.Add(aButtons: TKeyboardButtons): Integer;
+begin
+  Result:=Add(aButtons as TJSONArray);
+end;
+
+function TKeybordButtonArray.Add: TKeyboardButtons;
+begin
+  Result:=TKeyboardButtons.Create;
+  Add(Result);
+end;
+
+{ TInlineQueryResultArray }
+
+function TInlineQueryResultArray.Add(aInlineQueryResult: TInlineQueryResult
+  ): Integer;
+begin
+  Result:=Add(aInlineQueryResult as TJSONObject);
+end;
+
+function TInlineQueryResultArray.Add: TInlineQueryResult;
+begin
+  Result:=TInlineQueryResult.Create;
+  Add(Result);
 end;
 
 { TLabeledPriceArray }
@@ -1063,6 +1111,11 @@ begin
   Result:=Get(s_Performer, EmptyStr);
 end;
 
+function TInlineQueryResult.GetPhotoFileID: String;
+begin
+  Result:=Get(s_PhotoFileID, EmptyStr);
+end;
+
 function TInlineQueryResult.GetPhotoHeight: Integer;
 begin
   Result:=Get(s_PhotoHeight, 0);
@@ -1162,6 +1215,11 @@ end;
 procedure TInlineQueryResult.SetPerformer(AValue: String);
 begin
   Strings[s_Performer]:=AValue;
+end;
+
+procedure TInlineQueryResult.SetPhotoFileID(AValue: String);
+begin
+  Strings[s_PhotoFileID]:=AValue;
 end;
 
 procedure TInlineQueryResult.SetPhotoHeight(AValue: Integer);
@@ -1355,9 +1413,9 @@ begin
   Result:=Get(s_OneTimeKeyboard, False);
 end;
 
-function TReplyMarkup.GetReplyKeyboardMarkup: TJSONArray;
+function TReplyMarkup.GetReplyKeyboardMarkup: TKeybordButtonArray;
 begin
-  Result:=Arrays[s_Keyboard];
+  Result:=Arrays[s_Keyboard] as TKeybordButtonArray;
 end;
 
 function TReplyMarkup.GetResizeKeyboard: Boolean;
@@ -1393,7 +1451,7 @@ begin
   Booleans[s_OneTimeKeyboard]:=AValue;
 end;
 
-procedure TReplyMarkup.SetReplyKeyboardMarkup(AValue: TJSONArray);
+procedure TReplyMarkup.SetReplyKeyboardMarkup(AValue: TKeybordButtonArray);
 begin
   Arrays[s_Keyboard]:=AValue;
 end;
@@ -2624,7 +2682,7 @@ begin
 end;
 
 function TTelegramSender.answerInlineQuery(const AnInlineQueryID: String;
-  Results: TJSONArray; CacheTime: Integer; IsPersonal: Boolean;
+  Results: TInlineQueryResultArray; CacheTime: Integer; IsPersonal: Boolean;
   const NextOffset: String; const SwitchPmText: String;
   const SwitchPmParameter: String): Boolean;
 begin  // todo: do not include default parameters... but is it really so necessary?
