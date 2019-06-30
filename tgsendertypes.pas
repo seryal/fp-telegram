@@ -455,6 +455,8 @@ type
       ShowAlert: Boolean=False; const Url: String = ''; CacheTime: Integer = 0): Boolean; virtual;
     function answerPreCheckoutQuery(const PreCheckoutQueryID: String; Ok: Boolean;
       AnErrorMessage: String = ''): Boolean;
+    function deleteMessage(chat_id: Int64; message_id: Int64): Boolean;
+    function deleteMessage(message_id: Int64): Boolean;
     function editMessageReplyMarkup(chat_id: Int64 = 0; message_id: Int64 = 0;
       const inline_message_id: String = ''; ReplyMarkup: TReplyMarkup = nil): Boolean;
     function editMessageText(const AMessage: String; chat_id: Int64; message_id: Int64;
@@ -608,6 +610,7 @@ const
   s_getMe='getMe';
   s_answerInlineQuery='answerInlineQuery';
   s_answerPreCheckoutQuery='answerPreCheckoutQuery';
+  s_deleteMessage='deleteMessage';
   s_getFile = 'getFile';
 
   s_Method='method';
@@ -1870,6 +1873,28 @@ begin
     finally
       Free;
     end;
+end;
+
+function TTelegramSender.deleteMessage(chat_id: Int64; message_id: Int64
+  ): Boolean;
+var
+  sendObj: TJSONObject;
+begin
+  Result:=False;
+  sendObj:=TJSONObject.Create;
+  with sendObj do
+  try
+    Add(s_ChatId, chat_id);
+    Add(s_MessageId, message_id);
+    Result:=SendMethod(s_deleteMessage, sendObj);
+  finally
+    Free;
+  end;
+end;
+
+function TTelegramSender.deleteMessage(message_id: Int64): Boolean;
+begin
+  deleteMessage(CurrentChatId, message_id);
 end;
 
 function TTelegramSender.editMessageReplyMarkup(chat_id: Int64; message_id: Int64;
