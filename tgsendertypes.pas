@@ -464,6 +464,7 @@ type
       inline_message_id: String = ''; ReplyMarkup: TReplyMarkup = nil): Boolean;
     function editMessageText(const AMessage: String; ParseMode: TParseMode = pmDefault;
       DisableWebPagePreview: Boolean=False; ReplyMarkup: TReplyMarkup = nil): Boolean; overload;
+    function getChatMember(chat_id: Int64; user_id: Integer): Boolean;
     function getMe: Boolean;
     function getUpdates(offset: Int64 = 0; limit: Integer = 0; timeout: Integer = 0;
       allowed_updates: TUpdateSet = []): Boolean;
@@ -608,6 +609,7 @@ const
   s_sendMediaGroup='sendMediaGroup';
   s_getUpdates='getUpdates';
   s_getMe='getMe';
+  s_getChatMember='getChatMember';
   s_answerInlineQuery='answerInlineQuery';
   s_answerPreCheckoutQuery='answerPreCheckoutQuery';
   s_deleteMessage='deleteMessage';
@@ -617,6 +619,7 @@ const
   s_Url = 'url';
   s_Text = 'text';
   s_ChatId = 'chat_id';
+  s_UserID = 'user_id';
   s_MessageId = 'message_id';
   s_InlineMessageId = 'inline_message_id';
   s_Document = 'document';
@@ -2293,6 +2296,23 @@ begin  { try to edit message if the message is present and chat is private with 
     Result:=sendMessage(AMessage, ParseMode, DisableWebPagePreview, ReplyMarkup);
 end;
 
+function TTelegramSender.getChatMember(chat_id: Int64; user_id: Integer
+  ): Boolean;
+var
+  sendObj: TJSONObject;
+begin
+  Result:=False;
+  sendObj:=TJSONObject.Create;
+  with sendObj do
+  try
+    Add(s_ChatId, chat_id);
+    Add(s_UserID, user_id);
+    Result:=SendMethod(s_getChatMember, sendObj);
+  finally
+    Free;
+  end;
+end;
+
 function TTelegramSender.getMe: Boolean;
 var
   sendObj: TJSONObject;
@@ -2621,7 +2641,7 @@ begin
     try
       Add(s_ChatId, chat_id);
       Add(s_Photo, APhoto);
-      Add(s_Photo, ACaption);
+      Add(s_Caption, ACaption);
       if ParseMode<>pmDefault then
         Add(s_ParseMode, ParseModes[ParseMode]);
       if Assigned(ReplyMarkup) then

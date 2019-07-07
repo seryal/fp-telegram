@@ -28,11 +28,13 @@ type
   private
     FBot: TTelegramSender;
     FChatID: Int64;
+    FUserID: Integer;
   protected
     procedure SetUp; override;
     procedure TearDown; override;
     property Bot: TTelegramSender read FBot;
     property ChatID: Int64 read FChatID;
+    property UserID: Integer read FUserID;
   end;
 
 implementation
@@ -48,6 +50,7 @@ begin
   FChatID:=Conf.ReadInt64('Chat', 'ID', 0);
   if FChatID=0 then
     Fail('Please, specify chat ID in testtelegram.ini! See readme.md');
+  FUserID:=Conf.ReadInteger('User', 'ID', 0);
 end;
 
 procedure TTestTelegramClass.TearDown;

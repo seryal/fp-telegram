@@ -22,6 +22,7 @@ type
     procedure sendMessage;
     procedure InlineKeyboard;
     procedure sendVideo;
+    procedure ChatMember;
   end;
 
   { TTestSenderProcedure }
@@ -231,6 +232,15 @@ end;
 procedure TTestSender.sendVideo;
 begin
   Bot.sendVideo(ChatID, VideoUrl, Format(vd_cptn, [Self.ClassName, TestName]));
+  if Bot.LastErrorCode<>0 then
+    Fail('Error from telegram API server. Error code: '+IntToStr(Bot.LastErrorCode)+
+      '. Description: '+Bot.LastErrorDescription);
+end;
+
+procedure TTestSender.ChatMember;
+begin
+  Bot.getChatMember(ChatID, UserID);
+  SaveJSONData(Bot.JSONResponse, '~responce.json');
   if Bot.LastErrorCode<>0 then
     Fail('Error from telegram API server. Error code: '+IntToStr(Bot.LastErrorCode)+
       '. Description: '+Bot.LastErrorDescription);
