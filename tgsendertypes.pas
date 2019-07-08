@@ -465,6 +465,8 @@ type
     function editMessageText(const AMessage: String; ParseMode: TParseMode = pmDefault;
       DisableWebPagePreview: Boolean=False; ReplyMarkup: TReplyMarkup = nil): Boolean; overload;
     function getChatMember(chat_id: Int64; user_id: Integer): Boolean;
+    function getChatMember(chat_id: Int64; user_id: Integer;
+      out aChatMember: TTelegramChatMember): Boolean; overload;
     function getMe: Boolean;
     function getUpdates(offset: Int64 = 0; limit: Integer = 0; timeout: Integer = 0;
       allowed_updates: TUpdateSet = []): Boolean;
@@ -1897,7 +1899,7 @@ end;
 
 function TTelegramSender.deleteMessage(message_id: Int64): Boolean;
 begin
-  deleteMessage(CurrentChatId, message_id);
+  Result:=deleteMessage(CurrentChatId, message_id);
 end;
 
 function TTelegramSender.editMessageReplyMarkup(chat_id: Int64; message_id: Int64;
@@ -2311,6 +2313,15 @@ begin
   finally
     Free;
   end;
+end;
+
+function TTelegramSender.getChatMember(chat_id: Int64; user_id: Integer; out
+  aChatMember: TTelegramChatMember): Boolean;
+begin
+  Result:=getChatMember(chat_id, user_id);
+  if Result then
+    if Assigned(JSONResponse) then
+      aChatMember:=TTelegramChatMember.CreateFromJSONObject(JSONResponse as TJSONObject) as TTelegramChatMember;
 end;
 
 function TTelegramSender.getMe: Boolean;

@@ -27,6 +27,7 @@ type
   TUpdateType = (utMessage, utEditedMessage, utChannelPost, utEditedChannelPost, utInlineQuery,
     utChosenInlineResult, utCallbackQuery, utShippingQuery, utPreCheckoutQuery, utUnknown);
   TChatType = (ctPrivate, ctGroup, ctSuperGroup, ctChannel, ctUnknown);
+  TChatMemberStatus = (msCreator, msAdministrator, msMember, msRestricted, msLeft, msKicked, msUnknown);
   TUpdateSet = set of TUpdateType;
 
   { TTelegramObj }
@@ -328,6 +329,22 @@ type
     property ProviderPaymentChargeID: String read FProviderPaymentChargeID;
   end;
 
+  { TTelegramChatMember }
+
+  TTelegramChatMember = class(TTelegramObj)
+  private
+    FChatMemberStatus: TChatMemberStatus;
+    Fis_member: Boolean;
+    FUser: TTelegramUserObj;
+    class function StringToStatus(const StatusString: String): TChatMemberStatus;
+  public
+    constructor Create(JSONObject: TJSONObject); override;
+    destructor Destroy; override;
+    property User: TTelegramUserObj read FUser;
+    property is_member: Boolean read Fis_member;
+    property StatusType: TChatMemberStatus read FChatMemberStatus;
+  end;
+
   TTelegramObjClass = class of TTelegramObj;
 
   const
@@ -354,6 +371,40 @@ begin
   Result:=TJSONArray.Create;
   for u in AllowedUpdates do
     Result.Add(UpdateTypeAliases[u]);
+end;
+
+{ TTelegramChatMember }
+
+class function TTelegramChatMember.StringToStatus(const StatusString: String
+  ): TChatMemberStatus;
+begin
+  if StatusString='creator' then
+    Exit(msCreator);
+  if StatusString='administrator' then
+    Exit(msAdministrator);
+  if StatusString='member' then
+    Exit(msMember);
+  if StatusString='restricted' then
+    Exit(msRestricted);
+  if StatusString='left' then
+    Exit(msLeft);
+  if StatusString='kicked' then
+    Exit(msKicked);
+  Result:=msUnknown;
+end;
+
+constructor TTelegramChatMember.Create(JSONObject: TJSONObject);
+begin
+  inherited Create(JSONObject);
+  FUser:=TTelegramUserObj.CreateFromJSONObject(fJSON.Find('user', jtObject) as TJSONObject) as TTelegramUserObj;
+  Fis_member:=fJSON.Get('is_member', False);
+  FChatMemberStatus:=StringToStatus(fJSON.Strings['status']);
+end;
+
+destructor TTelegramChatMember.Destroy;
+begin
+  FUser.Free;
+  inherited Destroy;
 end;
 
 { TTelegramSuccessfulPayment }
