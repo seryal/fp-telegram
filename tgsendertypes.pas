@@ -389,11 +389,13 @@ type
     FUpdateID: Int64;
     FUpdateLogger: TtgStatLog;
     FUpdateProcessed: Boolean;
+    FTimeout: Integer;
     function CurrentLanguage(AUser: TTelegramUserObj): String;
     function CurrentLanguage(AMessage: TTelegramMessageObj): String;
     function GetAPIEndPoint: String;
     function GetChannelCommandHandlers(const Command: String): TCommandEvent;
     function GetCommandHandlers(const Command: String): TCommandEvent;
+    function GetTimeout: Integer;
     procedure SetAPIEndPoint(AValue: String);
     procedure SetBotUsername(AValue: String);
     procedure SetChannelCommandHandlers(const Command: String;
@@ -422,6 +424,7 @@ type
     procedure SetProcessUpdate(AValue: Boolean);
     procedure SetRequestBody(AValue: String);
     procedure SetRequestWhenAnswer(AValue: Boolean);
+    procedure SetTimeout(AValue: Integer);
     procedure SetUpdateID(AValue: Int64);
     procedure SetUpdateLogger(AValue: TtgStatLog);
     procedure SetUpdateProcessed(AValue: Boolean);
@@ -464,6 +467,8 @@ type
       inline_message_id: String = ''; ReplyMarkup: TReplyMarkup = nil): Boolean;
     function editMessageText(const AMessage: String; ParseMode: TParseMode = pmDefault;
       DisableWebPagePreview: Boolean=False; ReplyMarkup: TReplyMarkup = nil): Boolean; overload;
+    function forwardMessage(chat_id: Int64; from_chat_id: Int64; DisableNotification: Boolean;
+      message_id: Int64): Boolean;
     function getChatMember(chat_id: Int64; user_id: Integer): Boolean;
     function getChatMember(chat_id: Int64; user_id: Integer;
       out aChatMember: TTelegramChatMember): Boolean; overload;
@@ -559,6 +564,7 @@ type
     property Logger: TEventLog read FLogger write SetLogger;
 
     property UpdateLogger: TtgStatLog read FUpdateLogger write SetUpdateLogger; //We will log the update object completely if need
+    property Timeout: Integer read GetTimeout write SetTimeout;
 
 { After the parse of the update object prior to calling all other custom events (OnReceive...) }
     property OnAfterParseUpdate: TNotifyEvent read FOnAfterParseUpdate write SetOnAfterParseUpdate;
@@ -612,6 +618,7 @@ const
   s_getUpdates='getUpdates';
   s_getMe='getMe';
   s_getChatMember='getChatMember';
+  s_forwardMessage='forwardMessage';
   s_answerInlineQuery='answerInlineQuery';
   s_answerPreCheckoutQuery='answerPreCheckoutQuery';
   s_deleteMessage='deleteMessage';
@@ -671,6 +678,7 @@ const
   s_Currency = 'currency';
   s_Prices = 'prices';
   s_PreCheckoutQueryID = 'pre_checkout_query_id';
+  s_FromChatID='from_chat_id';
 
   s_CallbackQueryID = 'callback_query_id';
   s_ShowAlert = 'show_alert';
@@ -1604,6 +1612,11 @@ begin
   Result:=FCommandHandlers.Items[Command];
 end;
 
+function TTelegramSender.GetTimeout: Integer;
+begin
+  Result:=FTimeout;
+end;
+
 procedure TTelegramSender.SetAPIEndPoint(AValue: String);
 begin
   if FAPIEndPoint=AValue then Exit;
@@ -1984,8 +1997,10 @@ function TTelegramSender.HTTPPostJSON(const Method: String): Boolean;
 var
   HTTP: TFPHTTPClient;
 begin
+  Result:=False;
   HTTP:=TFPHTTPClient.Create(nil);
   try
+    HTTP.IOTimeout:=FTimeout;
     HTTP.RequestBody:=TStringStream.Create(FRequestBody);
     try
       HTTP.AddHeader('Content-Type','application/json');
@@ -1996,8 +2011,8 @@ begin
     Result:=True;
     DebugMessage('Response: '+FResponse);
   except
-    Result:=False;
-    ErrorMessage('It is not succesful request to API! Request body: '+FRequestBody);
+    on E: Exception do
+      ErrorMessage('[HTTPPostJSON] '+e.ClassName+': '+e.Message);
   end;
   HTTP.Free;
 end;
@@ -2011,6 +2026,7 @@ begin
   HTTP:=TFPHTTPClient.Create(nil);
   AStringStream:=TStringStream.Create(EmptyStr);
   try
+    HTTP.IOTimeout:=FTimeout;
     HTTP.AddHeader('Content-Type','multipart/form-data');
     HTTP.StreamFormPost(FAPIEndPoint+FToken+'/'+Method, AFormData, FileField, FileName, AStream, AStringStream);
     FResponse:=AStringStream.DataString;
@@ -2101,6 +2117,11 @@ procedure TTelegramSender.SetRequestWhenAnswer(AValue: Boolean);
 begin
   if FRequestWhenAnswer=AValue then Exit;
   FRequestWhenAnswer:=AValue;
+end;
+
+procedure TTelegramSender.SetTimeout(AValue: Integer);
+begin
+  FTimeout:=AValue;
 end;
 
 procedure TTelegramSender.SetUpdateID(AValue: Int64);
@@ -2239,6 +2260,7 @@ begin
   FCommandHandlers:=TCommandHandlersMap.create;
   FChannelCommandHandlers:=TCommandHandlersMap.create;
   FLogDebug:=False;
+  FTimeout:=6000;
 end;
 
 function TTelegramSender.DeepLinkingUrl(const AParameter: String): String;
@@ -2296,6 +2318,26 @@ begin  { try to edit message if the message is present and chat is private with 
       ParseMode, DisableWebPagePreview, EmptyStr, ReplyMarkup)
   else
     Result:=sendMessage(AMessage, ParseMode, DisableWebPagePreview, ReplyMarkup);
+end;
+
+function TTelegramSender.forwardMessage(chat_id: Int64; from_chat_id: Int64;
+  DisableNotification: Boolean; message_id: Int64): Boolean;
+var
+  sendObj: TJSONObject;
+begin
+  Result:=False;
+  sendObj:=TJSONObject.Create;
+  with sendObj do
+  try
+    Add(s_ChatId, chat_id);
+    Add(s_FromChatID, from_chat_id);
+    if DisableNotification then
+      Add(s_DsblNtfctn, DisableNotification);
+    Add(s_MessageId, message_id);
+    Result:=SendMethod(s_forwardMessage, sendObj);
+  finally
+    Free;
+  end;
 end;
 
 function TTelegramSender.getChatMember(chat_id: Int64; user_id: Integer
