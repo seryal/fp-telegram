@@ -210,6 +210,7 @@ type
     function GetReplyMarkup: TReplyMarkup;
     function GetThumbUrl: String;
     function GetTitle: String;
+    function GetVideoFileID: String;
     function GetVideoUrl: String;
     procedure SetAudioDuration(AValue: Integer);
     procedure SetAudioUrl(AValue: String);
@@ -231,6 +232,7 @@ type
     procedure SetReplyMarkup(AValue: TReplyMarkup);
     procedure SetThumbUrl(AValue: String);
     procedure SetTitle(AValue: String);
+    procedure SetVideoFileID(AValue: String);
     procedure SetVideoUrl(AValue: String);
   public
     property IQRType: TInlineQueryResultType read GetIQRType write SetIQRType;
@@ -241,6 +243,7 @@ type
     property Description: String read GetDescription write SetDescription;
 
     property PhotoFileID: String read GetPhotoFileID write SetPhotoFileID;
+    property VideoFileID: String read GetVideoFileID write SetVideoFileID;
 
     property PhotoUrl: String read GetPhotoUrl write SetPhotoUrl;
     property ThumbUrl: String read GetThumbUrl write SetThumbUrl;
@@ -517,8 +520,12 @@ type
       ReplyToMessageID: Integer = 0): Boolean; overload;
     function sendPhotoStream(chat_id: Int64;  const AFileName: String; APhotoStream: TStream;
       const ACaption: String; ReplyMarkup: TReplyMarkup = nil): Boolean; overload;
-    function sendVideo(chat_id: Int64; const AVideo: String; const ACaption: String = ''): Boolean;
-    function sendVideo(const AVideo: String; const ACaption: String = ''): Boolean; overload;
+    function sendVideo(chat_id: Int64; const AVideo: String; const ACaption: String = '';
+      ParseMode: TParseMode = pmDefault; ReplyMarkup: TReplyMarkup = nil;
+      ReplyToMessageID: Integer = 0): Boolean;
+    function sendVideo(const AVideo: String; const ACaption: String = '';
+      ParseMode: TParseMode = pmDefault; ReplyMarkup: TReplyMarkup = nil;
+      ReplyToMessageID: Integer = 0): Boolean; overload;
     function sendVoice(chat_id: Int64; const Voice: String; const Caption: String = '';
       ParseMode: TParseMode = pmDefault; Duration: Integer=0; DisableNotification: Boolean = False;
       ReplyToMessageID: Integer = 0; ReplyMarkup: TReplyMarkup = nil): Boolean;
@@ -710,6 +717,7 @@ const
   s_PhotoWidth = 'photo_width';
   s_PhotoSize = 'photo_size';
   s_PhotoFileID = 'photo_file_id';
+  s_VideoFileID = 'video_file_id';
   s_Mpeg4Url = 'mpeg4_url';
   s_Mpeg4Width = 'mpeg4_width';
   s_Mpeg4Height = 'mpeg4_height';
@@ -1162,6 +1170,11 @@ begin
   Result:=Strings[s_Title];
 end;
 
+function TInlineQueryResult.GetVideoFileID: String;
+begin
+  Result:=Get(s_VideoFileID, EmptyStr);
+end;
+
 function TInlineQueryResult.GetVideoUrl: String;
 begin
   Result:=Get(s_VideoUrl, '');
@@ -1266,6 +1279,11 @@ end;
 procedure TInlineQueryResult.SetTitle(AValue: String);
 begin
   Strings[s_Title]:=AValue;
+end;
+
+procedure TInlineQueryResult.SetVideoFileID(AValue: String);
+begin
+  Strings[s_VideoFileID]:=AValue;
 end;
 
 procedure TInlineQueryResult.SetVideoUrl(AValue: String);
@@ -2737,15 +2755,36 @@ end;
 
 { https://core.telegram.org/bots/api#sendvideo }
 function TTelegramSender.sendVideo(chat_id: Int64; const AVideo: String;
-  const ACaption: String): Boolean;
+  const ACaption: String; ParseMode: TParseMode; ReplyMarkup: TReplyMarkup;
+  ReplyToMessageID: Integer): Boolean;
+var
+  sendObj: TJSONObject;
 begin
-  Result:=SendMethod(s_sendVideo, ['chat_id', chat_id, 'video', AVideo, 'caption', ACaption]);
+  Result:=False;
+  sendObj:=TJSONObject.Create;
+  with sendObj do
+  try
+    Add(s_ChatId, chat_id);
+    Add('video', AVideo);
+    if ACaption=EmptyStr then
+      Add('caption', ACaption);
+    if ParseMode<>pmDefault then
+      Add(s_ParseMode, ParseModes[ParseMode]);
+    if Assigned(ReplyMarkup) then
+      Add(s_ReplyMarkup, ReplyMarkup.Clone); // Clone of ReplyMarkup object will have released with sendObject
+    if ReplyToMessageID<>0 then
+      Add(s_ReplyToMessageID, ReplyToMessageID);
+    Result:=SendMethod(s_sendVideo, sendObj);
+  finally
+    Free;
+  end;
 end;
 
-function TTelegramSender.sendVideo(const AVideo: String; const ACaption: String
-  ): Boolean;
+function TTelegramSender.sendVideo(const AVideo: String;
+  const ACaption: String; ParseMode: TParseMode; ReplyMarkup: TReplyMarkup;
+  ReplyToMessageID: Integer): Boolean;
 begin
-  Result:=sendVideo(FCurrentChatId, AVideo, ACaption);
+  Result:=sendVideo(FCurrentChatId, AVideo, ACaption, ParseMode, ReplyMarkup, ReplyToMessageID);
 end;
 
 function TTelegramSender.sendVoice(chat_id: Int64; const Voice: String;
