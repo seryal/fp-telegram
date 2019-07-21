@@ -25,6 +25,7 @@ type
   TTelegramPhotoSizeList = specialize TFPGObjectList<TTelegramPhotoSize>;
   TTelegramVideo = class;
   TTelegramVoice = class;
+  TTelegramAudio = class;
 
   TUpdateType = (utMessage, utEditedMessage, utChannelPost, utEditedChannelPost, utInlineQuery,
     utChosenInlineResult, utCallbackQuery, utShippingQuery, utPreCheckoutQuery, utUnknown);
@@ -82,6 +83,7 @@ type
 
   TTelegramMessageObj = class(TTelegramObj)
   private
+    FAudio: TTelegramAudio;
     FCaption: String;
     FChat: TTelegramChatObj;
     FFrom: TTelegramUserObj;
@@ -109,6 +111,7 @@ type
     property Location: TTelegramLocation read FLocation;
     property Photo: TTelegramPhotoSizeList read FPhoto;
     property SuccessfulPayment: TTelegramSuccessfulPayment read FSuccessfulPayment;
+    property Audio: TTelegramAudio read FAudio;
     property Video: TTelegramVideo read FVideo;
     property Voice: TTelegramVoice read FVoice;
   end;
@@ -374,6 +377,29 @@ type
     property FileSize: Integer read FFileSize;
   end;
 
+  { TTelegramAudio }
+
+  TTelegramAudio = class(TTelegramObj)
+  private
+    FDuration: Integer;
+    FFileID: String;
+    FFileSize: Integer;
+    FMimeType: String;
+    FPerformer: String;
+    FThumb: TTelegramPhotoSize;
+    FTitle: String;
+  public
+    constructor Create(JSONObject: TJSONObject); override;
+    destructor Destroy; override;
+    property FileID: String read FFileID;
+    property Duration: Integer read FDuration;
+    property Performer: String read FPerformer;
+    property Title: String read FTitle;
+    property MimeType: String read FMimeType;
+    property FileSize: Integer read FFileSize;
+    property Thumb: TTelegramPhotoSize read FThumb;
+  end;
+
   { TTelegramVoice }
 
   TTelegramVoice = class(TTelegramObj)
@@ -384,7 +410,6 @@ type
     FMimeType: String;
   public
     constructor Create(JSONObject: TJSONObject); override;
-    destructor Destroy; override;
     property FileID: String read FFileID;
     property Duration: Integer read FDuration;
     property MimeType: String read FMimeType;
@@ -419,6 +444,26 @@ begin
     Result.Add(UpdateTypeAliases[u]);
 end;
 
+{ TTelegramAudio }
+
+constructor TTelegramAudio.Create(JSONObject: TJSONObject);
+begin
+  inherited Create(JSONObject);
+  FFileID := fJSON.Strings['file_id'];
+  FDuration:=fJSON.Integers['duration'];
+  FPerformer:=fJSON.Get('performer', EmptyStr);
+  FTitle:=fJSON.Get('title', EmptyStr);
+  FThumb:=TTelegramPhotoSize.CreateFromJSONObject(fJSON.Find('thumb', jtObject) as TJSONObject) as TTelegramPhotoSize;
+  FMimeType:=fJSON.Get('mime_type');
+  FFileSize := fJSON.Get('file_size', 0);
+end;
+
+destructor TTelegramAudio.Destroy;
+begin
+  FThumb.Free;
+  inherited Destroy;
+end;
+
 { TTelegramVoice }
 
 constructor TTelegramVoice.Create(JSONObject: TJSONObject);
@@ -426,13 +471,8 @@ begin
   inherited Create(JSONObject);
   FFileID := fJSON.Strings['file_id'];
   FDuration:=fJSON.Integers['duration'];
-  FMimeType:=fJSON.Strings['mime_type'];
+  FMimeType:=fJSON.Get('mime_type', EmptyStr);
   FFileSize := fJSON.Get('file_size', 0);
-end;
-
-destructor TTelegramVoice.Destroy;
-begin
-  inherited Destroy;
 end;
 
 { TTelegramVideo }
@@ -445,7 +485,7 @@ begin
   FHeight:=fJSON.Integers['height'];
   FDuration:=fJSON.Integers['duration'];
   FThumb:=TTelegramPhotoSize.CreateFromJSONObject(fJSON.Find('thumb', jtObject) as TJSONObject) as TTelegramPhotoSize;
-  FMimeType:=fJSON.Strings['mime_type'];
+  FMimeType:=fJSON.Get('mime_type', EmptyStr);
   FFileSize := fJSON.Get('file_size', 0);
 end;
 
@@ -862,6 +902,7 @@ begin
   fChatId := fJSON.Objects['chat'].Int64s['id']; // deprecated?
   FFrom:=TTelegramUserObj.CreateFromJSONObject(fJSON.Find('from', jtObject) as TJSONObject) as TTelegramUserObj;
   FVideo := TTelegramVideo.CreateFromJSONObject(fJSON.Find('video', jtObject) as TJSONObject) as TTelegramVideo;
+  FAudio := TTelegramAudio.CreateFromJSONObject(fJSON.Find('audio', jtObject) as TJSONObject) as TTelegramAudio;
   FVoice := TTelegramVoice.CreateFromJSONObject(fJSON.Find('voice', jtObject) as TJSONObject) as TTelegramVoice;
 
   FLocation:=TTelegramLocation.CreateFromJSONObject(fJSON.Find('location', jtObject) as TJSONObject) as TTelegramLocation;
@@ -894,6 +935,7 @@ begin
   FChat.Free;
   FReplyToMessage.Free;
   FPhoto.Free;
+  FAudio.Free;
   FVideo.Free;
   FVoice.Free;
   fEntities.Free;

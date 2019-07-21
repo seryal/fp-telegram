@@ -10,7 +10,7 @@ uses
 type
   TParseMode = (pmDefault, pmMarkdown, pmHTML);
   TMediaType = (mtPhoto, mtVideo, mtUnknown);
-  TInlineQueryResultType = (qrtArticle, qrtPhoto, qrtVideo, qrtAudio, qrtMpeg4Gif, qrtUnknown);
+  TInlineQueryResultType = (qrtArticle, qrtPhoto, qrtVideo, qrtAudio, qrtVoice, qrtMpeg4Gif, qrtUnknown);
   TLogMessageEvent = procedure(ASender: TObject; EventType: TEventType; const Msg: String) of object;
   TInlineKeyboardButton = class;
   TKeyboardButton = class;
@@ -191,6 +191,7 @@ type
   TInlineQueryResult = class(TJSONObject)
   private
     function GetAudioDuration: Integer;
+    function GetAudioFileID: String;
     function GetAudioUrl: String;
     function GetCaption: String;
     function GetDescription: String;
@@ -212,7 +213,9 @@ type
     function GetTitle: String;
     function GetVideoFileID: String;
     function GetVideoUrl: String;
+    function GetVoiceFileID: String;
     procedure SetAudioDuration(AValue: Integer);
+    procedure SetAudioFileID(AValue: String);
     procedure SetAudioUrl(AValue: String);
     procedure SetCaption(AValue: String);
     procedure SetDescription(AValue: String);
@@ -234,6 +237,7 @@ type
     procedure SetTitle(AValue: String);
     procedure SetVideoFileID(AValue: String);
     procedure SetVideoUrl(AValue: String);
+    procedure SetVoiceFileID(AValue: String);
   public
     property IQRType: TInlineQueryResultType read GetIQRType write SetIQRType;
     property ID: String read GetID write SetID;
@@ -242,8 +246,10 @@ type
     property ReplyMarkup: TReplyMarkup read GetReplyMarkup write SetReplyMarkup;
     property Description: String read GetDescription write SetDescription;
 
+    property AudioFileID: String read GetAudioFileID write SetAudioFileID;
     property PhotoFileID: String read GetPhotoFileID write SetPhotoFileID;
     property VideoFileID: String read GetVideoFileID write SetVideoFileID;
+    property VoiceFileID: String read GetVoiceFileID write SetVoiceFileID;
 
     property PhotoUrl: String read GetPhotoUrl write SetPhotoUrl;
     property ThumbUrl: String read GetThumbUrl write SetThumbUrl;
@@ -716,8 +722,10 @@ const
   s_PhotoHeight = 'photo_height';
   s_PhotoWidth = 'photo_width';
   s_PhotoSize = 'photo_size';
+  s_AudioFileID = 'audio_file_id';
   s_PhotoFileID = 'photo_file_id';
   s_VideoFileID = 'video_file_id';
+  s_VoiceFileID = 'voice_file_id';
   s_Mpeg4Url = 'mpeg4_url';
   s_Mpeg4Width = 'mpeg4_width';
   s_Mpeg4Height = 'mpeg4_height';
@@ -739,7 +747,7 @@ const
   ParseModes: array[TParseMode] of PChar = ('', 'Markdown', 'HTML');
   MediaTypes: array[TMediaType] of PChar = ('photo', 'video', '');
   QueryResultTypeArray: array[TInlineQueryResultType] of PChar =
-    ('article', 'photo', 'video', 'audio', 'mpeg4_gif', '');
+    ('article', 'photo', 'video', 'audio', 'voice', 'mpeg4_gif', '');
 
   TgBotUrlStart = 'https://t.me/';
 
@@ -1075,6 +1083,11 @@ begin
   Result:=Get(s_AudioDuration, 0);
 end;
 
+function TInlineQueryResult.GetAudioFileID: String;
+begin
+  Result:=Get(s_AudioFileID, EmptyStr);
+end;
+
 function TInlineQueryResult.GetAudioUrl: String;
 begin
   Result:=Get(s_AudioUrl, EmptyStr);
@@ -1180,9 +1193,19 @@ begin
   Result:=Get(s_VideoUrl, '');
 end;
 
+function TInlineQueryResult.GetVoiceFileID: String;
+begin
+  Result:=Get(s_VoiceFileID, '');
+end;
+
 procedure TInlineQueryResult.SetAudioDuration(AValue: Integer);
 begin
   Integers[s_AudioDuration]:=AValue;
+end;
+
+procedure TInlineQueryResult.SetAudioFileID(AValue: String);
+begin
+  Strings[s_AudioFileID]:=AValue;
 end;
 
 procedure TInlineQueryResult.SetAudioUrl(AValue: String);
@@ -1289,6 +1312,11 @@ end;
 procedure TInlineQueryResult.SetVideoUrl(AValue: String);
 begin
   Strings[s_VideoUrl]:=AValue;
+end;
+
+procedure TInlineQueryResult.SetVoiceFileID(AValue: String);
+begin
+  Strings[s_VoiceFileID]:=AValue;
 end;
 
 { TStringHash }
@@ -2766,7 +2794,7 @@ begin
   try
     Add(s_ChatId, chat_id);
     Add('video', AVideo);
-    if ACaption=EmptyStr then
+    if ACaption<>EmptyStr then
       Add('caption', ACaption);
     if ParseMode<>pmDefault then
       Add(s_ParseMode, ParseModes[ParseMode]);
