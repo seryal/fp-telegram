@@ -10,7 +10,8 @@ uses
 type
   TParseMode = (pmDefault, pmMarkdown, pmHTML);
   TMediaType = (mtPhoto, mtVideo, mtUnknown);
-  TInlineQueryResultType = (qrtArticle, qrtPhoto, qrtVideo, qrtAudio, qrtVoice, qrtMpeg4Gif, qrtUnknown);
+  TInlineQueryResultType = (qrtArticle, qrtPhoto, qrtVideo, qrtAudio, qrtVoice, qrtMpeg4Gif,
+    qrtDocument, qrtUnknown);
   TLogMessageEvent = procedure(ASender: TObject; EventType: TEventType; const Msg: String) of object;
   TInlineKeyboardButton = class;
   TKeyboardButton = class;
@@ -195,6 +196,7 @@ type
     function GetAudioUrl: String;
     function GetCaption: String;
     function GetDescription: String;
+    function GetDocumentFileID: String;
     function GetID: String;
     function GetInputMessageContent: TInputMessageContent;
     function GetIQRType: TInlineQueryResultType;
@@ -219,6 +221,7 @@ type
     procedure SetAudioUrl(AValue: String);
     procedure SetCaption(AValue: String);
     procedure SetDescription(AValue: String);
+    procedure SetDocumentFileID(AValue: String);
     procedure SetID(AValue: String);
     procedure SetInputMessageContent(AValue: TInputMessageContent);
     procedure SetIQRType(AValue: TInlineQueryResultType);
@@ -247,6 +250,7 @@ type
     property Description: String read GetDescription write SetDescription;
 
     property AudioFileID: String read GetAudioFileID write SetAudioFileID;
+    property DocumentFileID: String read GetDocumentFileID write SetDocumentFileID;
     property PhotoFileID: String read GetPhotoFileID write SetPhotoFileID;
     property VideoFileID: String read GetVideoFileID write SetVideoFileID;
     property VoiceFileID: String read GetVoiceFileID write SetVoiceFileID;
@@ -492,6 +496,9 @@ type
       ParseMode: TParseMode = pmDefault; Duration: Integer = 0; DisableNotification: Boolean = False;
       ReplyToMessageID: Integer = 0; const Performer:String = ''; const Title: String = '';
       ReplyMarkup: TReplyMarkup = nil): Boolean;
+    function sendDocument(chat_id: Int64; const file_id: String; const Caption: String = '';
+      ParseMode: TParseMode = pmDefault; DisableNotification: Boolean = False;
+      ReplyToMessageID: Integer = 0; ReplyMarkup: TReplyMarkup = nil): Boolean;
     function sendDocumentByFileName(chat_id: Int64; const AFileName: String;
       const ACaption: String; ReplyMarkup: TReplyMarkup = nil): Boolean;
     function sendDocumentStream(chat_id: Int64;  const AFileName: String; ADocStream: TStream;
@@ -723,6 +730,7 @@ const
   s_PhotoWidth = 'photo_width';
   s_PhotoSize = 'photo_size';
   s_AudioFileID = 'audio_file_id';
+  s_DocumentFileID = 'document_file_id';
   s_PhotoFileID = 'photo_file_id';
   s_VideoFileID = 'video_file_id';
   s_VoiceFileID = 'voice_file_id';
@@ -747,7 +755,7 @@ const
   ParseModes: array[TParseMode] of PChar = ('', 'Markdown', 'HTML');
   MediaTypes: array[TMediaType] of PChar = ('photo', 'video', '');
   QueryResultTypeArray: array[TInlineQueryResultType] of PChar =
-    ('article', 'photo', 'video', 'audio', 'voice', 'mpeg4_gif', '');
+    ('article', 'photo', 'video', 'audio', 'voice', 'mpeg4_gif', 'document', '');
 
   TgBotUrlStart = 'https://t.me/';
 
@@ -1103,6 +1111,11 @@ begin
   Result:=Get(s_Description, EmptyStr);
 end;
 
+function TInlineQueryResult.GetDocumentFileID: String;
+begin
+  Result:=Get(s_DocumentFileID, EmptyStr);
+end;
+
 function TInlineQueryResult.GetID: String;
 begin
   Result:=Strings[s_ID];
@@ -1221,6 +1234,11 @@ end;
 procedure TInlineQueryResult.SetDescription(AValue: String);
 begin
   Strings[s_Description]:=AValue;
+end;
+
+procedure TInlineQueryResult.SetDocumentFileID(AValue: String);
+begin
+  Strings[s_DocumentFileID]:=AValue;
 end;
 
 procedure TInlineQueryResult.SetID(AValue: String);
@@ -2514,6 +2532,34 @@ begin
     if Assigned(ReplyMarkup) then
       Add(s_ReplyMarkup, ReplyMarkup.Clone); // Clone of ReplyMarkup object will have released with sendObject
     Result:=SendMethod(s_sendAudio, sendObj);
+  finally
+    Free;
+  end;
+end;
+
+function TTelegramSender.sendDocument(chat_id: Int64; const file_id: String;
+  const Caption: String; ParseMode: TParseMode; DisableNotification: Boolean;
+  ReplyToMessageID: Integer; ReplyMarkup: TReplyMarkup): Boolean;
+var
+  sendObj: TJSONObject;
+begin
+  Result:=False;
+  sendObj:=TJSONObject.Create;
+  with sendObj do
+  try
+    Add(s_ChatId, chat_id);
+    Add(s_Document, file_id);
+    if Caption<>EmptyStr then
+      Add(s_Caption, Caption);
+    if ParseMode<>pmDefault then
+      Add(s_ParseMode, ParseModes[ParseMode]);
+    if DisableNotification then
+      Add(s_DsblNtfctn, DisableNotification);
+    if ReplyToMessageID<>0 then
+      Add(s_ReplyToMessageID, ReplyToMessageID);
+    if Assigned(ReplyMarkup) then
+      Add(s_ReplyMarkup, ReplyMarkup.Clone); // Clone of ReplyMarkup object will have released with sendObject
+    Result:=SendMethod(s_sendDocument, sendObj);
   finally
     Free;
   end;
