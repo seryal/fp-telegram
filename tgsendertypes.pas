@@ -5,7 +5,9 @@ unit tgsendertypes;
 interface
 
 uses
-  Classes, SysUtils, fphttpclient, fpjson, tgtypes, ghashmap, ghashset, tgstatlog, eventlog;
+  Classes, SysUtils, fphttpclient, fpjson, tgtypes, ghashmap, ghashset, tgstatlog, eventlog,
+  ssockets
+  ;
 
 type
   TParseMode = (pmDefault, pmMarkdown, pmHTML);
@@ -414,6 +416,8 @@ type
     procedure SetChannelCommandHandlers(const Command: String;
       AValue: TCommandEvent);
     procedure SetCommandHandlers(const Command: String; AValue: TCommandEvent);
+    procedure HttpClientGetSocketHandler(Sender: TObject; const UseSSL: Boolean;
+      out AHandler: TSocketHandler);
     function HTTPPostFile(const Method, FileField, FileName: String; AFormData: TStrings): Boolean;
     function HTTPPostJSON(const Method: String): Boolean;
     function HTTPPostStream(const Method, FileField, FileName: String;
@@ -620,7 +624,7 @@ var
 implementation
 
 uses
-  jsonparser, jsonscanner;
+  jsonparser, jsonscanner, sslsockets, fpopenssl;
 const
 //  API names constants
 
@@ -1735,6 +1739,17 @@ begin
   FCommandHandlers.Items[Command]:=AValue;
 end;
 
+procedure TTelegramSender.HttpClientGetSocketHandler(Sender: TObject;
+  const UseSSL: Boolean; out AHandler: TSocketHandler);
+begin
+  {$IFDEF LINUX}
+    if UseSSL then begin
+      AHandler:=TSSLSocketHandler.Create;
+      TSSLSocketHandler(AHandler).SSLType:=stTLSv1_1;  // <--
+    end;
+  {$ENDIF}
+end;
+
 procedure TTelegramSender.DoReceiveMessageUpdate(AMessage: TTelegramMessageObj);
 begin
   FCurrentMessage:=AMessage;
@@ -2068,6 +2083,7 @@ begin
     HTTP.RequestBody:=TStringStream.Create(FRequestBody);
     try
       HTTP.AddHeader('Content-Type','application/json');
+      HTTP.OnGetSocketHandler:=@HttpClientGetSocketHandler;
       FResponse:=HTTP.Post(FAPIEndPoint+FToken+'/'+Method);
     finally
       HTTP.RequestBody.Free;
