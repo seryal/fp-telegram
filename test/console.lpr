@@ -20,7 +20,7 @@ var
 begin
   Application := TMyTestRunner.Create(nil);
   Application.Initialize;
-  Application.Title := 'fp-telegram test runner';
+  Application.Title:='console';
   Application.Run;
   Application.Free;
 end.

@@ -4,9 +4,11 @@ unit tgsendertypes;
 
 interface
 
+{$IF FPC_FULLVERSION < 30300}{$DEFINE ExplSSL}{$ENDIF}
+
 uses
-  Classes, SysUtils, fphttpclient, fpjson, tgtypes, ghashmap, ghashset, tgstatlog, eventlog,
-  ssockets
+  Classes, SysUtils, fphttpclient, fpjson, tgtypes, ghashmap, ghashset, tgstatlog, eventlog
+  {$IFDEF ExplSSL}, ssockets{$ENDIF}
   ;
 
 type
@@ -415,9 +417,9 @@ type
     procedure SetBotUsername(AValue: String);
     procedure SetChannelCommandHandlers(const Command: String;
       AValue: TCommandEvent);
-    procedure SetCommandHandlers(const Command: String; AValue: TCommandEvent);
-    procedure HttpClientGetSocketHandler(Sender: TObject; const UseSSL: Boolean;
-      out AHandler: TSocketHandler);
+    procedure SetCommandHandlers(const Command: String; AValue: TCommandEvent);{$IFDEF ExplSSL}
+    procedure HttpClientGetSocketHandler(Sender: TObject; const {%H-}UseSSL: Boolean;
+      out {%H-}AHandler: TSocketHandler);{$ENDIF}
     function HTTPPostFile(const Method, FileField, FileName: String; AFormData: TStrings): Boolean;
     function HTTPPostJSON(const Method: String): Boolean;
     function HTTPPostStream(const Method, FileField, FileName: String;
@@ -624,7 +626,9 @@ var
 implementation
 
 uses
-  jsonparser, jsonscanner, sslsockets, fpopenssl;
+  jsonparser, jsonscanner{$IFDEF ExplSSL}, sslsockets, fpopenssl{$ENDIF}
+  ;
+
 const
 //  API names constants
 
@@ -1738,7 +1742,7 @@ procedure TTelegramSender.SetCommandHandlers(const Command: String;
 begin
   FCommandHandlers.Items[Command]:=AValue;
 end;
-
+{$IFDEF ExplSSL}
 procedure TTelegramSender.HttpClientGetSocketHandler(Sender: TObject;
   const UseSSL: Boolean; out AHandler: TSocketHandler);
 begin
@@ -1749,7 +1753,7 @@ begin
     end;
   {$ENDIF}
 end;
-
+{$ENDIF}
 procedure TTelegramSender.DoReceiveMessageUpdate(AMessage: TTelegramMessageObj);
 begin
   FCurrentMessage:=AMessage;
@@ -2082,8 +2086,8 @@ begin
     HTTP.IOTimeout:=FTimeout;
     HTTP.RequestBody:=TStringStream.Create(FRequestBody);
     try
-      HTTP.AddHeader('Content-Type','application/json');
-      HTTP.OnGetSocketHandler:=@HttpClientGetSocketHandler;
+      HTTP.AddHeader('Content-Type','application/json');{$IFDEF ExplSSL}
+      HTTP.OnGetSocketHandler:=@HttpClientGetSocketHandler; {$ENDIF}
       FResponse:=HTTP.Post(FAPIEndPoint+FToken+'/'+Method);
     finally
       HTTP.RequestBody.Free;
