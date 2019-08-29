@@ -385,7 +385,6 @@ type
 
   TTelegramDocument = class(TTelegramObj)
   private
-    FDuration: Integer;
     FFileID: String;
     FFileSize: Integer;
     FMimeType: String;

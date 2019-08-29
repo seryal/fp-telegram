@@ -4,7 +4,7 @@ unit tgsendertypes;
 
 interface
 
-{$IF FPC_FULLVERSION < 30300}{$DEFINE ExplSSL}{$ENDIF}
+{$IF FPC_FULLVERSION < 30300}{$DEFINE ExplSSL}{$else}{$DEFINE SSLOpenSockets}{$ENDIF}
 
 uses
   Classes, SysUtils, fphttpclient, fpjson, tgtypes, ghashmap, ghashset, tgstatlog, eventlog
@@ -627,6 +627,7 @@ implementation
 
 uses
   jsonparser, jsonscanner{$IFDEF ExplSSL}, sslsockets, fpopenssl{$ENDIF}
+  {$IFDEF ExplSSL}, opensslsockets{$endif}
   ;
 
 const
