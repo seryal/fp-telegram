@@ -627,7 +627,7 @@ implementation
 
 uses
   jsonparser, jsonscanner{$IFDEF ExplSSL}, sslsockets, fpopenssl{$ENDIF}
-  {$IFDEF ExplSSL}, opensslsockets{$endif}
+  {$IFDEF SSLOpenSockets}, opensslsockets{$endif}
   ;
 
 const
