@@ -72,10 +72,12 @@ type
     procedure SetResizeKeyboard(AValue: Boolean);
     procedure SetSelective(AValue: Boolean);
   public
+    class function CreateFromObject(aObject: TJSONObject): TReplyMarkup;
+    class function CreateFromString(const aJSONString: String): TReplyMarkup;
     function CreateInlineKeyBoard: TInlineKeyboard;
     { Only one from InlineKeyboard or ReplyMarkup is must to set }
     property InlineKeyBoard: TInlineKeyboard read GetInlineKeyBoard write SetInlineKeyBoard;
-{ ٌReplyKeyboard porerties }
+{ ReplyKeyboard properties }
     property ReplyKeyboardMarkup: TKeybordButtonArray read GetReplyKeyboardMarkup
       write SetReplyKeyboardMarkup;
 { Only if ReplyKeyboard is present then optional}
@@ -86,6 +88,8 @@ type
     property ForceReply: Boolean read GetForceReply write SetForceReply;
     property Selective: Boolean read GetSelective write SetSelective;
   end;
+
+  TReplyMarkupClass=class of TReplyMarkup;
 
   { TKeyboardButton }
 
@@ -1556,6 +1560,34 @@ begin
     if not ForceReply then
       ForceReply:=True;
   Booleans[s_Selective]:=AValue;
+end;
+
+class function TReplyMarkup.CreateFromObject(aObject: TJSONObject
+  ): TReplyMarkup;
+Var
+  I: Integer;
+begin
+  Result:=TReplyMarkup.Create;
+  try
+    For I:=0 to aObject.Count-1 do
+      Result.Add(aObject.Names[I],aObject.Items[I].Clone);
+  except
+    FreeAndNil(Result);
+    Raise;
+  end;
+end;
+
+class function TReplyMarkup.CreateFromString(const aJSONString: String
+  ): TReplyMarkup;
+var
+  aJSONObject: TJSONObject;
+begin
+  aJSONObject:=TTelegramSender.StringToJSONObject(aJSONString);
+  try
+    Result:=CreateFromObject(aJSONObject);
+  finally
+    aJSONObject.Free;
+  end;
 end;
 
 function TReplyMarkup.CreateInlineKeyBoard: TInlineKeyboard;
