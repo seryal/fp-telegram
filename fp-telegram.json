@@ -1,0 +1,31 @@
+{
+  "PackageData0" : {
+    "Name" : "fp-telegram",
+    "DisplayName" : "fp-telegram",
+    "Category" : "Networking",
+    "CommunityDescription" : "",
+    "RepositoryFileName" : "fp-telegram.zip",
+    "RepositoryFileSize" : 436559,
+    "RepositoryFileHash" : "4287c74cccf021bb6cee806f5b56448f",
+    "RepositoryDate" : 4.3775657010972223E+004,
+    "PackageBaseDir" : "fp-telegram\\/",
+    "HomePageURL" : "https://github.com/Al-Muhandis/fp-telegram",
+    "DownloadURL" : "",
+    "SVNURL" : ""
+  },
+  "PackageFiles0" : [
+    {
+      "Name" : "fptelegram.lpk",
+      "Description" : "Telegram API library",
+      "Author" : "Al-muhandis (Renat Suleymanov)",
+      "License" : "",
+      "RelativeFilePath" : "",
+      "VersionAsString" : "0.0.0.15",
+      "LazCompatibility" : "1.6, 1.8, Trunk",
+      "FPCCompatibility" : "2.6.4, 3.0.0, 3.0.2, 3.0.4",
+      "SupportedWidgetSet" : "win32/64, gtk, carbon, cocoa",
+      "PackageType" : 3,
+      "DependenciesAsString" : "FCL"
+    }
+  ]
+}

@@ -22,8 +22,9 @@
         </Debugging>
       </Linking>
     </CompilerOptions>
-    <Description Value="Telegram API library"/>
-    <Version Build="15"/>
+    <Description Value="Telegram bots API library"/>
+    <License Value="MIT License"/>
+    <Version Build="16"/>
     <Files Count="4">
       <Item1>
         <Filename Value="tgsendertypes.pas"/>
