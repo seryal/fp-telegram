@@ -62,12 +62,14 @@ type
     function GetForceReply: Boolean;
     function GetInlineKeyBoard: TInlineKeyboard;
     function GetOneTimeKeyboard: Boolean;
+    function GetRemoveKeyboard: Boolean;
     function GetReplyKeyboardMarkup: TKeybordButtonArray;
     function GetResizeKeyboard: Boolean;
     function GetSelective: Boolean;
     procedure SetForceReply(AValue: Boolean);
     procedure SetInlineKeyBoard(AValue: TInlineKeyboard);
     procedure SetOneTimeKeyboard(AValue: Boolean);
+    procedure SetRemoveKeyboard(AValue: Boolean);
     procedure SetReplyKeyboardMarkup(AValue: TKeybordButtonArray);
     procedure SetResizeKeyboard(AValue: Boolean);
     procedure SetSelective(AValue: Boolean);
@@ -80,6 +82,7 @@ type
 { ReplyKeyboard properties }
     property ReplyKeyboardMarkup: TKeybordButtonArray read GetReplyKeyboardMarkup
       write SetReplyKeyboardMarkup;
+    property RemoveKeyboard: Boolean read GetRemoveKeyboard write SetRemoveKeyboard;
 { Only if ReplyKeyboard is present then optional}
     property ResizeKeyboard: Boolean read GetResizeKeyboard write SetResizeKeyboard;
     property OneTimeKeyboard: Boolean read GetOneTimeKeyboard write SetOneTimeKeyboard;
@@ -683,6 +686,7 @@ const
   s_SupportsStreaming = 'supports_streaming';
   s_InlineKeyboard = 'inline_keyboard';
   s_Keyboard = 'keyboard';
+  s_RemoveKeyboard = 'remove_keyboard';
   s_ResizeKeyboard = 'resize_keyboard';
   s_OneTimeKeyboard = 'one_time_keyboard';
   s_RequestContact = 'request_contact';
@@ -1506,6 +1510,11 @@ begin
   Result:=Get(s_OneTimeKeyboard, False);
 end;
 
+function TReplyMarkup.GetRemoveKeyboard: Boolean;
+begin
+  Result:=Get(s_RemoveKeyboard, False);
+end;
+
 function TReplyMarkup.GetReplyKeyboardMarkup: TKeybordButtonArray;
 begin
   Result:=Arrays[s_Keyboard] as TKeybordButtonArray;
@@ -1542,6 +1551,11 @@ end;
 procedure TReplyMarkup.SetOneTimeKeyboard(AValue: Boolean);
 begin
   Booleans[s_OneTimeKeyboard]:=AValue;
+end;
+
+procedure TReplyMarkup.SetRemoveKeyboard(AValue: Boolean);
+begin
+  Booleans[s_RemoveKeyboard]:=AValue;
 end;
 
 procedure TReplyMarkup.SetReplyKeyboardMarkup(AValue: TKeybordButtonArray);
