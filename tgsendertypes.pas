@@ -517,7 +517,7 @@ type
     function sendDocumentStream(chat_id: Int64;  const AFileName: String; ADocStream: TStream;
       const ACaption: String; ReplyMarkup: TReplyMarkup = nil): Boolean;
     function sendInvoice(chat_id: Int64; const Title, Description, Payload, ProviderToken,
-      StartParameter, Currency: String; Prices: TLabeledPriceArray; ProviderData: TJSONData = nil;
+      StartParameter, Currency: String; Prices: TLabeledPriceArray; ProviderData: TJSONObject = nil;
       const PhotoUrl: String = ''; PhotoSize: Integer = 0; PhotoWidth: Integer = 0; PhotoHeight: Integer = 0;
       NeedName: Boolean = False; NeedPhoneNumber: Boolean = False; NeedEmail: Boolean = False; NeedShippingAddress: Boolean = False;
       SendPhoneNumberToProvider: Boolean = False; SendEmailToProvider: Boolean = False;
@@ -2673,14 +2673,12 @@ begin
   end;
 end;
 
-function TTelegramSender.sendInvoice(chat_id: Int64; const Title, Description,
-  Payload, ProviderToken, StartParameter, Currency: String;
-  Prices: TLabeledPriceArray; ProviderData: TJSONData; const PhotoUrl: String;
-  PhotoSize: Integer; PhotoWidth: Integer; PhotoHeight: Integer;
-  NeedName: Boolean; NeedPhoneNumber: Boolean; NeedEmail: Boolean;
-  NeedShippingAddress: Boolean; SendPhoneNumberToProvider: Boolean;
-  SendEmailToProvider: Boolean; IsFlexible: Boolean;
-  DisableNotification: Boolean; ReplyToMessageID: Integer;
+function TTelegramSender.sendInvoice(chat_id: Int64; const Title, Description, Payload,
+  ProviderToken, StartParameter, Currency: String; Prices: TLabeledPriceArray;
+  ProviderData: TJSONObject; const PhotoUrl: String; PhotoSize: Integer; PhotoWidth: Integer;
+  PhotoHeight: Integer; NeedName: Boolean; NeedPhoneNumber: Boolean; NeedEmail: Boolean;
+  NeedShippingAddress: Boolean; SendPhoneNumberToProvider: Boolean; SendEmailToProvider: Boolean;
+  IsFlexible: Boolean; DisableNotification: Boolean; ReplyToMessageID: Integer;
   ReplyMarkup: TReplyMarkup): Boolean;
 var
   sendObj: TJSONObject;
@@ -2698,7 +2696,7 @@ begin
     Add(s_Currency, Currency);
     Add(s_Prices, Prices.Clone);
     if Assigned(ProviderData) then
-      Add(s_ProviderData, ProviderData);
+      Add(s_ProviderData, ProviderData.Clone);
     if PhotoUrl<>EmptyStr then
       Add(s_PhotoUrl, PhotoUrl);
     if PhotoSize<>0 then
