@@ -1796,7 +1796,7 @@ begin
   {$IFDEF LINUX}
     if UseSSL then begin
       AHandler:=TSSLSocketHandler.Create;
-      TSSLSocketHandler(AHandler).SSLType:=stTLSv1_1;  // <--
+      TSSLSocketHandler(AHandler).SSLType:=stTLSv1_2;  // <--
     end;
   {$ENDIF}
 end;
