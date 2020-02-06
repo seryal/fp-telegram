@@ -1,9 +1,9 @@
-program gui;
+program gui_synapse;
 
 {$mode objfpc}{$H+}
 
 uses
-  Interfaces, Forms, GuiTestRunner, testtelegram, tgfclhttpclientbroker
+  Interfaces, Forms, GuiTestRunner, testtelegram, tgsynapsehttpclientbroker
   ;
 
 {$R *.res}

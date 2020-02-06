@@ -4,11 +4,9 @@ unit tgsendertypes;
 
 interface
 
-{$IF FPC_FULLVERSION < 30300}{$DEFINE ExplSSL}{$else}{$DEFINE SSLOpenSockets}{$ENDIF}
-
 uses
-  Classes, SysUtils, fphttpclient, fpjson, tgtypes, ghashmap, ghashset, tgstatlog, eventlog
-  {$IFDEF ExplSSL}, ssockets{$ENDIF}
+  Classes, SysUtils, fpjson, tgtypes, ghashmap, ghashset, tgstatlog, eventlog,
+  tgbasehttpclient
   ;
 
 type
@@ -424,9 +422,7 @@ type
     procedure SetBotUsername(AValue: String);
     procedure SetChannelCommandHandlers(const Command: String;
       AValue: TCommandEvent);
-    procedure SetCommandHandlers(const Command: String; AValue: TCommandEvent);{$IFDEF ExplSSL}
-    procedure HttpClientGetSocketHandler(Sender: TObject; const {%H-}UseSSL: Boolean;
-      out {%H-}AHandler: TSocketHandler);{$ENDIF}
+    procedure SetCommandHandlers(const Command: String; AValue: TCommandEvent);
     function HTTPPostFile(const Method, FileField, FileName: String; AFormData: TStrings): Boolean;
     function HTTPPostJSON(const Method: String): Boolean;
     function HTTPPostStream(const Method, FileField, FileName: String;
@@ -633,9 +629,7 @@ var
 implementation
 
 uses
-  jsonparser, jsonscanner{$IFDEF ExplSSL}, sslsockets, fpopenssl{$ENDIF}
-  {$IFDEF SSLOpenSockets}, opensslsockets{$endif}
-  ;
+  jsonparser, jsonscanner;
 
 const
 //  API names constants
@@ -1789,18 +1783,7 @@ procedure TTelegramSender.SetCommandHandlers(const Command: String;
 begin
   FCommandHandlers.Items[Command]:=AValue;
 end;
-{$IFDEF ExplSSL}
-procedure TTelegramSender.HttpClientGetSocketHandler(Sender: TObject;
-  const UseSSL: Boolean; out AHandler: TSocketHandler);
-begin
-  {$IFDEF LINUX}
-    if UseSSL then begin
-      AHandler:=TSSLSocketHandler.Create;
-      TSSLSocketHandler(AHandler).SSLType:=stTLSv1_1;  // <--
-    end;
-  {$ENDIF}
-end;
-{$ENDIF}
+
 procedure TTelegramSender.DoReceiveMessageUpdate(AMessage: TTelegramMessageObj);
 begin
   FCurrentMessage:=AMessage;
@@ -2106,10 +2089,10 @@ end;
 function TTelegramSender.HTTPPostFile(const Method, FileField, FileName: String;
   AFormData: TStrings): Boolean;
 var
-  HTTP: TFPHTTPClient;
+  HTTP: TBaseHTTPClient;
   AStream: TStringStream;
 begin
-  HTTP:=TFPHTTPClient.Create(nil);
+  HTTP:=TBaseHTTPClient.GetClientClass.Create(nil);
   AStream:=TStringStream.Create(EmptyStr);
   try
     HTTP.AddHeader('Content-Type','multipart/form-data');
@@ -2125,19 +2108,19 @@ end;
 
 function TTelegramSender.HTTPPostJSON(const Method: String): Boolean;
 var
-  HTTP: TFPHTTPClient;
+  HTTP: TBaseHTTPClient;
 begin
   Result:=False;
-  HTTP:=TFPHTTPClient.Create(nil);
+  HTTP:=TBaseHTTPClient.GetClientClass.Create(nil);
   try
     HTTP.IOTimeout:=FTimeout;
     HTTP.RequestBody:=TStringStream.Create(FRequestBody);
     try
-      HTTP.AddHeader('Content-Type','application/json');{$IFDEF ExplSSL}
-      HTTP.OnGetSocketHandler:=@HttpClientGetSocketHandler; {$ENDIF}
+      HTTP.AddHeader('Content-Type','application/json');
       FResponse:=HTTP.Post(FAPIEndPoint+FToken+'/'+Method);
     finally
       HTTP.RequestBody.Free;
+      HTTP.RequestBody:=nil;
     end;
     Result:=True;
     DebugMessage('Response: '+FResponse);
@@ -2151,10 +2134,10 @@ end;
 function TTelegramSender.HTTPPostStream(const Method, FileField, FileName: String;
   AStream: TStream; AFormData: TStrings): Boolean;
 var
-  HTTP: TFPHTTPClient;
+  HTTP: TBaseHTTPClient;
   AStringStream: TStringStream;
 begin
-  HTTP:=TFPHTTPClient.Create(nil);
+  HTTP:=TBaseHTTPClient.GetClientClass.Create(nil);
   AStringStream:=TStringStream.Create(EmptyStr);
   try
     HTTP.IOTimeout:=FTimeout;

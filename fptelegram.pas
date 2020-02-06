@@ -8,7 +8,7 @@ unit fptelegram;
 interface
 
 uses
-  tgsendertypes, tgtypes, tgstatlog, tgutils;
+  tgsendertypes, tgtypes, tgstatlog, tgutils, tgfclhttpclientbroker, tgbasehttpclient;
 
 implementation
 
