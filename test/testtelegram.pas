@@ -25,6 +25,23 @@ type
     procedure ChatMember;
   end;
 
+  { TTestProxySender }
+
+  TTestProxySender = class(TTestSender)
+  private
+    FProxyHost: String;
+    FProxyPassword: String;
+    FProxyPort: Word;
+    FProxyUser: String;
+  protected
+    procedure SetUp; override;
+  public
+    property ProxyUser: String read FProxyUser write FProxyUser;
+    property ProxyPassword: String read FProxyPassword write FProxyPassword;
+    property ProxyHost: String read FProxyHost write FProxyHost;
+    property ProxyPort: Word read FProxyPort write FProxyPort;
+  end;
+
   { TTestSenderProcedure }
   { Test sending messages. Simple procedure style}
   TTestSenderProcedure=class(TTestTelegramBase)
@@ -75,10 +92,48 @@ type
 
 implementation
 
+uses
+  URIParser
+  ;
+
 const
   Msg='Test message sent from %s. Test procedure: %s';
   vd_cptn='Test video sent from %s. Test procedure: %s';
   Msg_md='Test message sent from %s. Test procedure: _%s_';
+
+  s_Username='Username';
+  s_Password='Password';
+  s_Proxy='Proxy';
+  s_Host='Host';
+  s_Port='Port';
+  s_Uri='Uri';
+
+{ TTestProxySender }
+
+procedure TTestProxySender.SetUp;
+var
+  AHost, AUsername, APassword: String;
+  APort: Word;
+  URI: TURI;
+begin
+  inherited SetUp;
+  AHost:=    Conf.ReadString(s_Proxy,  s_Host,     EmptyStr);
+  AUsername:=Conf.ReadString(s_Proxy,  s_Username, EmptyStr);
+  APassword:=Conf.ReadString(s_Proxy,  s_Password, EmptyStr);
+  APort:=    Conf.ReadInteger(s_Proxy, s_Port,     0);
+  if AHost=EmptyStr then
+  begin
+    URI:=URIParser.ParseURI('https://'+Conf.ReadString(s_Proxy, s_Uri, EmptyStr));
+    AHost:=URI.Host;
+    APort:=URI.Port;
+    AUsername:=URI.Username;
+    APassword:=URI.Password;
+  end;
+  Bot.HTTPProxyHost:=AHost;
+  Bot.HTTProxyPort:=APort;
+  Bot.HTTPProxyUser:=AUsername;
+  Bot.HTTPProxyPassword:=APassword;
+end;
 
 { TTestReceiveLongPolling }
 
@@ -248,6 +303,6 @@ end;
 
 initialization
 
-  RegisterTests([TTestSender, TTestSenderProcedure, TTestReceiveLongPolling, TTestPayments]);
+  RegisterTests([TTestSender, TTestSenderProcedure, TTestProxySender, TTestReceiveLongPolling, TTestPayments]);
 end.
 

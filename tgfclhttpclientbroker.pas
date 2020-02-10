@@ -60,9 +60,8 @@ implementation
 
 uses
   {$IFDEF ExplSSL}sslsockets, fpopenssl{$ENDIF}
-  {$IFDEF SSLOpenSockets}, opensslsockets{$endif}
+  {$IFDEF SSLOpenSockets}opensslsockets{$endif}
   ;
-
 
 { TFCLHTTPClient }
 

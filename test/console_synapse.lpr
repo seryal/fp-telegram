@@ -1,9 +1,9 @@
-program console;
+program console_synapse;
 
 {$mode objfpc}{$H+}
 
 uses
-  Classes, consoletestrunner, testtelegram, tgfclhttpclientbroker;
+  Classes, consoletestrunner, testtelegram, tgsynapsehttpclientbroker, ssl_openssl;
 
 type
 
