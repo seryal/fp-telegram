@@ -20,7 +20,7 @@ var
 begin
   Application := TMyTestRunner.Create(nil);
   Application.Initialize;
-  Application.Title:='console';
+  Application.Title:='console_synapse';
   Application.Run;
   Application.Free;
 end.

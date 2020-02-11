@@ -38,7 +38,7 @@ type
     procedure SetHTTPProxyPassword(AValue: String); override;
     procedure SetHTTPProxyPort(AValue: Word); override;
     procedure SetHTTPProxyUsername(AValue: String); override;
-    procedure SetIOTimeout({%H-}AValue: Integer); override;
+    procedure SetIOTimeout(AValue: Integer); override;
     procedure SetRequestBody(AValue: TStream); override;
     procedure SetRequestHeaders(AValue: TStrings); override;
     function HttpPostFile(const URL: string; FormData: TStrings; const AFieldName, AFileName: String;
@@ -125,8 +125,11 @@ begin
       Response.Free;
     end
   end
-  else
+  else begin
     Result:=EmptyStr;
+    raise EHTTPClient.Create('HTTP client. '+FHTTPClient.ResultCode.ToString+' '+
+      FHTTPClient.ResultString);
+  end;
 end;
 
 function TSynapseHTTPClient.Get(const AUrl: String): String;
@@ -146,8 +149,11 @@ begin
       Response.Free;
     end
   end
-  else
+  else begin
     Result:=EmptyStr;
+    raise EHTTPClient.Create('HTTP client. '+FHTTPClient.ResultCode.ToString+' '+
+      FHTTPClient.ResultString);
+  end;
 end;
 
 function TSynapseHTTPClient.Post(const URL: string): String;
@@ -169,8 +175,11 @@ begin
       Response.Free;
     end
   end
-  else
+  else begin
     Result:=EmptyStr;
+    raise EHTTPClient.Create('HTTP client. '+FHTTPClient.ResultCode.ToString+' '+
+      FHTTPClient.ResultString);
+  end;
 end;
 
 procedure TSynapseHTTPClient.StreamFormPost(const AURL: string; FormData: TStrings;
@@ -224,7 +233,7 @@ end;
 
 function TSynapseHTTPClient.{%H-}GetIOTimeout: Integer;
 begin
-  { todo }
+  Result:=FHTTPClient.Timeout;
 end;
 
 function TSynapseHTTPClient.GetRequestBody: TStream;
@@ -285,7 +294,7 @@ end;
 
 procedure TSynapseHTTPClient.SetIOTimeout(AValue: Integer);
 begin
-  { todo }
+  FHTTPClient.Timeout:=AValue;
 end;
 
 procedure TSynapseHTTPClient.SetRequestBody(AValue: TStream);
@@ -335,7 +344,10 @@ begin
       FHTTPClient.Document.SaveToStream(Response);
       FResponseHeaders.AddStrings(FHTTPClient.Headers, True);
       {$IFDEF DEBUG}FResponseHeaders.SaveToFile('~ResponseHeaders.txt');{$ENDIF}
-    end;
+    end
+    else
+      raise EHTTPClient.Create('HTTP client. '+FHTTPClient.ResultCode.ToString+' '+
+            FHTTPClient.ResultString);
   finally
     SS.Free;
   end;

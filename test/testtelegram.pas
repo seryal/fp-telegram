@@ -253,11 +253,13 @@ end;
 
 procedure TTestSender.sendMessage;
 begin
-  Bot.sendMessage(ChatID, Format(Msg, [Self.ClassName, TestName]));
+  if not Bot.sendMessage(ChatID, Format(Msg, [Self.ClassName, TestName])) then
+    Fail('Connection error');
   if Bot.LastErrorCode<>0 then
     Fail('Error from telegram API server. Error code: '+IntToStr(Bot.LastErrorCode)+
       '. Description: '+Bot.LastErrorDescription);
-  Bot.sendMessage(ChatID, Format(Msg_md, [Self.ClassName, TestName]), pmMarkdown);
+  if not Bot.sendMessage(ChatID, Format(Msg_md, [Self.ClassName, TestName]), pmMarkdown) then
+    Fail('Connection error');
   if Bot.LastErrorCode<>0 then
     Fail('Error from telegram API server. Error code: '+IntToStr(Bot.LastErrorCode)+
       '. Description: '+Bot.LastErrorDescription);
@@ -274,8 +276,9 @@ begin
     Buttons.AddButtonUrl('Github.com',
       'https://github.com/Al-Muhandis/fp-telegram');
     ReplyMarkup.InlineKeyBoard.Add.AddButtons(['Button 1', 'Callback data 1', 'Button 2', 'Callback data 2']);
-    Bot.sendMessage(ChatID, Format(Msg_md, [Self.ClassName, TestName]), pmMarkdown, False,
-      ReplyMarkup);
+    if not Bot.sendMessage(ChatID, Format(Msg_md, [Self.ClassName, TestName]), pmMarkdown,
+      False, ReplyMarkup) then
+      Fail('Connection error');
   finally
     ReplyMarkup.Free;
   end;
@@ -286,7 +289,8 @@ end;
 
 procedure TTestSender.sendVideo;
 begin
-  Bot.sendVideo(ChatID, VideoUrl, Format(vd_cptn, [Self.ClassName, TestName]));
+  if not Bot.sendVideo(ChatID, VideoUrl, Format(vd_cptn, [Self.ClassName, TestName])) then
+    Fail('Connection error');
   if Bot.LastErrorCode<>0 then
     Fail('Error from telegram API server. Error code: '+IntToStr(Bot.LastErrorCode)+
       '. Description: '+Bot.LastErrorDescription);
@@ -294,7 +298,8 @@ end;
 
 procedure TTestSender.ChatMember;
 begin
-  Bot.getChatMember(ChatID, UserID);
+  if not Bot.getChatMember(ChatID, UserID) then
+    Fail('Connection error');
   SaveJSONData(Bot.JSONResponse, '~responce.json');
   if Bot.LastErrorCode<>0 then
     Fail('Error from telegram API server. Error code: '+IntToStr(Bot.LastErrorCode)+
