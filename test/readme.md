@@ -23,6 +23,20 @@ Currency=USD
 PricePortionLabel=
 ;; for example: 10000, that is 100.00 [dollars/rub/etc]
 PricePortionAmount=10000
+
+[Send]
+;; Url link to [short] video file (for example, http://sample.com/video.mp4)
+videourl=
+
+;; Proxy support is implemented only for the synapse HTTP Client broker. Not yet implemented in the native FPHTTPClient. 
+;; You can specify HTTP proxy via Host/Port/UserName/Password name-value strings or via the Uri.
+[Proxy]
+Host=
+Port=
+Username=
+Password=
+Uri=
+;;Uri=username:password@host:port
 ```
 In order to test receiving updates via longpolling, send a message or other \[action\] to the bot just before testing (procedure `TTestReceiveLongPolling.Receive`).
 

@@ -1,9 +1,9 @@
-program console;
+program console_synapse;
 
 {$mode objfpc}{$H+}
 
 uses
-  Classes, consoletestrunner, testtelegram, tgfclhttpclientbroker;
+  Classes, consoletestrunner, testtelegram, tgsynapsehttpclientbroker, ssl_openssl;
 
 type
 
@@ -20,7 +20,7 @@ var
 begin
   Application := TMyTestRunner.Create(nil);
   Application.Initialize;
-  Application.Title:='console';
+  Application.Title:='console_synapse';
   Application.Run;
   Application.Free;
 end.

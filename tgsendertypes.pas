@@ -4,11 +4,9 @@ unit tgsendertypes;
 
 interface
 
-{$IF FPC_FULLVERSION < 30300}{$DEFINE ExplSSL}{$else}{$DEFINE SSLOpenSockets}{$ENDIF}
-
 uses
-  Classes, SysUtils, fphttpclient, fpjson, tgtypes, ghashmap, ghashset, tgstatlog, eventlog
-  {$IFDEF ExplSSL}, ssockets{$ENDIF}
+  Classes, SysUtils, fpjson, tgtypes, ghashmap, ghashset, tgstatlog, eventlog,
+  tgbasehttpclient
   ;
 
 type
@@ -384,6 +382,10 @@ type
     FCurrentUser: TTelegramUserObj;
     FBotUser: TTelegramUserObj;
     FFileObj: TTelegramFile;
+    FHTTPProxyHost: String;
+    FHTTPProxyPassword: String;
+    FHTTPProxyUser: String;
+    FHTTProxyPort: Word;
     FLanguage: string;
     FLastErrorCode: Integer;
     FLastErrorDescription: String;
@@ -414,6 +416,9 @@ type
     FUpdateLogger: TtgStatLog;
     FUpdateProcessed: Boolean;
     FTimeout: Integer;
+    procedure AssignHTTProxy(aHTTPClient: TBaseHTTPClient; const aHost: String; aPort: Word;
+      const aUserName, aPassword: String);
+    procedure AssignHTTProxy(aHTTPClient: TBaseHTTPClient);
     function CurrentLanguage(AUser: TTelegramUserObj): String;
     function CurrentLanguage(AMessage: TTelegramMessageObj): String;
     function GetAPIEndPoint: String;
@@ -424,9 +429,7 @@ type
     procedure SetBotUsername(AValue: String);
     procedure SetChannelCommandHandlers(const Command: String;
       AValue: TCommandEvent);
-    procedure SetCommandHandlers(const Command: String; AValue: TCommandEvent);{$IFDEF ExplSSL}
-    procedure HttpClientGetSocketHandler(Sender: TObject; const {%H-}UseSSL: Boolean;
-      out {%H-}AHandler: TSocketHandler);{$ENDIF}
+    procedure SetCommandHandlers(const Command: String; AValue: TCommandEvent);
     function HTTPPostFile(const Method, FileField, FileName: String; AFormData: TStrings): Boolean;
     function HTTPPostJSON(const Method: String): Boolean;
     function HTTPPostStream(const Method, FileField, FileName: String;
@@ -579,6 +582,10 @@ type
     property UpdateProcessed: Boolean read FUpdateProcessed write SetUpdateProcessed;
     property RequestBody: String read FRequestBody write SetRequestBody;
     property Response: String read FResponse;
+    property HTTPProxyUser: String read FHTTPProxyUser write FHTTPProxyUser;
+    property HTTPProxyPassword: String read FHTTPProxyPassword write FHTTPProxyPassword;
+    property HTTPProxyHost: String read FHTTPProxyHost write FHTTPProxyHost;
+    property HTTProxyPort: Word read FHTTProxyPort write FHTTProxyPort;
     property Token: String read FToken write FToken;
     { If you're using webhooks, you can perform a request to the API while sending an answer...
       In this case the method to be invoked in the method parameter of the request.}
@@ -633,8 +640,10 @@ var
 implementation
 
 uses
-  jsonparser, jsonscanner{$IFDEF ExplSSL}, sslsockets, fpopenssl{$ENDIF}
-  {$IFDEF SSLOpenSockets}, opensslsockets{$endif}
+  jsonparser, jsonscanner
+{  added tgfclhttpclientbroker unit by default for backward compatibility.
+  But in your projects it is better to specify the appropriate broker explicitly }
+  , tgfclhttpclientbroker
   ;
 
 const
@@ -1748,6 +1757,24 @@ begin
   FBotUsername:=AValue;
 end;
 
+procedure TTelegramSender.AssignHTTProxy(aHTTPClient: TBaseHTTPClient; const aHost: String;
+  aPort: Word; const aUserName, aPassword: String);
+begin
+  with aHTTPClient do
+  begin
+    HTTPProxyHost:=aHost;
+    HTTPProxyPort:=aPort;
+    HTTPProxyUsername:=aUserName;
+    HTTPProxyPassword:=aPassword;
+  end;
+end;
+
+procedure TTelegramSender.AssignHTTProxy(aHTTPClient: TBaseHTTPClient);
+begin
+  AssignHTTProxy(aHTTPClient, FHTTPProxyHost, FHTTProxyPort, FHTTPProxyUser,
+    FHTTPProxyPassword);
+end;
+
 function TTelegramSender.CurrentLanguage(AUser: TTelegramUserObj): String;
 begin
   Result:=AUser.Language_code;
@@ -1789,18 +1816,7 @@ procedure TTelegramSender.SetCommandHandlers(const Command: String;
 begin
   FCommandHandlers.Items[Command]:=AValue;
 end;
-{$IFDEF ExplSSL}
-procedure TTelegramSender.HttpClientGetSocketHandler(Sender: TObject;
-  const UseSSL: Boolean; out AHandler: TSocketHandler);
-begin
-  {$IFDEF LINUX}
-    if UseSSL then begin
-      AHandler:=TSSLSocketHandler.Create;
-      TSSLSocketHandler(AHandler).SSLType:=stTLSv1_2;  // <--
-    end;
-  {$ENDIF}
-end;
-{$ENDIF}
+
 procedure TTelegramSender.DoReceiveMessageUpdate(AMessage: TTelegramMessageObj);
 begin
   FCurrentMessage:=AMessage;
@@ -2106,10 +2122,11 @@ end;
 function TTelegramSender.HTTPPostFile(const Method, FileField, FileName: String;
   AFormData: TStrings): Boolean;
 var
-  HTTP: TFPHTTPClient;
+  HTTP: TBaseHTTPClient;
   AStream: TStringStream;
 begin
-  HTTP:=TFPHTTPClient.Create(nil);
+  HTTP:=TBaseHTTPClient.GetClientClass.Create(nil);
+  AssignHTTProxy(HTTP);
   AStream:=TStringStream.Create(EmptyStr);
   try
     HTTP.AddHeader('Content-Type','multipart/form-data');
@@ -2125,19 +2142,20 @@ end;
 
 function TTelegramSender.HTTPPostJSON(const Method: String): Boolean;
 var
-  HTTP: TFPHTTPClient;
+  HTTP: TBaseHTTPClient;
 begin
   Result:=False;
-  HTTP:=TFPHTTPClient.Create(nil);
+  HTTP:=TBaseHTTPClient.GetClientClass.Create(nil);
+  AssignHTTProxy(HTTP);
   try
     HTTP.IOTimeout:=FTimeout;
     HTTP.RequestBody:=TStringStream.Create(FRequestBody);
     try
-      HTTP.AddHeader('Content-Type','application/json');{$IFDEF ExplSSL}
-      HTTP.OnGetSocketHandler:=@HttpClientGetSocketHandler; {$ENDIF}
+      HTTP.AddHeader('Content-Type','application/json');
       FResponse:=HTTP.Post(FAPIEndPoint+FToken+'/'+Method);
     finally
       HTTP.RequestBody.Free;
+      HTTP.RequestBody:=nil;
     end;
     Result:=True;
     DebugMessage('Response: '+FResponse);
@@ -2151,10 +2169,11 @@ end;
 function TTelegramSender.HTTPPostStream(const Method, FileField, FileName: String;
   AStream: TStream; AFormData: TStrings): Boolean;
 var
-  HTTP: TFPHTTPClient;
+  HTTP: TBaseHTTPClient;
   AStringStream: TStringStream;
 begin
-  HTTP:=TFPHTTPClient.Create(nil);
+  HTTP:=TBaseHTTPClient.GetClientClass.Create(nil);
+  AssignHTTProxy(HTTP);
   AStringStream:=TStringStream.Create(EmptyStr);
   try
     HTTP.IOTimeout:=FTimeout;

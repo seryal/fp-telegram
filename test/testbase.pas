@@ -39,12 +39,24 @@ type
 
 implementation
 
+uses
+  eventlog
+  ;
+
 { TTestTelegramClass }
 
 procedure TTestTelegramClass.SetUp;
 begin
   inherited SetUp;
   FBot:=TTelegramSender.Create(FConf.ReadString('Bot', 'Token', EmptyStr));
+  FBot.Logger:=TEventLog.Create(nil);
+  FBot.LogDebug:=True;
+  with FBot.Logger do
+  begin
+    LogType:=ltFile;
+    FileName:=ChangeFileExt(ParamStr(0), '.log');
+    AppendContent:=True;
+  end;
   if FBot.Token=EmptyStr then
     Fail('Please, specify bot token in testtelegram.ini! See readme.md');
   FChatID:=Conf.ReadInt64('Chat', 'ID', 0);
@@ -55,6 +67,8 @@ end;
 
 procedure TTestTelegramClass.TearDown;
 begin
+  FBot.Logger.Free;
+  FBot.Logger:=nil;
   FreeAndNil(FBot);
   inherited TearDown;
 end;

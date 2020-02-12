@@ -25,7 +25,7 @@
     <Description Value="Telegram bots API library"/>
     <License Value="MIT License"/>
     <Version Build="17"/>
-    <Files Count="4">
+    <Files Count="6">
       <Item1>
         <Filename Value="tgsendertypes.pas"/>
         <UnitName Value="tgsendertypes"/>
@@ -42,6 +42,14 @@
         <Filename Value="tgutils.pas"/>
         <UnitName Value="tgutils"/>
       </Item4>
+      <Item5>
+        <Filename Value="tgfclhttpclientbroker.pas"/>
+        <UnitName Value="tgfclhttpclientbroker"/>
+      </Item5>
+      <Item6>
+        <Filename Value="tgbasehttpclient.pas"/>
+        <UnitName Value="tgbasehttpclient"/>
+      </Item6>
     </Files>
     <RequiredPkgs Count="1">
       <Item1>
