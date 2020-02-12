@@ -8,7 +8,7 @@ object FrmMain: TFrmMain
   ClientWidth = 608
   OnDestroy = FormDestroy
   SessionProperties = 'EdtToken.Text'
-  LCLVersion = '2.0.0.4'
+  LCLVersion = '2.0.6.0'
   object EdtToken: TLabeledEdit
     Left = 16
     Height = 23

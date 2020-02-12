@@ -7,19 +7,13 @@ object FrmMain: TFrmMain
   ClientHeight = 328
   ClientWidth = 320
   SessionProperties = 'EdtToken.Text'
-  LCLVersion = '1.8.0.6'
+  LCLVersion = '2.0.6.0'
   object EdtToken: TLabeledEdit
     Left = 8
     Height = 23
     Top = 24
     Width = 304
-    EditLabel.AnchorSideLeft.Control = EdtToken
-    EditLabel.AnchorSideRight.Control = EdtToken
-    EditLabel.AnchorSideRight.Side = asrBottom
-    EditLabel.AnchorSideBottom.Control = EdtToken
-    EditLabel.Left = 8
     EditLabel.Height = 15
-    EditLabel.Top = 6
     EditLabel.Width = 304
     EditLabel.Caption = 'Telegram token'
     EditLabel.ParentColor = False

@@ -235,6 +235,7 @@ end;
 
 function TFCLHTTPClient.Post(const URL: string): String;
 begin
+  PrepareHeaders;
   Result:=FHTTPClient.Post(URL);
 end;
 

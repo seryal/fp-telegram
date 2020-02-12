@@ -640,7 +640,8 @@ var
 implementation
 
 uses
-  jsonparser, jsonscanner;
+  jsonparser, jsonscanner, tgfclhttpclientbroker
+  ;
 
 const
 //  API names constants

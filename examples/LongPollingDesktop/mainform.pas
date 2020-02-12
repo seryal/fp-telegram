@@ -34,7 +34,8 @@ implementation
 {$R *.lfm}
 
 uses
-  tgsendertypes;
+  tgsendertypes, tgfclhttpclientbroker
+  ;
 
 { TFrmMain }
 
