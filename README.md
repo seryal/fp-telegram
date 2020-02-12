@@ -28,6 +28,7 @@ Done:
   + All implemented    
 + Full json updates logging (without handling)
 + Simple statistcs (csv-format)
++ Isolation of the HTTP client implementation from the interface. Added FCL http client broker (default) and synapse http client broker units
 
 Todo:
 + Extensive statistics *(Quantitative data on requests and unique users)*
