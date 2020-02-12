@@ -640,7 +640,10 @@ var
 implementation
 
 uses
-  jsonparser, jsonscanner, tgfclhttpclientbroker
+  jsonparser, jsonscanner
+{  added tgfclhttpclientbroker unit by default for backward compatibility.
+  But in your projects it is better to specify the appropriate broker explicitly }
+  , tgfclhttpclientbroker
   ;
 
 const

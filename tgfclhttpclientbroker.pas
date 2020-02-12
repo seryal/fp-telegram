@@ -246,6 +246,7 @@ begin
 end;
 
 initialization
+  TFCLHTTPClient.UnregisterClientClass;
   TFCLHTTPClient.RegisterClientClass;
 
 end.
