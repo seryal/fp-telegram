@@ -1,7 +1,7 @@
 {
   "UpdateLazPackages" : [
     {
-      "ForceNotify" : false,
+      "ForceNotify" : true,
       "InternalVersion" : 1,
       "Name" : "fptelegram.lpk",
       "Version" : "0.0.0.18"
@@ -9,7 +9,7 @@
   ],
   "UpdatePackageData" : {
     "DisableInOPM" : false,
-    "DownloadZipURL" : "",
+    "DownloadZipURL" : "https://github.com/Al-Muhandis/fp-telegram/archive/v0.0.0.18.zip",
     "Name" : "FpTelegram"
   }
 }
