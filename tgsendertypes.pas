@@ -385,7 +385,7 @@ type
     FHTTPProxyHost: String;
     FHTTPProxyPassword: String;
     FHTTPProxyUser: String;
-    FHTTProxyPort: Word;
+    FHTTPProxyPort: Word;
     FLanguage: string;
     FLastErrorCode: Integer;
     FLastErrorDescription: String;
@@ -585,7 +585,7 @@ type
     property HTTPProxyUser: String read FHTTPProxyUser write FHTTPProxyUser;
     property HTTPProxyPassword: String read FHTTPProxyPassword write FHTTPProxyPassword;
     property HTTPProxyHost: String read FHTTPProxyHost write FHTTPProxyHost;
-    property HTTProxyPort: Word read FHTTProxyPort write FHTTProxyPort;
+    property HTTPProxyPort: Word read FHTTPProxyPort write FHTTPProxyPort;
     property Token: String read FToken write FToken;
     { If you're using webhooks, you can perform a request to the API while sending an answer...
       In this case the method to be invoked in the method parameter of the request.}
@@ -1771,7 +1771,7 @@ end;
 
 procedure TTelegramSender.AssignHTTProxy(aHTTPClient: TBaseHTTPClient);
 begin
-  AssignHTTProxy(aHTTPClient, FHTTPProxyHost, FHTTProxyPort, FHTTPProxyUser,
+  AssignHTTProxy(aHTTPClient, FHTTPProxyHost, FHTTPProxyPort, FHTTPProxyUser,
     FHTTPProxyPassword);
 end;
 

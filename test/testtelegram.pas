@@ -130,7 +130,7 @@ begin
     APassword:=URI.Password;
   end;
   Bot.HTTPProxyHost:=AHost;
-  Bot.HTTProxyPort:=APort;
+  Bot.HTTPProxyPort:=APort;
   Bot.HTTPProxyUser:=AUsername;
   Bot.HTTPProxyPassword:=APassword;
 end;
