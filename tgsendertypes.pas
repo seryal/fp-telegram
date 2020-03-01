@@ -505,7 +505,8 @@ type
     function getUpdates(offset: Int64 = 0; limit: Integer = 0; timeout: Integer = 0;
       allowed_updates: TUpdateSet = []): Boolean;
  { To receive updates (LongPolling) You do not need to recalculate Offset in procedure below.
-      The offset itself will take it from the previous UpdateID and increment by one }
+      The offset itself will take it from the previous UpdateID and increment by one.
+      LongPollingTimeout in seconds! Timeout with 0 sec only for test cases}
     function getUpdatesEx(limit: Integer = 0; timeout: Integer = 0;
       allowed_updates: TUpdateSet = []): Boolean;
     function SendAudio(chat_id: Int64; const audio: String; const Caption: String = '';
@@ -547,6 +548,8 @@ type
     function sendPhoto(const APhoto: String; const ACaption: String = '';
       ParseMode: TParseMode = pmDefault; ReplyMarkup: TReplyMarkup = nil;
       ReplyToMessageID: Integer = 0): Boolean; overload;
+ { AFileName is not the fullpath to the file but the filename for request POST data.
+   Photo pass as a stream in the APhotoStream parameter }
     function sendPhotoStream(chat_id: Int64;  const AFileName: String; APhotoStream: TStream;
       const ACaption: String; ReplyMarkup: TReplyMarkup = nil): Boolean; overload;
     function sendVideo(chat_id: Int64; const AVideo: String; const ACaption: String = '';
