@@ -163,10 +163,6 @@
       <OtherUnitFiles Value="..;C:\lazarus-stable\config_lazarus\onlinepackagemanager\packages\synapse40.1\"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
-    <CodeGeneration>
-      <TargetCPU Value="x86_64"/>
-      <TargetOS Value="linux"/>
-    </CodeGeneration>
   </CompilerOptions>
   <Debugging>
     <Exceptions Count="3">
