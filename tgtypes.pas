@@ -952,7 +952,7 @@ begin
 
   FForwardFrom:=TTelegramUserObj.CreateFromJSONObject(fJSON.Find('forward_from', jtObject) as TJSONObject) as TTelegramUserObj;
   FForwardFromChat:=TTelegramChatObj.CreateFromJSONObject(fJSON.Find('forward_from_chat', jtObject) as TJSONObject) as TTelegramChatObj;
-  FForwardFromMessageID:=fJSON.Integers['forward_from_message_id'];
+  FForwardFromMessageID:=fJSON.Get('forward_from_message_id', 0);
 
   FLocation:=TTelegramLocation.CreateFromJSONObject(fJSON.Find('location', jtObject) as TJSONObject) as TTelegramLocation;
 
