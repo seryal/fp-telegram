@@ -1981,11 +1981,11 @@ begin
       case AnUpdate.UpdateType of
         utMessage: DoReceiveMessageUpdate(AnUpdate.Message);
         utEditedMessage: DoReceiveEditedMessage(AnUpdate.EditedMessage);
-        utCallbackQuery: DoReceiveCallbackQuery(AnUpdate.CallbackQuery);
         utChannelPost: DoReceiveChannelPost(AnUpdate.ChannelPost);
         utEditedChannelPost: DoReceiveEditedChannelPost(AnUpdate.EditedChannelPost);
-        utInlineQuery: DoReceiveInlineQuery(AnUpdate.InlineQuery);
+        utInlineQuery: DoReceiveInlineQuery(AnUpdate.InlineQuery); 
         utChosenInlineResult: DoReceiveChosenInlineResult(AnUpdate.ChosenInlineResult);
+        utCallbackQuery: DoReceiveCallbackQuery(AnUpdate.CallbackQuery);
         utPreCheckoutQuery: DoReceivePreCheckoutQuery(AnUpdate.PreCheckoutQuery);
       end;
       if Assigned(FUpdateLogger) then

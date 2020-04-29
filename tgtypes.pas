@@ -88,6 +88,9 @@ type
     FCaption: String;
     FChat: TTelegramChatObj;
     FDocument: TTelegramDocument;
+    FForwardFrom: TTelegramUserObj;
+    FForwardFromChat: TTelegramChatObj;
+    FForwardFromMessageID: LongInt;
     FFrom: TTelegramUserObj;
     FLocation: TTelegramLocation;
     fMessageId: Integer;
@@ -944,6 +947,10 @@ begin
   FAudio := TTelegramAudio.CreateFromJSONObject(fJSON.Find('audio', jtObject) as TJSONObject) as TTelegramAudio;
   FVoice := TTelegramVoice.CreateFromJSONObject(fJSON.Find('voice', jtObject) as TJSONObject) as TTelegramVoice;
 
+  FForwardFrom:=TTelegramUserObj.CreateFromJSONObject(fJSON.Find('forward_from', jtObject) as TJSONObject) as TTelegramUserObj;
+  FForwardFromChat:=TTelegramChatObj.CreateFromJSONObject(fJSON.Find('forward_from_chat', jtObject) as TJSONObject) as TTelegramChatObj;
+  FForwardFromMessageID:=fJSON.Integers['forward_from_message_id'];
+
   FLocation:=TTelegramLocation.CreateFromJSONObject(fJSON.Find('location', jtObject) as TJSONObject) as TTelegramLocation;
 
   FReplyToMessage:=
@@ -968,6 +975,8 @@ end;
 
 destructor TTelegramMessageObj.Destroy;
 begin
+  FForwardFrom.Free;
+  FForwardFromChat.Free;
   FSuccessfulPayment.Free;
   FFrom.Free;
   FLocation.Free;
