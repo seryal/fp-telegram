@@ -509,6 +509,7 @@ type
       LongPollingTimeout in seconds! Timeout with 0 sec only for test cases}
     function getUpdatesEx(limit: Integer = 0; timeout: Integer = 0;
       allowed_updates: TUpdateSet = []): Boolean;
+    function kickChatMember(chat_id: Int64; user_id: Int64; kickDuration:Int64): Boolean;
     function SendAudio(chat_id: Int64; const audio: String; const Caption: String = '';
       ParseMode: TParseMode = pmDefault; Duration: Integer = 0; DisableNotification: Boolean = False;
       ReplyToMessageID: Integer = 0; const Performer:String = ''; const Title: String = '';
@@ -671,6 +672,8 @@ const
   s_answerPreCheckoutQuery='answerPreCheckoutQuery';
   s_deleteMessage='deleteMessage';
   s_getFile = 'getFile';
+  s_kickChatMember = 'kickChatMember';
+
 
   s_Method='method';
   s_Url = 'url';
@@ -728,6 +731,7 @@ const
   s_Prices = 'prices';
   s_PreCheckoutQueryID = 'pre_checkout_query_id';
   s_FromChatID='from_chat_id';
+  s_UntilDate = 'until_date';
 
   s_CallbackQueryID = 'callback_query_id';
   s_ShowAlert = 'show_alert';
@@ -2588,6 +2592,24 @@ begin
   if FUpdateID<>0 then
     Inc(FUpdateID);
   Result:=getUpdates(FUpdateID, limit, timeout, allowed_updates);
+end;
+
+function TTelegramSender.kickChatMember(chat_id: Int64; user_id: Int64;
+  kickDuration: Int64): Boolean;
+var
+  sendObj: TJSONObject;
+begin
+  Result:=False;
+  sendObj:=TJSONObject.Create;
+  with sendObj do
+  try
+    Add(s_ChatId, chat_id);
+    Add(s_UserID, user_id);
+    Add(s_UntilDate, kickDuration);
+    Result:=SendMethod(s_kickChatMember, sendObj);
+  finally
+    Free;
+  end;
 end;
 
 function TTelegramSender.SendAudio(chat_id: Int64; const audio: String;
