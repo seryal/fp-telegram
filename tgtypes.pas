@@ -109,6 +109,9 @@ type
     property MessageId: Integer read fMessageId;
     property From: TTelegramUserObj read FFrom;
     property Chat: TTelegramChatObj read FChat;
+    property ForwardFrom: TTelegramUserObj read FForwardFrom;
+    property ForwardFromChat: TTelegramChatObj read FForwardFromChat;
+    property ForwardFromMessageID: Integer read FForwardFromMessageID;
     property ChatId: Int64 read fChatId;
     property ReplyToMessage: TTelegramMessageObj read FReplyToMessage;
     property Text: string read fText;
