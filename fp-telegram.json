@@ -5,12 +5,12 @@
     "Category" : "Networking, Other",
     "CommunityDescription" : "Telegram bots API wrapper for freepascal",
     "RepositoryFileName" : "fp-telegram.zip",
-    "RepositoryFileSize" : 507821,
-    "RepositoryFileHash" : "b4eb3fdac6d0306dbca695716792804f",
-    "RepositoryDate" : 4.3954938620451387E+004,
+    "RepositoryFileSize" : 507815,
+    "RepositoryFileHash" : "2be7ae2cb8afbd8ed1cd89523a7c9e96",
+    "RepositoryDate" : 4.3954943589606482E+004,
     "PackageBaseDir" : "fp-telegram\\/",
     "HomePageURL" : "https://github.com/Al-Muhandis/fp-telegram",
-    "DownloadURL" : "https://raw.githubusercontent.com/Al-Muhandis/fp-telegram/master/update_FpTelegram.json",
+    "DownloadURL" : "https://raw.githubusercontent.com/Al-Muhandis/fp-telegram/master/update_fp-telegram.json",
     "SVNURL" : ""
   },
   "PackageFiles0" : [
