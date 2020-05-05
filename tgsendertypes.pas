@@ -498,6 +498,8 @@ type
       DisableWebPagePreview: Boolean=False; ReplyMarkup: TReplyMarkup = nil): Boolean; overload;
     function forwardMessage(chat_id: Int64; from_chat_id: Int64; DisableNotification: Boolean;
       message_id: Int64): Boolean;
+    function getChat(chat_id: Int64; out aChat:TTelegramChatObj): Boolean;
+    function getChat(chat_id: String; out aChat:TTelegramChatObj): Boolean;
     function getChatMember(chat_id: Int64; user_id: Integer): Boolean;
     function getChatMember(chat_id: Int64; user_id: Integer;
       out aChatMember: TTelegramChatMember): Boolean; overload;
@@ -664,6 +666,7 @@ const
   s_sendLocation='sendLocation';
   s_sendInvoice='sendInvoice';
   s_sendMediaGroup='sendMediaGroup';
+  s_getChat = 'getChat';
   s_getUpdates='getUpdates';
   s_getMe='getMe';
   s_getChatMember='getChatMember';
@@ -2492,6 +2495,42 @@ begin
       Add(s_DsblNtfctn, DisableNotification);
     Add(s_MessageId, message_id);
     Result:=SendMethod(s_forwardMessage, sendObj);
+  finally
+    Free;
+  end;
+end;
+
+function TTelegramSender.getChat(chat_id: Int64; out aChat: TTelegramChatObj
+  ): Boolean;
+var
+  sendObj: TJSONObject;
+begin
+  Result:=False;
+  sendObj:=TJSONObject.Create;
+  with sendObj do
+  try
+    Add(s_ChatId, chat_id);
+    Result:=SendMethod(s_getChat, sendObj);
+    if Result and Assigned(JSONResponse) then
+      aChat:=TTelegramChatObj.CreateFromJSONObject(JSONResponse as TJSONObject) as TTelegramChatObj;;
+  finally
+    Free;
+  end;
+end;
+
+function TTelegramSender.getChat(chat_id: String; out aChat: TTelegramChatObj
+  ): Boolean;
+var
+  sendObj: TJSONObject;
+begin
+  Result:=False;
+  sendObj:=TJSONObject.Create;
+  with sendObj do
+  try
+    Add(s_ChatId, chat_id);
+    Result:=SendMethod(s_getChat, sendObj);
+    if Result and Assigned(JSONResponse) then
+      aChat:=TTelegramChatObj.CreateFromJSONObject(JSONResponse as TJSONObject) as TTelegramChatObj;;
   finally
     Free;
   end;
