@@ -23,6 +23,7 @@ type
     procedure InlineKeyboard;
     procedure sendVideo;
     procedure ChatMember;
+    procedure getWebhookInfo;
   end;
 
   { TTestProxySender }
@@ -254,12 +255,12 @@ end;
 procedure TTestSender.sendMessage;
 begin
   if not Bot.sendMessage(ChatID, Format(Msg, [Self.ClassName, TestName])) then
-    Fail('Connection error');
+    Fail('Connection error. See log');
   if Bot.LastErrorCode<>0 then
     Fail('Error from telegram API server. Error code: '+IntToStr(Bot.LastErrorCode)+
       '. Description: '+Bot.LastErrorDescription);
   if not Bot.sendMessage(ChatID, Format(Msg_md, [Self.ClassName, TestName]), pmMarkdown) then
-    Fail('Connection error');
+    Fail('Connection error. See log');
   if Bot.LastErrorCode<>0 then
     Fail('Error from telegram API server. Error code: '+IntToStr(Bot.LastErrorCode)+
       '. Description: '+Bot.LastErrorDescription);
@@ -278,7 +279,7 @@ begin
     ReplyMarkup.InlineKeyBoard.Add.AddButtons(['Button 1', 'Callback data 1', 'Button 2', 'Callback data 2']);
     if not Bot.sendMessage(ChatID, Format(Msg_md, [Self.ClassName, TestName]), pmMarkdown,
       False, ReplyMarkup) then
-      Fail('Connection error');
+      Fail('Connection error. See log');
   finally
     ReplyMarkup.Free;
   end;
@@ -290,7 +291,7 @@ end;
 procedure TTestSender.sendVideo;
 begin
   if not Bot.sendVideo(ChatID, VideoUrl, Format(vd_cptn, [Self.ClassName, TestName])) then
-    Fail('Connection error');
+    Fail('Connection error. See log');
   if Bot.LastErrorCode<>0 then
     Fail('Error from telegram API server. Error code: '+IntToStr(Bot.LastErrorCode)+
       '. Description: '+Bot.LastErrorDescription);
@@ -299,15 +300,32 @@ end;
 procedure TTestSender.ChatMember;
 begin
   if not Bot.getChatMember(ChatID, UserID) then
-    Fail('Connection error');
+    Fail('Connection error. See log');
   SaveJSONData(Bot.JSONResponse, '~responce.json');
   if Bot.LastErrorCode<>0 then
     Fail('Error from telegram API server. Error code: '+IntToStr(Bot.LastErrorCode)+
       '. Description: '+Bot.LastErrorDescription);
 end;
 
-initialization
+procedure TTestSender.getWebhookInfo;
+var
+  aWebhookInfo: TTelegramWebhookInfo;
+begin
+  try
+    if not Bot.getWebhookInfo(aWebhookInfo) then
+      Fail('Connection error. See log')
+    else
+      SaveString(aWebhookInfo.AsString, '~webhookinfo.json');
+  finally
+    aWebhookInfo.Free;
+  end;
+  if Bot.LastErrorCode<>0 then
+    Fail('Error from telegram API server. Error code: '+IntToStr(Bot.LastErrorCode)+
+      '. Description: '+Bot.LastErrorDescription);
+end;
 
+initialization
   RegisterTests([TTestSender, TTestSenderProcedure, TTestProxySender, TTestReceiveLongPolling, TTestPayments]);
+
 end.
 

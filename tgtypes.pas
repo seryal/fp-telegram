@@ -363,6 +363,30 @@ type
     property StatusType: TChatMemberStatus read FChatMemberStatus;
   end;
 
+  { TTelegramWebhookInfo }
+
+  TTelegramWebhookInfo = class(TTelegramObj)
+  private
+    FAllowedUpdates: TUpdateSet;
+    FHasCustomCertificate: Boolean;
+    FLastErrorDate: Int64;
+    FLastErrorMessage: String;
+    FMaxConnections: Integer;
+    FPendingUpdateCount: Integer;
+    FUrl: String;
+    function GetLastErrorDateAsDateTime: TDateTime;
+  public
+    constructor Create(JSONObject: TJSONObject); override;
+    property Url: String read FUrl;
+    property AllowedUpdates: TUpdateSet read FAllowedUpdates;
+    property HasCustomCertificate: Boolean read FHasCustomCertificate;
+    property LastErrorDate: Int64 read FLastErrorDate;  // UnixTime
+    property LastErrorDateAsDateTime: TDateTime read GetLastErrorDateAsDateTime;
+    property LastErrorMessage: String read FLastErrorMessage;
+    property MaxConnections: Integer read FMaxConnections;
+    property PendingUpdateCount: Integer read FPendingUpdateCount;
+  end;
+
   { TTelegramVideo }
 
   TTelegramVideo = class(TTelegramObj)
@@ -447,7 +471,7 @@ type
 
   const
     TELEGRAM_REQUEST_GETUPDATES = 'getUpdates';
-    UpdateTypeAliases: array[TUpdateType] of PChar = ('message', 'edited_message', 'channel_post',
+    UpdateTypeAliases: array[TUpdateType] of String = ('message', 'edited_message', 'channel_post',
       'edited_channel_post', 'inline_query', 'chosen_inline_result', 'callback_query',
       'shipping_query', 'pre_checkout_query', '');
     UpdateTypeClasses: array[TUpdateType] of TTelegramObjClass = (TTelegramMessageObj,
@@ -459,8 +483,13 @@ function AllowedUpdatesToJSON(const AllowedUpdates: TUpdateSet): TJSONArray;
 
 implementation
 
+uses
+  strutils, dateutils
+  ;
+
 const
   API_URL_FILE='https://api.telegram.org/file/bot';
+  utAllUpdates = [utMessage..utPreCheckoutQuery];
 
 function AllowedUpdatesToJSON(const AllowedUpdates: TUpdateSet): TJSONArray;
 var
@@ -469,6 +498,47 @@ begin
   Result:=TJSONArray.Create;
   for u in AllowedUpdates do
     Result.Add(UpdateTypeAliases[u]);
+end;
+
+function JSONToUpdateSet(const aUpdateSet: TJSONArray): TUpdateSet;
+var
+  aEnum: TJSONEnum;
+  i: Integer;
+begin
+  Result:=[];
+  for aEnum in aUpdateSet do
+  begin
+    i:=AnsiIndexStr(aEnum.Value.AsString, UpdateTypeAliases);
+    if i<>-1 then
+      Include(Result, TUpdateType(i));
+  end;
+  if Result=[] then
+    Result:=utAllUpdates;
+end;
+
+{ TTelegramWebhookInfo }
+
+function TTelegramWebhookInfo.GetLastErrorDateAsDateTime: TDateTime;
+begin
+  Result:=UnixToDateTime(FLastErrorDate);
+end;
+
+constructor TTelegramWebhookInfo.Create(JSONObject: TJSONObject);
+var
+  aJSONArray: TJSONArray;
+begin
+  inherited Create(JSONObject);
+  FUrl:=fJSON.Strings['url'];
+  FHasCustomCertificate:=fJSON.Booleans['has_custom_certificate'];
+  FPendingUpdateCount:=fJSON.Integers['pending_update_count'];
+  FLastErrorDate:=fJSON.Get('last_error_date', 0);
+  FLastErrorMessage:=fJSON.Get('last_error_message', EmptyStr);
+  FMaxConnections:=fJSON.Get('max_connections', 0);
+
+  if fJSON.Find('allowed_updates', aJSONArray) then
+    FAllowedUpdates:=JSONToUpdateSet(aJSONArray)
+  else
+    FAllowedUpdates:=[];
 end;
 
 { TTelegramDocument }

@@ -22,7 +22,7 @@
           </Target>
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
-            <OtherUnitFiles Value="..;C:\lazarus-stable\config_lazarus\onlinepackagemanager\packages\synapse40.1\"/>
+            <OtherUnitFiles Value="..;..\..\synapse40.1"/>
             <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
           <Parsing>
@@ -63,7 +63,7 @@
           </Target>
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
-            <OtherUnitFiles Value="..;C:\lazarus-stable\config_lazarus\onlinepackagemanager\packages\synapse40.1\"/>
+            <OtherUnitFiles Value="..;..\..\synapse40.1"/>
             <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
           <CodeGeneration>
@@ -126,7 +126,7 @@
         <IsPartOfProject Value="True"/>
       </Unit2>
       <Unit3>
-        <Filename Value="C:\lazarus-stable\config_lazarus\onlinepackagemanager\packages\synapse40.1\ssl_openssl.pas"/>
+        <Filename Value="..\..\synapse40.1\ssl_openssl.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit3>
     </Units>
@@ -139,7 +139,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="..;C:\lazarus-stable\config_lazarus\onlinepackagemanager\packages\synapse40.1\"/>
+      <OtherUnitFiles Value="..;..\..\synapse40.1"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Linking>

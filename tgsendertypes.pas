@@ -504,6 +504,7 @@ type
     function getChatMember(chat_id: Int64; user_id: Integer;
       out aChatMember: TTelegramChatMember): Boolean; overload;
     function getMe: Boolean;
+    function getWebhookInfo(out aWebhookInfo: TTelegramWebhookInfo): Boolean;
     function getUpdates(offset: Int64 = 0; limit: Integer = 0; timeout: Integer = 0;
       allowed_updates: TUpdateSet = []): Boolean;
  { To receive updates (LongPolling) You do not need to recalculate Offset in procedure below.
@@ -667,6 +668,7 @@ const
   s_sendInvoice='sendInvoice';
   s_sendMediaGroup='sendMediaGroup';
   s_getChat = 'getChat';
+  s_getWebhookInfo = 'getWebhookInfo';
   s_getUpdates='getUpdates';
   s_getMe='getMe';
   s_getChatMember='getChatMember';
@@ -2578,6 +2580,24 @@ begin
         if Assigned(FBotUser) then
           FBotUsername:=FBotUser.Username;
       end;
+  finally
+    Free;
+  end;
+end;
+
+function TTelegramSender.getWebhookInfo(out aWebhookInfo: TTelegramWebhookInfo): Boolean;
+var
+  sendObj: TJSONObject;
+begin
+  Result:=False;
+  aWebhookInfo:=nil;
+  sendObj:=TJSONObject.Create;
+  with sendObj do
+  try
+    Result:=SendMethod(s_getWebhookInfo, sendObj);
+    if Result then
+      if Assigned(JSONResponse) then
+        aWebhookInfo:=TTelegramWebhookInfo.CreateFromJSONObject(JSONResponse as TJSONObject) as TTelegramWebhookInfo;
   finally
     Free;
   end;
