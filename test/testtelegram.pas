@@ -24,6 +24,7 @@ type
     procedure sendVideo;
     procedure ChatMember;
     procedure getWebhookInfo;
+    procedure setWebhook;
   end;
 
   { TTestProxySender }
@@ -319,6 +320,16 @@ begin
   finally
     aWebhookInfo.Free;
   end;
+  if Bot.LastErrorCode<>0 then
+    Fail('Error from telegram API server. Error code: '+IntToStr(Bot.LastErrorCode)+
+      '. Description: '+Bot.LastErrorDescription);
+end;
+
+procedure TTestSender.setWebhook;
+begin
+  if not Bot.setWebhook(EmptyStr, 10, []) then
+    Fail('Connection error. See log');
+  SaveJSONData(Bot.JSONResponse, '~responce.json');
   if Bot.LastErrorCode<>0 then
     Fail('Error from telegram API server. Error code: '+IntToStr(Bot.LastErrorCode)+
       '. Description: '+Bot.LastErrorDescription);
