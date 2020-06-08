@@ -507,7 +507,8 @@ type
     function getWebhookInfo(out aWebhookInfo: TTelegramWebhookInfo): Boolean;
     { Specify an empty Update set ([]) to receive all updates regardless of type (default).
       If not specified or [utUnknown], the previous setting will be used }
-    function setWebhook(const url: String; MaxConnections: Integer = 0; AllowedUpdates: TUpdateSet = [utUnknown]): Boolean;
+    function setWebhook(const url: String; MaxConnections: Integer = 0; AllowedUpdates: TUpdateSet = [utUnknown]): Boolean; 
+    function deleteWebhook: Boolean;
     function getUpdates(offset: Int64 = 0; limit: Integer = 0; timeout: Integer = 0;
       allowed_updates: TUpdateSet = []): Boolean;
  { To receive updates (LongPolling) You do not need to recalculate Offset in procedure below.
@@ -672,7 +673,8 @@ const
   s_sendMediaGroup='sendMediaGroup';
   s_getChat = 'getChat';
   s_getWebhookInfo = 'getWebhookInfo';
-  s_setWebhook = 'setWebhook';
+  s_setWebhook = 'setWebhook';  
+  s_deleteWebhook = 'deleteWebhook';
   s_getUpdates='getUpdates';
   s_getMe='getMe';
   s_getChatMember='getChatMember';
@@ -2622,6 +2624,19 @@ begin
     if AllowedUpdates<>[utUnknown] then
       Add(s_AllowedUpdates, AllowedUpdatesToJSON(AllowedUpdates));
     Result:=SendMethod(s_setWebhook, sendObj);
+  finally
+    Free;
+  end;
+end;
+
+function TTelegramSender.deleteWebhook: Boolean;
+var
+  sendObj: TJSONObject;
+begin
+  sendObj:=TJSONObject.Create;
+  with sendObj do
+  try
+    Result:=SendMethod(s_deleteWebhook, sendObj);
   finally
     Free;
   end;
