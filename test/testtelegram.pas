@@ -13,11 +13,13 @@ type
   { Test sending messages. Object style }
   TTestSender= class(TTestTelegramClass)
   private
+    FUrl: String;
     FVideoUrl: String;
   protected
     procedure SetUp; override;
   public
     property VideoUrl: String read FVideoUrl;
+    property Url: String read FUrl;
   published
     procedure sendMessage;
     procedure InlineKeyboard;
@@ -252,6 +254,7 @@ procedure TTestSender.SetUp;
 begin
   inherited SetUp;
   FVideoUrl:=Conf.ReadString('Send', 'videourl', EmptyStr);
+  FUrl:=Conf.ReadString('Send', 'Url', EmptyStr);
 end;
 
 procedure TTestSender.sendMessage;
@@ -328,7 +331,7 @@ end;
 
 procedure TTestSender.setWebhook;
 begin
-  if not Bot.setWebhook(EmptyStr, 10, []) then
+  if not Bot.setWebhook(Url, 10, []) then
     Fail('Connection error. See log');
   SaveJSONData(Bot.JSONResponse, '~responce.json');
   if Bot.LastErrorCode<>0 then
