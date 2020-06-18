@@ -27,6 +27,13 @@ PricePortionAmount=10000
 [Send]
 ;; Url link to [short] video file (for example, http://sample.com/video.mp4)
 videourl=
+;; Url for setWebhook test
+url=
+;; Video filename for sendVideoBFileName
+VideoFile=
+;; Photo filename for sendPhotoByFileName
+PhotoFile=
+
 
 ;; Proxy support is implemented only for the synapse HTTP Client broker. Not yet implemented in the native FPHTTPClient. 
 ;; You can specify HTTP proxy via Host/Port/UserName/Password name-value strings or via the Uri.

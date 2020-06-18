@@ -13,17 +13,23 @@ type
   { Test sending messages. Object style }
   TTestSender= class(TTestTelegramClass)
   private
+    FPhotoFile: String;
     FUrl: String;
+    FVideoFile: String;
     FVideoUrl: String;
   protected
     procedure SetUp; override;
   public
     property VideoUrl: String read FVideoUrl;
     property Url: String read FUrl;
+    property VideoFile: String read FVideoFile; 
+    property PhotoFile: String read FPhotoFile;
   published
     procedure sendMessage;
     procedure InlineKeyboard;
-    procedure sendVideo;
+    procedure sendVideo;  
+    procedure sendVideoByFileName;
+    procedure sendPhotoByFileName;
     procedure ChatMember;
     procedure getWebhookInfo;
     procedure setWebhook;    
@@ -103,7 +109,8 @@ uses
 
 const
   Msg='Test message sent from %s. Test procedure: %s';
-  vd_cptn='Test video sent from %s. Test procedure: %s';
+  vd_cptn='Test video sent from %s. Test procedure: %s'; 
+  pht_cptn='Test photo sent from %s. Test procedure: %s';
   Msg_md='Test message sent from %s. Test procedure: _%s_';
 
   s_Username='Username';
@@ -255,6 +262,8 @@ begin
   inherited SetUp;
   FVideoUrl:=Conf.ReadString('Send', 'videourl', EmptyStr);
   FUrl:=Conf.ReadString('Send', 'Url', EmptyStr);
+  FVideoFile:=Conf.ReadString('Send', 'VideoFile', EmptyStr);
+  FPhotoFile:=Conf.ReadString('Send', 'PhotoFile', EmptyStr);
 end;
 
 procedure TTestSender.sendMessage;
@@ -296,6 +305,24 @@ end;
 procedure TTestSender.sendVideo;
 begin
   if not Bot.sendVideo(ChatID, VideoUrl, Format(vd_cptn, [Self.ClassName, TestName])) then
+    Fail('Connection error. See log');
+  if Bot.LastErrorCode<>0 then
+    Fail('Error from telegram API server. Error code: '+IntToStr(Bot.LastErrorCode)+
+      '. Description: '+Bot.LastErrorDescription);
+end;
+
+procedure TTestSender.sendVideoByFileName;
+begin
+  if not Bot.sendVideoByFileName(ChatID, VideoFile, Format(vd_cptn, [Self.ClassName, TestName])) then
+    Fail('Connection error. See log');
+  if Bot.LastErrorCode<>0 then
+    Fail('Error from telegram API server. Error code: '+IntToStr(Bot.LastErrorCode)+
+      '. Description: '+Bot.LastErrorDescription);
+end;
+
+procedure TTestSender.sendPhotoByFileName;
+begin
+  if not Bot.sendPhotoByFileName(ChatID, PhotoFile, Format(pht_cptn, [Self.ClassName, TestName])) then
     Fail('Connection error. See log');
   if Bot.LastErrorCode<>0 then
     Fail('Error from telegram API server. Error code: '+IntToStr(Bot.LastErrorCode)+
