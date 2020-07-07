@@ -498,6 +498,8 @@ type
       DisableWebPagePreview: Boolean=False; ReplyMarkup: TReplyMarkup = nil): Boolean; overload;
     function forwardMessage(chat_id: Int64; from_chat_id: Int64; DisableNotification: Boolean;
       message_id: Int64): Boolean;
+    function forwardMessage(chat_id: String; from_chat_id: Int64; DisableNotification: Boolean;
+      message_id: Int64): Boolean;
     function getChat(chat_id: Int64; out aChat:TTelegramChatObj): Boolean;
     function getChat(chat_id: String; out aChat:TTelegramChatObj): Boolean;
     function getChatMember(chat_id: Int64; user_id: Integer): Boolean;
@@ -2497,6 +2499,12 @@ begin  { try to edit message if the message is present and chat is private with 
 end;
 
 function TTelegramSender.forwardMessage(chat_id: Int64; from_chat_id: Int64;
+  DisableNotification: Boolean; message_id: Int64): Boolean;
+begin
+  Result:=forwardMessage(IntToStr(chat_id), from_chat_id, DisableNotification, message_id);
+end;
+
+function TTelegramSender.forwardMessage(chat_id: String; from_chat_id: Int64;
   DisableNotification: Boolean; message_id: Int64): Boolean;
 var
   sendObj: TJSONObject;
