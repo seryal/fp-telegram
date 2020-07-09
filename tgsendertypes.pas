@@ -577,6 +577,12 @@ type
     function sendVoice(chat_id: Int64; const Voice: String; const Caption: String = '';
       ParseMode: TParseMode = pmDefault; Duration: Integer=0; DisableNotification: Boolean = False;
       ReplyToMessageID: Integer = 0; ReplyMarkup: TReplyMarkup = nil): Boolean;
+    function sendAnimation(chat_id: Int64; const aAnimation: String; const ACaption: String = '';
+      ParseMode: TParseMode = pmDefault; ReplyMarkup: TReplyMarkup = nil;
+      ReplyToMessageID: Integer = 0): Boolean;
+    function sendAnimation(const aAnimation: String; const ACaption: String = '';
+      ParseMode: TParseMode = pmDefault; ReplyMarkup: TReplyMarkup = nil;
+      ReplyToMessageID: Integer = 0): Boolean;
     function answerInlineQuery(const AnInlineQueryID: String; Results: TInlineQueryResultArray;
       CacheTime: Integer = 300; IsPersonal: Boolean = False; const NextOffset: String = '';
       const SwitchPmText: String = ''; const SwitchPmParameter: String = ''): Boolean;
@@ -675,6 +681,7 @@ const
   s_sendAudio='sendAudio';
   s_sendVoice='sendVoice';
   s_sendVideo='sendVideo';
+  s_sendAnimation='sendAnimation';
   s_sendDocument='sendDocument';
   s_sendLocation='sendLocation';
   s_sendInvoice='sendInvoice';
@@ -707,6 +714,7 @@ const
   s_Video = 'video';
   s_Audio = 'audio';
   s_Voice = 'voice';
+  s_Animation='animation';
   s_Caption = 'caption';
   s_Media = 'media';
   s_ParseMode = 'parse_mode';
@@ -3160,6 +3168,37 @@ begin
   finally
     Free;
   end;
+end;
+
+function TTelegramSender.sendAnimation(chat_id: Int64; const aAnimation: String; const ACaption: String;
+  ParseMode: TParseMode; ReplyMarkup: TReplyMarkup; ReplyToMessageID: Integer): Boolean;
+var
+  sendObj: TJSONObject;
+begin
+  Result:=False;
+  sendObj:=TJSONObject.Create;
+  with sendObj do
+  try
+    Add(s_ChatId, chat_id);
+    Add(s_Animation, aAnimation);
+    if ACaption<>EmptyStr then
+      Add('caption', ACaption);
+    if ParseMode<>pmDefault then
+      Add(s_ParseMode, ParseModes[ParseMode]);
+    if Assigned(ReplyMarkup) then
+      Add(s_ReplyMarkup, ReplyMarkup.Clone); // Clone of ReplyMarkup object will have released with sendObject
+    if ReplyToMessageID<>0 then
+      Add(s_ReplyToMessageID, ReplyToMessageID);
+    Result:=SendMethod(s_sendAnimation, sendObj);
+  finally
+    Free;
+  end;
+end;
+
+function TTelegramSender.sendAnimation(const aAnimation: String; const ACaption: String; ParseMode: TParseMode;
+  ReplyMarkup: TReplyMarkup; ReplyToMessageID: Integer): Boolean;
+begin
+  Result:=sendAnimation(FCurrentChatId, aAnimation, ACaption, ParseMode, ReplyMarkup, ReplyToMessageID);
 end;
 
 function TTelegramSender.answerInlineQuery(const AnInlineQueryID: String;
