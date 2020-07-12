@@ -568,7 +568,7 @@ begin
   FPerformer:=fJSON.Get('performer', EmptyStr);
   FTitle:=fJSON.Get('title', EmptyStr);
   FThumb:=TTelegramPhotoSize.CreateFromJSONObject(fJSON.Find('thumb', jtObject) as TJSONObject) as TTelegramPhotoSize;
-  FMimeType:=fJSON.Get('mime_type');
+  FMimeType:=fJSON.Get('mime_type', EmptyStr);
   FFileSize := fJSON.Get('file_size', 0);
 end;
 
