@@ -1736,11 +1736,16 @@ end;
 class function TTelegramSender.StringToJSONObject(const AString: String): TJSONObject;
 var
   lParser: TJSONParser;
+  aOptions: TJSONOptions;
 begin
   Result := nil;
   if AString<>EmptyStr then
   begin
-    lParser := TJSONParser.Create(AString{$IF FPC_FULLVERSION > 30002}, DefaultOptions{$ENDIF});
+    aOptions:=DefaultOptions;
+    { See https://github.com/Al-Muhandis/fp-telegram/issues/4 about this compiler key.
+      You can add -dJsonNoUTF8 compiler key to the project for avoiding the problem mentioned in the issue above}
+    {$ifdef JsonNoUTF8}Exclude(Options,joUTF8);{$endif}
+    lParser := TJSONParser.Create(AString{$IF FPC_FULLVERSION > 30002}, aOptions{$ENDIF});
     try
       try
         Result := lParser.Parse as TJSONObject
