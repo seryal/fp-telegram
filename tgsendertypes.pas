@@ -564,7 +564,7 @@ type
  { AFileName is not the fullpath to the file but the filename for request POST data.
    Photo pass as a stream in the APhotoStream parameter }
     function sendPhotoStream(chat_id: Int64;  const AFileName: String; APhotoStream: TStream;
-      const ACaption: String; ReplyMarkup: TReplyMarkup = nil): Boolean; overload;
+      const ACaption: String; ParseMode: TParseMode = pmDefault; ReplyMarkup: TReplyMarkup = nil): Boolean; overload;
     function sendVideo(chat_id: Int64; const AVideo: String; const ACaption: String = '';
       ParseMode: TParseMode = pmDefault; ReplyMarkup: TReplyMarkup = nil;
       ReplyToMessageID: Integer = 0): Boolean;
@@ -3064,10 +3064,10 @@ function TTelegramSender.sendPhoto(const APhoto: String;
 begin
   Result:=sendPhoto(FCurrentChatId, APhoto, ACaption, ParseMode, ReplyMarkup, ReplyToMessageID);
 end;
-                                                      // AFileName ??????
-function TTelegramSender.sendPhotoStream(chat_id: Int64; const AFileName: String;
-  APhotoStream: TStream; const ACaption: String; ReplyMarkup: TReplyMarkup
-  ): Boolean;
+
+function TTelegramSender.sendPhotoStream(chat_id: Int64;
+  const AFileName: String; APhotoStream: TStream; const ACaption: String;
+  ParseMode: TParseMode; ReplyMarkup: TReplyMarkup): Boolean;
 var
   sendObj: TStringList;
 begin
@@ -3077,7 +3077,9 @@ begin
   try
     Add(s_ChatId+'='+IntToStr(chat_id));
     if ACaption<>EmptyStr then
-      Add(s_Caption+'='+ACaption);
+      Add(s_Caption+'='+ACaption);  
+    if ParseMode<>pmDefault then
+      Add(s_ParseMode+'='+ParseModes[ParseMode]);
     if Assigned(ReplyMarkup) then
       Add(s_ReplyMarkup+'='+ReplyMarkup.AsJSON);
     Result:=SendStream(s_sendPhoto, s_Photo, AFileName, APhotoStream, sendObj);
