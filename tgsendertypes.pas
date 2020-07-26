@@ -565,24 +565,20 @@ type
    Photo pass as a stream in the APhotoStream parameter }
     function sendPhotoStream(chat_id: Int64;  const AFileName: String; APhotoStream: TStream;
       const ACaption: String; ParseMode: TParseMode = pmDefault; ReplyMarkup: TReplyMarkup = nil): Boolean; overload;
-    function sendVideo(chat_id: Int64; const AVideo: String; const ACaption: String = '';
-      ParseMode: TParseMode = pmDefault; ReplyMarkup: TReplyMarkup = nil;
-      ReplyToMessageID: Integer = 0): Boolean;
-    function sendVideo(const AVideo: String; const ACaption: String = '';
-      ParseMode: TParseMode = pmDefault; ReplyMarkup: TReplyMarkup = nil;
-      ReplyToMessageID: Integer = 0): Boolean; overload;
-    function sendVideoByFileName(chat_id: Int64; const AFileName: String; const ACaption: String = '';
-      ParseMode: TParseMode = pmDefault; ReplyMarkup: TReplyMarkup = nil;
-      ReplyToMessageID: Integer = 0): Boolean;
+    function sendVideo(chat_id: Int64; const AVideo: String; const ACaption: String = ''; ParseMode: TParseMode = pmDefault;
+      ReplyMarkup: TReplyMarkup = nil; ReplyToMessageID: Integer = 0; Width: Integer = 0; Height: Integer = 0): Boolean;
+    function sendVideo(const AVideo: String; const ACaption: String = ''; ParseMode: TParseMode = pmDefault;
+      ReplyMarkup: TReplyMarkup = nil; ReplyToMessageID: Integer = 0; Width: Integer = 0; Height: Integer = 0): Boolean; overload;
+    function sendVideoByFileName(chat_id: Int64; const AFileName: String;
+      const ACaption: String; ParseMode: TParseMode; ReplyMarkup: TReplyMarkup;
+  ReplyToMessageID: Integer; Width: Word=0; Height: Word=0): Boolean;
     function sendVoice(chat_id: Int64; const Voice: String; const Caption: String = '';
       ParseMode: TParseMode = pmDefault; Duration: Integer=0; DisableNotification: Boolean = False;
       ReplyToMessageID: Integer = 0; ReplyMarkup: TReplyMarkup = nil): Boolean;
-    function sendAnimation(chat_id: Int64; const aAnimation: String; const ACaption: String = '';
-      ParseMode: TParseMode = pmDefault; ReplyMarkup: TReplyMarkup = nil;
-      ReplyToMessageID: Integer = 0): Boolean;
-    function sendAnimation(const aAnimation: String; const ACaption: String = '';
-      ParseMode: TParseMode = pmDefault; ReplyMarkup: TReplyMarkup = nil;
-      ReplyToMessageID: Integer = 0): Boolean;
+    function sendAnimation(chat_id: Int64; const aAnimation: String; const ACaption: String = ''; ParseMode: TParseMode = pmDefault;
+      ReplyMarkup: TReplyMarkup = nil; ReplyToMessageID: Integer = 0; Width: Integer = 0; Height: Integer = 0): Boolean;
+    function sendAnimation(const aAnimation: String; const ACaption: String = ''; ParseMode: TParseMode = pmDefault;
+      ReplyMarkup: TReplyMarkup = nil; ReplyToMessageID: Integer = 0; Width: Integer = 0; Height: Integer = 0): Boolean;
     function answerInlineQuery(const AnInlineQueryID: String; Results: TInlineQueryResultArray;
       CacheTime: Integer = 300; IsPersonal: Boolean = False; const NextOffset: String = '';
       const SwitchPmText: String = ''; const SwitchPmParameter: String = ''): Boolean;
@@ -3091,7 +3087,7 @@ end;
 { https://core.telegram.org/bots/api#sendvideo }
 function TTelegramSender.sendVideo(chat_id: Int64; const AVideo: String;
   const ACaption: String; ParseMode: TParseMode; ReplyMarkup: TReplyMarkup;
-  ReplyToMessageID: Integer): Boolean;
+  ReplyToMessageID: Integer; Width: Integer; Height: Integer): Boolean;
 var
   sendObj: TJSONObject;
 begin
@@ -3101,6 +3097,10 @@ begin
   try
     Add(s_ChatId, chat_id);
     Add(s_Video, AVideo);
+    if Width<>0 then
+      Add(s_Width, Width);
+    if Height<>0 then
+      Add(s_Height, Height);
     if ACaption<>EmptyStr then
       Add('caption', ACaption);
     if ParseMode<>pmDefault then
@@ -3117,13 +3117,13 @@ end;
 
 function TTelegramSender.sendVideo(const AVideo: String;
   const ACaption: String; ParseMode: TParseMode; ReplyMarkup: TReplyMarkup;
-  ReplyToMessageID: Integer): Boolean;
+  ReplyToMessageID: Integer; Width: Integer; Height: Integer): Boolean;
 begin
-  Result:=sendVideo(FCurrentChatId, AVideo, ACaption, ParseMode, ReplyMarkup, ReplyToMessageID);
+  Result:=sendVideo(FCurrentChatId, AVideo, ACaption, ParseMode, ReplyMarkup, ReplyToMessageID, Width, Height);
 end;
 
 function TTelegramSender.sendVideoByFileName(chat_id: Int64; const AFileName: String; const ACaption: String;
-  ParseMode: TParseMode; ReplyMarkup: TReplyMarkup; ReplyToMessageID: Integer): Boolean;
+  ParseMode: TParseMode; ReplyMarkup: TReplyMarkup; ReplyToMessageID: Integer; Width: Word = 0; Height: Word = 0): Boolean;
 var
   sendObj: TStringList;
 begin
@@ -3132,6 +3132,10 @@ begin
   with sendObj do
   try
     Add(s_ChatId+'='+IntToStr(chat_id));
+    if Width<>0 then
+      Add(s_Width+'='+Width.ToString);  
+    if Height<>0 then
+      Add(s_Height+'='+Height.ToString);
     if ACaption<>EmptyStr then
       Add(s_Caption+'='+ACaption);
     if ParseMode<>pmDefault then
@@ -3177,8 +3181,10 @@ begin
   end;
 end;
 
-function TTelegramSender.sendAnimation(chat_id: Int64; const aAnimation: String; const ACaption: String;
-  ParseMode: TParseMode; ReplyMarkup: TReplyMarkup; ReplyToMessageID: Integer): Boolean;
+function TTelegramSender.sendAnimation(chat_id: Int64;
+  const aAnimation: String; const ACaption: String; ParseMode: TParseMode;
+  ReplyMarkup: TReplyMarkup; ReplyToMessageID: Integer; Width: Integer;
+  Height: Integer): Boolean;
 var
   sendObj: TJSONObject;
 begin
@@ -3188,6 +3194,10 @@ begin
   try
     Add(s_ChatId, chat_id);
     Add(s_Animation, aAnimation);
+    if Width<>0 then
+      Add(s_Width, Width);
+    if Height<>0 then
+      Add(s_Height, Height);
     if ACaption<>EmptyStr then
       Add('caption', ACaption);
     if ParseMode<>pmDefault then
@@ -3202,10 +3212,11 @@ begin
   end;
 end;
 
-function TTelegramSender.sendAnimation(const aAnimation: String; const ACaption: String; ParseMode: TParseMode;
-  ReplyMarkup: TReplyMarkup; ReplyToMessageID: Integer): Boolean;
+function TTelegramSender.sendAnimation(const aAnimation: String;
+  const ACaption: String; ParseMode: TParseMode; ReplyMarkup: TReplyMarkup;
+  ReplyToMessageID: Integer; Width: Integer; Height: Integer): Boolean;
 begin
-  Result:=sendAnimation(FCurrentChatId, aAnimation, ACaption, ParseMode, ReplyMarkup, ReplyToMessageID);
+  Result:=sendAnimation(FCurrentChatId, aAnimation, ACaption, ParseMode, ReplyMarkup, ReplyToMessageID, Width, Height);
 end;
 
 function TTelegramSender.answerInlineQuery(const AnInlineQueryID: String;
