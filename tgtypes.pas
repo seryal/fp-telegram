@@ -416,6 +416,7 @@ type
   TTelegramDocument = class(TTelegramObj)
   private
     FFileID: String;
+    FFileName: String;
     FFileSize: Integer;
     FMimeType: String;
     FThumb: TTelegramPhotoSize;
@@ -423,6 +424,7 @@ type
     constructor Create(JSONObject: TJSONObject); override;
     destructor Destroy; override;
     property FileID: String read FFileID;
+    property FileName: String read FFileName;
     property MimeType: String read FMimeType;
     property FileSize: Integer read FFileSize;
     property Thumb: TTelegramPhotoSize read FThumb;
@@ -550,6 +552,7 @@ begin
   FThumb:=TTelegramPhotoSize.CreateFromJSONObject(fJSON.Find('thumb', jtObject) as TJSONObject) as TTelegramPhotoSize;
   FMimeType:=fJSON.Get('mime_type', EmptyStr);
   FFileSize := fJSON.Get('file_size', 0);
+  FFileName := fJSON.Get('file_name', EmptyStr);
 end;
 
 destructor TTelegramDocument.Destroy;
