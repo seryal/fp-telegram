@@ -570,8 +570,8 @@ type
     function sendVideo(const AVideo: String; const ACaption: String = ''; ParseMode: TParseMode = pmDefault;
       ReplyMarkup: TReplyMarkup = nil; ReplyToMessageID: Integer = 0; Width: Integer = 0; Height: Integer = 0): Boolean; overload;
     function sendVideoByFileName(chat_id: Int64; const AFileName: String;
-      const ACaption: String; ParseMode: TParseMode; ReplyMarkup: TReplyMarkup;
-  ReplyToMessageID: Integer; Width: Word=0; Height: Word=0): Boolean;
+      const ACaption: String; ParseMode: TParseMode = pmDefault; ReplyMarkup: TReplyMarkup = nil;
+      ReplyToMessageID: Integer = 0; Width: Word=0; Height: Word=0): Boolean;
     function sendVoice(chat_id: Int64; const Voice: String; const Caption: String = '';
       ParseMode: TParseMode = pmDefault; Duration: Integer=0; DisableNotification: Boolean = False;
       ReplyToMessageID: Integer = 0; ReplyMarkup: TReplyMarkup = nil): Boolean;

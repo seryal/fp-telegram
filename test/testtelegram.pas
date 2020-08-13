@@ -313,7 +313,7 @@ end;
 
 procedure TTestSender.sendVideoByFileName;
 begin
-  if not Bot.sendVideoByFileName(ChatID, VideoFile, Format(vd_cptn, [Self.ClassName, TestName])) then
+  if not Bot.sendVideoByFileName(ChatID, VideoFile, Format(vd_cptn, [Self.ClassName, TestName]), pmDefault, Nil) then
     Fail('Connection error. See log');
   if Bot.LastErrorCode<>0 then
     Fail('Error from telegram API server. Error code: '+IntToStr(Bot.LastErrorCode)+
