@@ -2351,11 +2351,12 @@ begin
     Result:=HTTPPostJson(Method);
 
     if Result then
-      if not ResponseHandle then
-      begin
-        Result:=False;
-        ErrorMessage('Error request: '+FResponse);
-      end;
+      if FResponse<>EmptyStr then     // longpolling
+        if not ResponseHandle then
+        begin
+          Result:=False;
+          ErrorMessage('Error request: '+FResponse);
+        end;
   end
   else
   begin
