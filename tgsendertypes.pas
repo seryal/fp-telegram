@@ -2958,7 +2958,7 @@ begin
   with sendObj do
     try
       Add(s_ChatId, chat_id);
-      Add(s_Text, AMessage);
+      Add(s_Text, TJSONUnicodeStringType(AMessage));
       if ParseMode<>pmDefault then
         Add(s_ParseMode, ParseModes[ParseMode]);
       Add(s_DsblWbpgPrvw, DisableWebPagePreview);
