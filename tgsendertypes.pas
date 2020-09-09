@@ -473,15 +473,19 @@ type
     procedure ErrorMessage(const Msg: String); virtual;
     procedure InfoMessage(const Msg: String); virtual;
     function IsBanned({%H-}ChatID: Int64): Boolean; virtual;
-    function IsSimpleUser({%H-}ChatID: Int64): Boolean; virtual;
+    function IsSimpleUser({%H-}ChatID: Int64): Boolean; virtual; 
+    function IsAdminUser({%H-}ChatID: Int64): Boolean; virtual;
+    function IsBotUser({%H-}ChatID: Int64): Boolean; virtual; // For example, a search engine bot
     procedure SetLanguage(const AValue: String); virtual;
   public
     constructor Create(const AToken: String);
     function DeepLinkingUrl(const AParameter: String): String;
     destructor Destroy; override;
     procedure DoReceiveUpdate(AnUpdate: TTelegramUpdateObj); virtual; // After calling the rest of handlers OnReceive...
-    function CurrentIsSimpleUser: Boolean; overload;
-    function CurrentIsBanned: Boolean; overload;
+    function CurrentIsAdminUser: Boolean;
+    function CurrentIsSimpleUser: Boolean;
+    function CurrentIsBanned: Boolean;
+    function CurrentIsBotUser: Boolean;
 
     function answerCallbackQuery(const CallbackQueryId: String; const Text: String = '';
       ShowAlert: Boolean=False; const Url: String = ''; CacheTime: Integer = 0): Boolean; virtual;
@@ -2031,6 +2035,11 @@ begin
   end;
 end;
 
+function TTelegramSender.CurrentIsAdminUser: Boolean;
+begin
+  Result:=IsAdminUser(FCurrentChatId);
+end;
+
 function TTelegramSender.answerCallbackQuery(const CallbackQueryId: String;
   const Text: String; ShowAlert: Boolean; const Url: String; CacheTime: Integer
   ): Boolean;
@@ -2146,6 +2155,16 @@ begin
   Result:=True;
 end;
 
+function TTelegramSender.IsAdminUser(ChatID: Int64): Boolean;
+begin
+  Result:=False;
+end;
+
+function TTelegramSender.IsBotUser(ChatID: Int64): Boolean;
+begin
+  Result:=False;
+end;
+
 function TTelegramSender.CurrentIsSimpleUser: Boolean;
 begin
   Result:=IsSimpleUser(FCurrentChatId);
@@ -2154,6 +2173,11 @@ end;
 function TTelegramSender.CurrentIsBanned: Boolean;
 begin
   Result:=IsBanned(FCurrentChatId);
+end;
+
+function TTelegramSender.CurrentIsBotUser: Boolean;
+begin
+  Result:=IsBotUser(FCurrentChatId);
 end;
 
 function TTelegramSender.HTTPPostFile(const Method, FileField, FileName: String;
