@@ -5,12 +5,15 @@ unit tgutils;
 interface
 
 uses
-  Classes, SysUtils, strutils;
+  Classes, SysUtils, strutils, tgtypes
+  ;
 
 const
   mdCode='`';
 
 function MarkdownEscape(const S: String): String;
+function CaptionFromChat(aChat: TTelegramChatObj): String;
+function CaptionFromUser(AUser: TTelegramUserObj): String;
 
 implementation
 
@@ -24,6 +27,38 @@ begin
   Result:=S;
   for a in MarkdownSpChars do
     Result:=StringReplace(Result, a, '\'+a, [rfReplaceAll]);
+end;
+
+function CaptionFromChat(aChat: TTelegramChatObj): String;
+begin
+  Result:=EmptyStr;
+  with aChat do
+  begin
+    if First_name<>EmptyStr then
+      Result+=First_name+' ';
+    if Last_name<>EmptyStr then
+      Result+=Last_name+' ';
+    if Title<>EmptyStr then
+      Result+=Title+' ';
+    if Username<>EmptyStr then
+      Result+='@'+Username;
+  end;
+  Result:=Trim(Result);
+end;
+
+function CaptionFromUser(AUser: TTelegramUserObj): String;
+begin
+  Result:=EmptyStr;
+  with AUser do
+  begin
+    if First_name<>EmptyStr then
+      Result+=First_name+' ';
+    if Last_name<>EmptyStr then
+      Result+=Last_name+' ';
+    if Username<>EmptyStr then
+      Result+='@'+Username;
+  end;
+  Result:=Trim(Result);
 end;
 
 end.

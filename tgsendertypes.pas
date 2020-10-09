@@ -2472,7 +2472,7 @@ begin
   FCommandHandlers:=TCommandHandlersMap.create;
   FChannelCommandHandlers:=TCommandHandlersMap.create;
   FLogDebug:=False;
-  FTimeout:=6000;
+  FTimeout:=12000;
 end;
 
 function TTelegramSender.DeepLinkingUrl(const AParameter: String): String;
@@ -2699,11 +2699,15 @@ var
   lJSONArray: TJSONArray;
   lUpdateObj: TTelegramUpdateObj;
   lJSONEnum: TJSONEnum;
+  aTimeout: Integer;
 begin
   Result:=False;
   sendObj:=TJSONObject.Create;
   with sendObj do
-  try
+  try    
+    aTimeout:=Self.Timeout;
+    if timeout*1000>self.Timeout then
+      Self.Timeout:=timeout*1000+3000; // The HTTPClient timeout cannot be less than logpolling timeout!
     if offset<>0 then
       Add(s_Offset, offset);
     if limit<>0 then    // if not specified then default[ = 100]
@@ -2729,6 +2733,7 @@ begin
         end;
       end;
   finally
+    self.Timeout:=aTimeout;
     Free;
   end;
 end;
