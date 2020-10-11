@@ -412,7 +412,7 @@ type
     FRequestWhenAnswer: Boolean;
     FCommandHandlers: TCommandHandlersMap; 
     FChannelCommandHandlers: TCommandHandlersMap;
-    FUpdateID: Int64;
+    FUpdateID: Integer;
     FUpdateLogger: TtgStatLog;
     FUpdateProcessed: Boolean;
     FTimeout: Integer;
@@ -454,7 +454,7 @@ type
     procedure SetRequestBody(AValue: String);
     procedure SetRequestWhenAnswer(AValue: Boolean);
     procedure SetTimeout(AValue: Integer);
-    procedure SetUpdateID(AValue: Int64);
+    procedure SetUpdateID(AValue: Integer);
     procedure SetUpdateLogger(AValue: TtgStatLog);
     procedure SetUpdateProcessed(AValue: Boolean);
     class function StringToJSONObject(const AString: String): TJSONObject;
@@ -515,7 +515,7 @@ type
       If not specified or [utUnknown], the previous setting will be used }
     function setWebhook(const url: String; MaxConnections: Integer = 0; AllowedUpdates: TUpdateSet = [utUnknown]): Boolean; 
     function deleteWebhook: Boolean;
-    function getUpdates(offset: Int64; limit: Integer; lp_timeout: Integer; allowed_updates: TUpdateSet = []): Boolean;
+    function getUpdates(offset: Integer; limit: Integer; lp_timeout: Integer; allowed_updates: TUpdateSet = []): Boolean;
  { To receive updates (LongPolling) You do not need to recalculate Offset in procedure below.
       The offset itself will take it from the previous UpdateID and increment by one.
       LongPollingTimeout in seconds! Timeout with 0 sec only for test cases}
@@ -599,7 +599,7 @@ type
     property Language: string read FLanguage write SetLanguage;
     property LogDebug: Boolean read FLogDebug write SetLogDebug;
     property OnLogMessage: TLogMessageEvent read FOnLogMessage write FOnLogMessage;
-    property UpdateID: Int64 read FUpdateID write SetUpdateID;
+    property UpdateID: Integer read FUpdateID write SetUpdateID;
     { Gives a flag that the Update object is processed and there is no need for further processing
       and for calling the appropriate events }
     property UpdateProcessed: Boolean read FUpdateProcessed write SetUpdateProcessed;
@@ -2333,7 +2333,7 @@ begin
   FTimeout:=AValue;
 end;
 
-procedure TTelegramSender.SetUpdateID(AValue: Int64);
+procedure TTelegramSender.SetUpdateID(AValue: Integer);
 begin
   if FUpdateID=AValue then Exit;
   FUpdateID:=AValue;
@@ -2690,7 +2690,7 @@ begin
 end;
 
 
-function TTelegramSender.getUpdates(offset: Int64; limit: Integer;
+function TTelegramSender.getUpdates(offset: Integer; limit: Integer;
   lp_timeout: Integer; allowed_updates: TUpdateSet): Boolean;
 var
   sendObj: TJSONObject;
@@ -2738,10 +2738,13 @@ end;
 
 function TTelegramSender.getUpdatesEx(limit: Integer; lp_timeout: Integer;
   allowed_updates: TUpdateSet): Boolean;
+var
+  aUpdateID: Integer;
 begin
-  if FUpdateID<>0 then
-    Inc(FUpdateID);
-  Result:=getUpdates(FUpdateID, limit, lp_timeout, allowed_updates);
+  aUpdateID:=FUpdateID;
+  if aUpdateID<>0 then
+    Inc(aUpdateID);
+  Result:=getUpdates(aUpdateID, limit, lp_timeout, allowed_updates);
 end;
 
 function TTelegramSender.kickChatMember(chat_id: Int64; user_id: Int64;
