@@ -515,13 +515,11 @@ type
       If not specified or [utUnknown], the previous setting will be used }
     function setWebhook(const url: String; MaxConnections: Integer = 0; AllowedUpdates: TUpdateSet = [utUnknown]): Boolean; 
     function deleteWebhook: Boolean;
-    function getUpdates(offset: Int64 = 0; limit: Integer = 0; timeout: Integer = 0;
-      allowed_updates: TUpdateSet = []): Boolean;
+    function getUpdates(offset: Int64; limit: Integer; lp_timeout: Integer; allowed_updates: TUpdateSet = []): Boolean;
  { To receive updates (LongPolling) You do not need to recalculate Offset in procedure below.
       The offset itself will take it from the previous UpdateID and increment by one.
       LongPollingTimeout in seconds! Timeout with 0 sec only for test cases}
-    function getUpdatesEx(limit: Integer = 0; timeout: Integer = 0;
-      allowed_updates: TUpdateSet = []): Boolean;
+    function getUpdatesEx(limit: Integer; lp_timeout: Integer; allowed_updates: TUpdateSet = []): Boolean;
     function kickChatMember(chat_id: Int64; user_id: Int64; kickDuration:Int64): Boolean;
     function SendAudio(chat_id: Int64; const audio: String; const Caption: String = '';
       ParseMode: TParseMode = pmDefault; Duration: Integer = 0; DisableNotification: Boolean = False;
@@ -2693,7 +2691,7 @@ end;
 
 
 function TTelegramSender.getUpdates(offset: Int64; limit: Integer;
-  timeout: Integer; allowed_updates: TUpdateSet): Boolean;
+  lp_timeout: Integer; allowed_updates: TUpdateSet): Boolean;
 var
   sendObj: TJSONObject;
   lJSONArray: TJSONArray;
@@ -2706,14 +2704,14 @@ begin
   with sendObj do
   try    
     aTimeout:=Self.Timeout;
-    if timeout*1000>self.Timeout then
-      Self.Timeout:=timeout*1000+3000; // The HTTPClient timeout cannot be less than logpolling timeout!
+    if lp_timeout*1000>self.Timeout then
+      Self.Timeout:=lp_timeout*1000+3000; // The HTTPClient timeout cannot be less than logpolling timeout!
     if offset<>0 then
       Add(s_Offset, offset);
     if limit<>0 then    // if not specified then default[ = 100]
       Add(s_Limit, limit);
-    if timeout<>0 then
-      Add(s_Timeout, timeout);
+    if lp_timeout<>0 then
+      Add(s_Timeout, lp_timeout);
     if allowed_updates <> [] then
       Add(s_AllowedUpdates, AllowedUpdatesToJSON(allowed_updates));
     FRequestWhenAnswer:=False; // You must do only HTTP request because because it's important to get a response in the form of an update array
@@ -2738,12 +2736,12 @@ begin
   end;
 end;
 
-function TTelegramSender.getUpdatesEx(limit: Integer; timeout: Integer;
+function TTelegramSender.getUpdatesEx(limit: Integer; lp_timeout: Integer;
   allowed_updates: TUpdateSet): Boolean;
 begin
   if FUpdateID<>0 then
     Inc(FUpdateID);
-  Result:=getUpdates(FUpdateID, limit, timeout, allowed_updates);
+  Result:=getUpdates(FUpdateID, limit, lp_timeout, allowed_updates);
 end;
 
 function TTelegramSender.kickChatMember(chat_id: Int64; user_id: Int64;
