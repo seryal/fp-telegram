@@ -19,7 +19,6 @@ type
     FCallbackAnswered: Boolean;
     FCallbackHandlers: TCallbackHandlersMap;
     FHelpText: String;
-    //FBrookAction: TWebhookAction;
     FFeedbackText: String;
     FFeedbackThanks: String;
     //FOnRate: TRateEvent;
@@ -42,7 +41,6 @@ type
     function GetCallbackHandlers(const Command: String): TCallbackEvent;
     function GetUserStatus(ID: Int64): TUserStatus;
     procedure SendStatLog(ADate: TDate = 0; AReplyMarkup: TReplyMarkup = nil);
-    //procedure SetBrookAction(AValue: TWebhookAction);
     procedure SetCallbackHandlers(const Command: String; AValue: TCallbackEvent
       );
     procedure SetCommandReply({%H-}ASender: TObject; const ACommand: String;
@@ -54,8 +52,6 @@ type
     procedure SetStartText(AValue: String);
     procedure SetStatLogger(AValue: TtgStatLog);
     procedure SetUserStatus(ID: Int64; AValue: TUserStatus);
-    //procedure TerminateHandler({%H-}ASender: TObject; const {%H-}ACommand: String;
-    //  {%H-}AMessage: TTelegramMessageObj);
     procedure TlgrmStartHandler({%H-}ASender: TObject; const {%H-}ACommand: String;
       {%H-}AMessage: TTelegramMessageObj);
     procedure TlgrmHelpHandler({%H-}ASender: TObject; const {%H-}ACommand: String;
@@ -85,7 +81,6 @@ type
     procedure DoReceiveChosenInlineResult(
       AChosenInlineResult: TTelegramChosenInlineResultObj); override;
     procedure DoReceiveInlineQuery(AnInlineQuery: TTelegramInlineQueryObj); override;
-    //property BrookAction: TWebhookAction read FBrookAction write SetBrookAction;
     function IsAdminUser(ChatID: Int64): Boolean; override;
     function IsBanned(ChatID: Int64): Boolean; override;
     function IsBotUser(ChatID: Int64): Boolean; override;
@@ -158,7 +153,6 @@ const
   cmd_Help = '/help';
   cmd_Stat = '/stat';
   cmd_StatF = '/statf';
-  //cmd_Terminate = '/terminate';
   cmd_Feedback = '/feedback';
   cmd_SetStart = '/setstart';
   cmd_SetHelp = '/sethelp';
@@ -235,12 +229,6 @@ end;
 
 { TTelegramBot }
 
-//procedure TTelegramBot.SetBrookAction(AValue: TWebhookAction);
-//begin
-//  if FBrookAction=AValue then Exit;
-//  FBrookAction:=AValue;
-//end;
-
 procedure TTelegramBot.SetCallbackHandlers(const Command: String;
   AValue: TCallbackEvent);
 begin
@@ -270,12 +258,6 @@ begin
   if FHelpText=AValue then Exit;
   FHelpText:=AValue;
 end;
-
-//procedure TTelegramBot.SetOnRate(AValue: TRateEvent);
-//begin
-//  if FOnRate=AValue then Exit;
-//  FOnRate:=AValue;
-//end;
 
 procedure TTelegramBot.SetOnReceiveDeepLinking(AValue: TReceiveDeepLinkEvent);
 begin
@@ -706,16 +688,6 @@ begin
   end;
   FUserPermissions.Values[IntToStr(ID)]:=UserStatusChars[AValue];
 end;
-//
-//procedure TTelegramBot.TerminateHandler(ASender: TObject; const ACommand: String;
-//  AMessage: TTelegramMessageObj);
-//begin
-//  if not CurrentIsAdminUser then
-//    Exit;
-//  RequestWhenAnswer:=True;
-//  sendMessage(str_BtApIsClsd);
-//  BrookApp.Terminate;
-//end;
 
 procedure TTelegramBot.TlgrmStartHandler(ASender: TObject;
   const ACommand: String; AMessage: TTelegramMessageObj);
@@ -984,7 +956,6 @@ end;
 constructor TTelegramBot.Create(const AToken: String);
 begin
   inherited Create(AToken);
-  //FBrookAction:=AWebhookAction;
   FStatLogger:=TtgStatLog.Create(nil);
   FStatLogger.Active:=False;
   FStatLogger.TimeStampFormat:='hh:nn:ss';
@@ -999,7 +970,6 @@ begin
   //CommandHandlers[cmd_Rate]:=    @TlgrmRate;
   CommandHandlers[cmd_Stat]:=    @TlgrmStatHandler;
   CommandHandlers[cmd_StatF]:=   @TlgrmStatFHandler;
-  //CommandHandlers[cmd_Terminate]:=@TerminateHandler;
   CommandHandlers[cmd_SetStart]:= @SetCommandReply;
   CommandHandlers[cmd_SetHelp]:=  @SetCommandReply;
   FCallbackHandlers:=TCallbackHandlersMap.create;
@@ -1031,7 +1001,6 @@ begin
     Exit;
   end;
   StatLog(AMessage.Text, utMessage);
-  //FBrookAction.BotMessageHandler(AMessage);
 end;
 
 procedure TTelegramBot.DoReceiveCallbackQuery(ACallback: TCallbackQueryObj);
@@ -1076,8 +1045,6 @@ begin
       RequestWhenAnswer:=AFlag;
       AHandled:=True;
     end;
-{    if not AHandled then
-      FBrookAction.BotCallbackQuery(ACallback);}
   end;
 end;
 
