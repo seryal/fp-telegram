@@ -34,6 +34,7 @@ type
     procedure getWebhookInfo;
     procedure setWebhook;    
     procedure deleteWebhook;
+    procedure testCodePage;
   end;
 
   { TTestProxySender }
@@ -371,6 +372,29 @@ begin
   if not Bot.deleteWebhook then
     Fail('Connection error. See log');
   SaveJSONData(Bot.JSONResponse, '~responce.json');
+  if Bot.LastErrorCode<>0 then
+    Fail('Error from telegram API server. Error code: '+IntToStr(Bot.LastErrorCode)+
+      '. Description: '+Bot.LastErrorDescription);
+end;
+
+procedure TTestSender.testCodePage;
+var
+  aStream: TStringStream;
+  s: String;
+begin
+  aStream:=TStringStream.Create(EmptyStr);
+  aStream.LoadFromFile('~debugutf8.txt');
+  S:=EmptyStr;
+  s+=aStream.DataString;
+  Bot.Logger.Debug(CodePageToCodePageName(StringCodePage(S)));
+  if not Bot.sendMessage(ChatID, s, pmMarkdown) then
+    Fail('Connection error. See log');
+  aStream.Free;
+  if Bot.LastErrorCode<>0 then
+    Fail('Error from telegram API server. Error code: '+IntToStr(Bot.LastErrorCode)+
+      '. Description: '+Bot.LastErrorDescription);
+  if not Bot.sendMessage(ChatID, Format(Msg_md, [Self.ClassName, TestName]), pmMarkdown) then
+    Fail('Connection error. See log');
   if Bot.LastErrorCode<>0 then
     Fail('Error from telegram API server. Error code: '+IntToStr(Bot.LastErrorCode)+
       '. Description: '+Bot.LastErrorDescription);

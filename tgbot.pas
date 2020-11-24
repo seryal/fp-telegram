@@ -117,7 +117,7 @@ function FormatStatRec(const S: String): String;
 implementation
 
 uses
-  tgutils, fpjson, StrUtils, DateUtils, Translations, LazUTF8
+  tgutils, fpjson, StrUtils, DateUtils, Translations, LazUTF8, FileUtil
   ;
 
 resourcestring
@@ -781,7 +781,7 @@ end;
 { Please define ni18n (No i18n) for excluding translate unit from uses and exclude i18n support }
 procedure TTelegramBot.LangTranslate(const ALang: String);{$IFNDEF ni18n}
 var
-  L, F: String;  {$ENDIF}
+  L, F, aExeName: String;  {$ENDIF}
 begin{$IFNDEF ni18n}
   if ALang=EmptyStr then
     Exit;
@@ -789,7 +789,8 @@ begin{$IFNDEF ni18n}
     L:=LeftStr(ALang, 2)
   else
     L:=ALang;
-  F:='languages'+PathDelim+ApplicationName+'.%s.po';
+  aExeName:=ChangeFileExt(ExtractFileName(ParamStr(0)), '');
+  F:='languages'+PathDelim+aExeName+'.%s.po';
   TranslateResourceStrings(F, L, '');{$ENDIF}
 end;
 
