@@ -2198,12 +2198,6 @@ begin
       HTTP.FileFormPost(APIEndPoint+FToken+'/'+Method, AFormData, FileField, FileName, AStream);
       FResponse:=AStream.DataString;
       Result:=True;
-      if FResponse<>EmptyStr then     // longpolling
-        if not ResponseHandle then
-        begin
-          Result:=False;
-          ErrorMessage('Error request: '+FResponse);
-        end;
     except
       Result:=False;
     end;
@@ -2324,6 +2318,13 @@ begin
   DebugMessage('Sending file '+AFileName);
   try
     Result:=HTTPPostFile(AMethod, AFileField, AFileName, MethodParameters);
+    if Result then
+      if FResponse<>EmptyStr then     // longpolling
+        if not ResponseHandle then
+        begin
+          Result:=False;
+          ErrorMessage('Error request: '+FResponse);
+        end;
     DebugMessage('Response: '+FResponse);
   except
     ErrorMessage('It is not succesful request to API! Request body: '+FRequestBody);
