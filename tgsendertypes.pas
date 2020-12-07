@@ -437,8 +437,7 @@ type
     procedure ProcessCommands(AMessage: TTelegramMessageObj; AHandlers: TCommandHandlersMap);
     function ResponseToJSONObject: TJSONObject;
     function ResponseHandle: Boolean;
-    function SendFile(const AMethod, AFileField, AFileName: String;
-      MethodParameters: TStrings): Boolean;
+    function SendFile(const AMethod, AFileField, AFileName: String; MethodParameters: TStrings): Boolean;
     function SendMethod(const Method: String; MethodParameters: array of const): Boolean;
     function SendMethod(const Method: String; MethodParameters: TJSONObject): Boolean; overload;
     function SendStream(const AMethod, AFileField, AFileName: String; AStream: TStream;
@@ -515,7 +514,7 @@ type
       If not specified or [utUnknown], the previous setting will be used }
     function setWebhook(const url: String; MaxConnections: Integer = 0; AllowedUpdates: TUpdateSet = [utUnknown]): Boolean; 
     function deleteWebhook: Boolean;
-    function getUpdates(offset: Integer; limit: Integer; lp_timeout: Integer; allowed_updates: TUpdateSet = []): Boolean;
+    function getUpdates(offset: Integer = 0; limit: Integer = 0; lp_timeout: Integer = 0; allowed_updates: TUpdateSet = []): Boolean;
  { To receive updates (LongPolling) You do not need to recalculate Offset in procedure below.
       The offset itself will take it from the previous UpdateID and increment by one.
       LongPollingTimeout in seconds! Timeout with 0 sec only for test cases}
@@ -580,7 +579,10 @@ type
     function sendAnimation(chat_id: Int64; const aAnimation: String; const ACaption: String = ''; ParseMode: TParseMode = pmDefault;
       ReplyMarkup: TReplyMarkup = nil; ReplyToMessageID: Integer = 0; Width: Integer = 0; Height: Integer = 0): Boolean;
     function sendAnimation(const aAnimation: String; const ACaption: String = ''; ParseMode: TParseMode = pmDefault;
-      ReplyMarkup: TReplyMarkup = nil; ReplyToMessageID: Integer = 0; Width: Integer = 0; Height: Integer = 0): Boolean;
+      ReplyMarkup: TReplyMarkup = nil; ReplyToMessageID: Integer = 0; Width: Integer = 0; Height: Integer = 0): Boolean; 
+    function sendAnimationByFileName(chat_id: Int64; const AFileName: String; const ACaption: String = '';
+      ParseMode: TParseMode = pmDefault; ReplyMarkup: TReplyMarkup = nil; ReplyToMessageID: Integer = 0;
+      Width: Integer = 0; Height: Integer = 0): Boolean;
     function answerInlineQuery(const AnInlineQueryID: String; Results: TInlineQueryResultArray;
       CacheTime: Integer = 300; IsPersonal: Boolean = False; const NextOffset: String = '';
       const SwitchPmText: String = ''; const SwitchPmParameter: String = ''): Boolean;
@@ -2184,19 +2186,31 @@ var
   HTTP: TBaseHTTPClient;
   AStream: TStringStream;
 begin
+  Result:=False;
+  JSONResponse:=nil;
+  FResponse:=EmptyStr;
   HTTP:=TBaseHTTPClient.GetClientClass.Create(nil);
   AssignHTTProxy(HTTP);
   AStream:=TStringStream.Create(EmptyStr);
   try
-    HTTP.AddHeader('Content-Type','multipart/form-data');
-    HTTP.FileFormPost(APIEndPoint+FToken+'/'+Method, AFormData, FileField, FileName, AStream);
-    FResponse:=AStream.DataString;
-    Result:=True;
-  except
-    Result:=False;
+    try
+      HTTP.AddHeader('Content-Type','multipart/form-data');
+      HTTP.FileFormPost(APIEndPoint+FToken+'/'+Method, AFormData, FileField, FileName, AStream);
+      FResponse:=AStream.DataString;
+      Result:=True;
+      if FResponse<>EmptyStr then     // longpolling
+        if not ResponseHandle then
+        begin
+          Result:=False;
+          ErrorMessage('Error request: '+FResponse);
+        end;
+    except
+      Result:=False;
+    end;
+  finally
+    AStream.Free;
+    HTTP.Free;
   end;
-  AStream.Free;
-  HTTP.Free;
 end;
 
 function TTelegramSender.HTTPPostJSON(const Method: String): Boolean;
@@ -2365,7 +2379,7 @@ function TTelegramSender.SendMethod(const Method: String; MethodParameters: TJSO
 begin
   Result:=False;
   JSONResponse:=nil;
-  FResponse:='';
+  FResponse:=EmptyStr;
   if not FRequestWhenAnswer then
   begin
     RequestBody:=MethodParameters.AsJSON;
@@ -3248,6 +3262,35 @@ function TTelegramSender.sendAnimation(const aAnimation: String;
   ReplyToMessageID: Integer; Width: Integer; Height: Integer): Boolean;
 begin
   Result:=sendAnimation(FCurrentChatId, aAnimation, ACaption, ParseMode, ReplyMarkup, ReplyToMessageID, Width, Height);
+end;
+
+function TTelegramSender.sendAnimationByFileName(chat_id: Int64; const AFileName: String; const ACaption: String;
+  ParseMode: TParseMode; ReplyMarkup: TReplyMarkup; ReplyToMessageID: Integer; Width: Integer; Height: Integer
+  ): Boolean;
+var
+  sendObj: TStringList;
+begin
+  Result:=False;
+  sendObj:=TStringList.Create;
+  with sendObj do
+  try
+    Add(s_ChatId+'='+IntToStr(chat_id));
+    if Width<>0 then
+      Add(s_Width+'='+Width.ToString);
+    if Height<>0 then
+      Add(s_Height+'='+Height.ToString);
+    if ACaption<>EmptyStr then
+      Add(s_Caption+'='+ACaption);
+    if ParseMode<>pmDefault then
+      Add(s_ParseMode+'='+ParseModes[ParseMode]);
+    if Assigned(ReplyMarkup) then
+      Add(s_ReplyMarkup+'='+ReplyMarkup.AsJSON);
+    if ReplyToMessageID<>0 then
+      Add(s_ReplyToMessageID+'='+IntToStr(ReplyToMessageID));
+    Result:=SendFile(s_sendAnimation, s_Animation, AFileName, sendObj);
+  finally
+    Free;
+  end;
 end;
 
 function TTelegramSender.answerInlineQuery(const AnInlineQueryID: String;

@@ -167,7 +167,7 @@ end;
 
 procedure TTestReceiveLongPolling.ReceiveUpdate;
 begin
-  Bot.getUpdates;
+  Bot.getUpdates();
   if not Received then
     Fail('No updates were received. Send, for example, a message to the test bot')
   else
