@@ -2314,6 +2314,7 @@ function TTelegramSender.SendFile(const AMethod, AFileField, AFileName: String;
   MethodParameters: TStrings): Boolean;
 begin
   Result:=False;
+  RequestBody:=MethodParameters.CommaText;
   DebugMessage('Request for method "'+AMethod+'": '+FRequestBody);
   DebugMessage('Sending file '+AFileName);
   try
