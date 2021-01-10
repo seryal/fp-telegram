@@ -573,6 +573,9 @@ type
     function sendVideoByFileName(chat_id: Int64; const AFileName: String;
       const ACaption: String; ParseMode: TParseMode = pmDefault; ReplyMarkup: TReplyMarkup = nil;
       ReplyToMessageID: Integer = 0; Width: Word=0; Height: Word=0): Boolean;
+    function sendVideoStream(chat_id: Int64; const AFileName: String; AVideoStream: TStream;
+      const ACaption: String = ''; ParseMode: TParseMode = pmDefault;  ReplyMarkup: TReplyMarkup = nil;
+      ReplyToMessageID: Integer = 0; Width: Integer = 0; Height: Integer = 0): Boolean;
     function sendVoice(chat_id: Int64; const Voice: String; const Caption: String = '';
       ParseMode: TParseMode = pmDefault; Duration: Integer=0; DisableNotification: Boolean = False;
       ReplyToMessageID: Integer = 0; ReplyMarkup: TReplyMarkup = nil): Boolean;
@@ -3192,6 +3195,35 @@ begin
     if ReplyToMessageID<>0 then
       Add(s_ReplyToMessageID+'='+IntToStr(ReplyToMessageID));
     Result:=SendFile(s_sendVideo, s_Video, AFileName, sendObj);
+  finally
+    Free;
+  end;
+end;
+
+function TTelegramSender.sendVideoStream(chat_id: Int64; const AFileName: String; AVideoStream: TStream;
+  const ACaption: String; ParseMode: TParseMode; ReplyMarkup: TReplyMarkup; ReplyToMessageID: Integer; Width: Integer;
+  Height: Integer): Boolean;
+var
+  sendObj: TStringList;
+begin
+  Result:=False;
+  sendObj:=TStringList.Create;
+  with sendObj do
+  try
+    Add(s_ChatId+'='+IntToStr(chat_id));
+    if ACaption<>EmptyStr then
+      Add(s_Caption+'='+ACaption);
+    if ParseMode<>pmDefault then
+      Add(s_ParseMode+'='+ParseModes[ParseMode]);
+    if Assigned(ReplyMarkup) then
+      Add(s_ReplyMarkup+'='+ReplyMarkup.AsJSON);
+     if Width<>0 then
+      Add(s_Width+'='+Width.ToString);
+    if Height<>0 then
+      Add(s_Height+'='+Height.ToString);
+    if ReplyToMessageID<>0 then
+      Add(s_ReplyToMessageID+'='+ReplyToMessageID.ToString);
+    Result:=SendStream(s_sendVideo, s_Video, AFileName, AVideoStream, sendObj);
   finally
     Free;
   end;

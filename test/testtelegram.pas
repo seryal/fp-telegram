@@ -29,6 +29,7 @@ type
     procedure InlineKeyboard;
     procedure sendVideo;  
     procedure sendVideoByFileName;
+    procedure sendVideoStream;
     procedure sendPhotoByFileName;
     procedure ChatMember;
     procedure getWebhookInfo;
@@ -319,6 +320,20 @@ begin
   if Bot.LastErrorCode<>0 then
     Fail('Error from telegram API server. Error code: '+IntToStr(Bot.LastErrorCode)+
       '. Description: '+Bot.LastErrorDescription);
+end;
+
+procedure TTestSender.sendVideoStream;
+var
+  aStream: TMemoryStream;
+begin
+  aStream:=TMemoryStream.Create;
+  aStream.LoadFromFile(VideoFile);
+  if not Bot.sendVideoStream(ChatID, VideoFile, aStream, Format(vd_cptn, [Self.ClassName, TestName])) then
+    Fail('Connection error. See log');
+  if Bot.LastErrorCode<>0 then
+    Fail('Error from telegram API server. Error code: '+IntToStr(Bot.LastErrorCode)+
+      '. Description: '+Bot.LastErrorDescription);
+  aStream.Free;
 end;
 
 procedure TTestSender.sendPhotoByFileName;
