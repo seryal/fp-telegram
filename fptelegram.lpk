@@ -19,8 +19,8 @@
     </CompilerOptions>
     <Description Value="Telegram bots API library"/>
     <License Value="MIT License"/>
-    <Version Release="2" Build="1"/>
-    <Files Count="6">
+    <Version Release="2" Build="2"/>
+    <Files Count="7">
       <Item1>
         <Filename Value="tgsendertypes.pas"/>
         <UnitName Value="tgsendertypes"/>
@@ -45,6 +45,10 @@
         <Filename Value="tgbasehttpclient.pas"/>
         <UnitName Value="tgbasehttpclient"/>
       </Item6>
+      <Item7>
+        <Filename Value="tgbot.pas"/>
+        <UnitName Value="tgbot"/>
+      </Item7>
     </Files>
     <RequiredPkgs Count="1">
       <Item1>
