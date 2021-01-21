@@ -117,7 +117,7 @@ function FormatStatRec(const S: String): String;
 implementation
 
 uses
-  tgutils, fpjson, StrUtils, DateUtils, Translations, LazUTF8, FileUtil
+  tgutils, fpjson, StrUtils, DateUtils, {$IFDEF poi18n}Translations, {$ENDIF}LazUTF8, FileUtil
   ;
 
 resourcestring
@@ -778,11 +778,11 @@ begin
     SendStatInlineKeyboard(True);
 end;
 
-{ Please define ni18n (No i18n) for excluding translate unit from uses and exclude i18n support }
-procedure TTelegramBot.LangTranslate(const ALang: String);{$IFNDEF ni18n}
+{ Please define poi18n for including translate unit to uses and include standard po i18n support }
+procedure TTelegramBot.LangTranslate(const ALang: String);{$IFDEF poi18n}
 var
   L, F, aExeName: String;  {$ENDIF}
-begin{$IFNDEF ni18n}
+begin{$IFDEF poi18n}
   if ALang=EmptyStr then
     Exit;
   if Length(ALang)>2 then
