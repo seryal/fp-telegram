@@ -13,7 +13,9 @@ type
   { Test sending messages. Object style }
   TTestSender= class(TTestTelegramClass)
   private
+    FJSONMediaGroup: String;
     FPhotoFile: String;
+    FPhotoUrl: String;
     FUrl: String;
     FVideoFile: String;
     FVideoUrl: String;
@@ -22,15 +24,19 @@ type
   public
     property VideoUrl: String read FVideoUrl;
     property Url: String read FUrl;
-    property VideoFile: String read FVideoFile; 
+    property VideoFile: String read FVideoFile;
+    property PhotoUrl: String read FPhotoUrl;
     property PhotoFile: String read FPhotoFile;
+    property jsonMediaGroup: String read FJSONMediaGroup;
   published
     procedure sendMessage;
     procedure InlineKeyboard;
     procedure sendVideo;  
     procedure sendVideoByFileName;
     procedure sendVideoStream;
+    procedure sendPhoto;
     procedure sendPhotoByFileName;
+    procedure sendMediaGroup;
     procedure ChatMember;
     procedure getWebhookInfo;
     procedure setWebhook;    
@@ -106,7 +112,7 @@ type
 implementation
 
 uses
-  URIParser
+  URIParser, jsonparser
   ;
 
 const
@@ -265,7 +271,9 @@ begin
   FVideoUrl:=Conf.ReadString('Send', 'videourl', EmptyStr);
   FUrl:=Conf.ReadString('Send', 'Url', EmptyStr);
   FVideoFile:=Conf.ReadString('Send', 'VideoFile', EmptyStr);
-  FPhotoFile:=Conf.ReadString('Send', 'PhotoFile', EmptyStr);
+  FPhotoUrl:=Conf.ReadString('Send', 'photourl', EmptyStr);
+  FPhotoFile:=Conf.ReadString('Send', 'PhotoFile', EmptyStr); 
+  FJSONMediaGroup:=Conf.ReadString('Send', 'JSONMediaGroup', EmptyStr);
 end;
 
 procedure TTestSender.sendMessage;
@@ -336,10 +344,41 @@ begin
   aStream.Free;
 end;
 
+procedure TTestSender.sendPhoto;
+begin
+  if not Bot.sendPhoto(ChatID, PhotoUrl, Format(pht_cptn, [Self.ClassName, TestName])) then
+    Fail('Connection error. See log');
+  if Bot.LastErrorCode<>0 then
+    Fail('Error from telegram API server. Error code: '+IntToStr(Bot.LastErrorCode)+
+      '. Description: '+Bot.LastErrorDescription);
+end;
+
 procedure TTestSender.sendPhotoByFileName;
 begin
   if not Bot.sendPhotoByFileName(ChatID, PhotoFile, Format(pht_cptn, [Self.ClassName, TestName])) then
     Fail('Connection error. See log');
+  if Bot.LastErrorCode<>0 then
+    Fail('Error from telegram API server. Error code: '+IntToStr(Bot.LastErrorCode)+
+      '. Description: '+Bot.LastErrorDescription);
+end;
+
+procedure TTestSender.sendMediaGroup;
+var
+  aJSONData: TJSONArray;
+  aMedias: TInputMediaArray;
+  i: TJSONEnum;
+begin
+  aJSONData:=GetJSON(JSONMediaGroup) as TJSONArray;
+  aMedias:=TInputMediaArray.Create;
+  try
+    for i in aJSONData do
+      aMedias.Add(i.Value.Clone as TJSONObject);
+    if not Bot.sendMediaGroup(ChatID, aMedias) then
+      Fail('Connection error. See log');
+  finally
+    aJSONData.Free;
+    aMedias.Free;
+  end;
   if Bot.LastErrorCode<>0 then
     Fail('Error from telegram API server. Error code: '+IntToStr(Bot.LastErrorCode)+
       '. Description: '+Bot.LastErrorDescription);
