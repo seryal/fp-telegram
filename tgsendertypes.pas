@@ -662,6 +662,9 @@ function TgBotSendMessage(const AToken: String; chat_id: Int64; const AMessage: 
   ParseMode: TParseMode = pmDefault; DisableWebPagePreview: Boolean=False;
   AReplyMarkup: TReplyMarkup = nil; ReplyToMessageID: Integer = 0): Boolean;
 
+function StringToParseMode(const S: String): TParseMode;
+function StringToMediaType(const S: String): TMediaType;
+
 var
   TelegramAPI_URL: String ='https://api.telegram.org/bot';
 
