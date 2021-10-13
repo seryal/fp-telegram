@@ -48,7 +48,8 @@ type
     destructor Destroy; override;
     class function EncodeUrlElement(S: String): String; override;
     procedure FileFormPost(const AURL: string; FormData: TStrings; AFieldName, AFileName: string;
-      const Response: TStream); override;
+      const Response: TStream); override;    
+    function FilesFormPost(const AURL: string; FormData: TStrings; const AFiles: TStrings): String; override;
     function FormPost(const URL: string; FormData: TStrings): String; override;
     function Get(const AUrl: String): String; override;
     function Post(const URL: string): String; override;
@@ -63,7 +64,62 @@ uses
   {$IFDEF SSLOpenSockets}opensslsockets{$endif}
   ;
 
+Const
+  CRLF = #13#10;
+
 { TFCLHTTPClient }
+
+function TFCLHTTPClient.FilesFormPost(const AURL: string; FormData: TStrings; const AFiles: TStrings): String;
+Var
+  S, Sep : string;
+  SS : TRawByteStringStream;
+  I: Integer;
+  N,V, aFieldName, aFileName: String;
+  F: TFileStream;
+begin
+  Sep:=Format('%.8x_multipart_boundary',[Random($ffffff)]);
+  AddHeader('Content-Type','multipart/form-data; boundary='+Sep);
+  SS:=TRawByteStringStream.Create();
+  try
+    if (FormData<>Nil) then
+      for I:=0 to FormData.Count -1 do
+        begin
+        // not url encoded
+        FormData.GetNameValue(I,N,V);
+        S :='--'+Sep+CRLF;
+        S:=S+Format('Content-Disposition: form-data; name="%s"'+CRLF+CRLF+'%s'+CRLF,[N, V]);
+        SS.WriteBuffer(S[1],Length(S));
+        end;
+    if (AFiles<>Nil) then
+      for I:=0 to AFiles.Count-1 do
+        begin             
+          AFiles.GetNameValue(I,aFieldName,aFileName);
+          S:='--'+Sep+CRLF;
+          s:=s+Format('Content-Disposition: form-data; name="%s"; filename="%s"'+CRLF,
+            [aFieldName,ExtractFileName(aFileName)]);
+          s:=s+'Content-Type: application/octet-string'+CRLF+CRLF;
+          SS.WriteBuffer(S[1],Length(S));
+          F:=TFileStream.Create(aFileName,fmOpenRead or fmShareDenyWrite);
+          try
+            F.Seek(0, soFromBeginning);
+            SS.CopyFrom(F,F.Size);
+            S:=CRLF;
+            SS.WriteBuffer(S[1],Length(S));
+          finally
+            F.Free;
+          end;
+        end;
+
+    S:='--'+Sep+'--'+CRLF;
+    SS.WriteBuffer(S[1],Length(S));
+    SS.Position:=0;
+    RequestBody:=SS;
+    Result:=Post(AURL);
+  finally
+    RequestBody:=Nil;
+    SS.Free;
+  end;
+end;
 
 procedure TFCLHTTPClient.PrepareHeaders;
 begin

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
-  <Package Version="4">
+  <Package Version="5">
     <PathDelim Value="\"/>
     <Name Value="fptelegram"/>
     <Type Value="RunTimeOnly"/>
@@ -16,10 +16,15 @@
           <OptimizationLevel Value="2"/>
         </Optimizations>
       </CodeGeneration>
+      <Other>
+        <CompilerMessages>
+          <IgnoredMessages idx6058="True"/>
+        </CompilerMessages>
+      </Other>
     </CompilerOptions>
     <Description Value="Telegram bots API library"/>
     <License Value="MIT License"/>
-    <Version Release="2" Build="4"/>
+    <Version Release="2" Build="5"/>
     <Files Count="6">
       <Item1>
         <Filename Value="tgsendertypes.pas"/>
@@ -46,6 +51,7 @@
         <UnitName Value="tgbasehttpclient"/>
       </Item6>
     </Files>
+    <CompatibilityMode Value="True"/>
     <RequiredPkgs Count="1">
       <Item1>
         <PackageName Value="FCL"/>

@@ -50,6 +50,7 @@ type
     class function EncodeUrlElement(S: String): String; override;
     procedure FileFormPost(const AURL: string; FormData: TStrings; AFieldName, AFileName: string;
       const Response: TStream); override;
+    function FilesFormPost(const AURL: string; FormData: TStrings; const AFiles: TStrings): String; override;
     function FormPost(const URL: string; FormData: TStrings): String; override;
     function Get(const AUrl: String): String; override;
     function Post(const URL: string): String; override;
@@ -103,6 +104,66 @@ begin
     StreamFormPost(AURL, FormData, AFieldName, ExtractFileName(AFileName), F, Response);
   finally
     F.Free;
+  end;
+end;
+
+function TSynapseHTTPClient.FilesFormPost(const AURL: string; FormData: TStrings; const AFiles: TStrings): String;
+var
+  Bound, N, V, S, aFieldName, aFileName: string;
+  I: Integer;
+  SS: TStringStream;
+  F: TFileStream;
+begin
+  BeforeRequest;
+  Bound := IntToHex(Random(MaxInt), 8) + '_Synapse_boundary';
+  SS:=TStringStream.Create('');
+  try
+    if (FormData<>Nil) then
+      for I:=0 to FormData.Count -1 do
+      begin
+        FormData.GetNameValue(I,N,V);
+        S :='--'+Bound+CRLF;
+        S:=S+Format('Content-Disposition: form-data; name="%s"'+CRLF+CRLF+'%s'+CRLF,[N, V]);
+        SS.WriteBuffer(S[1],Length(S));
+      end;
+
+
+    if (AFiles<>Nil) then
+      for I:=0 to AFiles.Count-1 do
+        begin
+          AFiles.GetNameValue(I,aFieldName,aFileName);
+          S:='--'+Bound+CRLF;
+          s:=s+Format('Content-Disposition: form-data; name="%s"; filename="%s"'+CRLF,
+            [aFieldName,ExtractFileName(aFileName)]);
+          s:=s+'Content-Type: application/octet-string'+CRLF+CRLF;
+          SS.WriteBuffer(S[1],Length(S));
+          F:=TFileStream.Create(aFileName,fmOpenRead or fmShareDenyWrite);
+          try
+            F.Seek(0, soFromBeginning);
+            SS.CopyFrom(F,F.Size);
+            S:=CRLF;
+            SS.WriteBuffer(S[1],Length(S));
+          finally
+            F.Free;
+          end;
+        end;
+    S:='--'+Bound+'--'+CRLF;
+    SS.WriteBuffer(S[1],Length(S));
+    FHTTPClient.Document.LoadFromStream(SS);
+    SS.Clear;
+    FHTTPClient.MimeType := 'multipart/form-data; boundary=' + Bound;
+    if FHTTPClient.HTTPMethod('POST', AURL) then
+    begin
+      FHTTPClient.Document.SaveToStream(SS);
+      Result:=SS.DataString;
+      FResponseHeaders.AddStrings(FHTTPClient.Headers, True);
+      {$IFDEF DEBUG}FResponseHeaders.SaveToFile('~ResponseHeaders.txt');{$ENDIF}
+    end
+    else
+      raise EHTTPClient.Create('HTTP client. '+FHTTPClient.ResultCode.ToString+' '+
+            FHTTPClient.ResultString);
+  finally
+    SS.Free;
   end;
 end;
 

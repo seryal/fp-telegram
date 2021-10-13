@@ -431,6 +431,7 @@ type
       AValue: TCommandEvent);
     procedure SetCommandHandlers(const Command: String; AValue: TCommandEvent);
     function HTTPPostFile(const Method, FileField, FileName: String; AFormData: TStrings): Boolean;
+    function HTTPPostFiles(const Method: String; aFormData, aFiles: TStrings): Boolean;
     function HTTPPostJSON(const Method: String): Boolean;
     function HTTPPostStream(const Method, FileField, FileName: String;
       AStream: TStream; AFormData: TStrings): Boolean;
@@ -438,6 +439,7 @@ type
     function ResponseToJSONObject: TJSONObject;
     function ResponseHandle: Boolean;
     function SendFile(const AMethod, AFileField, AFileName: String; MethodParameters: TStrings): Boolean;
+    function SendFiles(const AMethod: String; AFiles, MethodParameters: TStrings): Boolean;
     function SendMethod(const Method: String; MethodParameters: array of const): Boolean;
     function SendMethod(const Method: String; MethodParameters: TJSONObject): Boolean; overload;
     function SendStream(const AMethod, AFileField, AFileName: String; AStream: TStream;
@@ -544,6 +546,7 @@ type
       ReplyMarkup: TReplyMarkup = nil): Boolean;
     function sendMediaGroup(chat_id: Int64; media: TInputMediaArray;
       DisableWebPagePreview: Boolean=False; ReplyToMessageID: Integer = 0): Boolean;
+    function sendMediaGroupByFileNames(chat_id: Int64; media: TInputMediaArray): Boolean;
     function sendMessage(chat_id: Int64; const AMessage: String; ParseMode: TParseMode = pmDefault;
       DisableWebPagePreview: Boolean=False; ReplyMarkup: TReplyMarkup = nil;
       ReplyToMessageID: Integer = 0): Boolean;
@@ -2213,6 +2216,27 @@ begin
   end;
 end;
 
+function TTelegramSender.HTTPPostFiles(const Method: String; aFormData, aFiles: TStrings): Boolean;
+var
+  HTTP: TBaseHTTPClient;
+begin
+  Result:=False;
+  JSONResponse:=nil;
+  FResponse:=EmptyStr;
+  HTTP:=TBaseHTTPClient.GetClientClass.Create(nil);
+  AssignHTTProxy(HTTP);
+  try
+    try
+      FResponse:=HTTP.FilesFormPost(APIEndPoint+FToken+'/'+Method, aFormData, aFiles);
+      Result:=True;
+    except
+      Result:=False;
+    end;
+  finally
+    HTTP.Free;
+  end;
+end;
+
 function TTelegramSender.HTTPPostJSON(const Method: String): Boolean;
 var
   HTTP: TBaseHTTPClient;
@@ -2325,6 +2349,26 @@ begin
   DebugMessage('Sending file '+AFileName);
   try
     Result:=HTTPPostFile(AMethod, AFileField, AFileName, MethodParameters);
+    if Result then
+      if FResponse<>EmptyStr then     // longpolling
+        if not ResponseHandle then
+        begin
+          Result:=False;
+          ErrorMessage('Error request: '+FResponse);
+        end;
+    DebugMessage('Response: '+FResponse);
+  except
+    ErrorMessage('It is not succesful request to API! Request body: '+FRequestBody);
+  end;
+end;
+
+function TTelegramSender.SendFiles(const AMethod: String; AFiles, MethodParameters: TStrings): Boolean;
+begin
+  Result:=False;
+  RequestBody:=MethodParameters.CommaText;
+  DebugMessage('Request for method "'+AMethod+'": '+FRequestBody);
+  try
+    Result:=HTTPPostFiles(AMethod, MethodParameters, AFiles);
     if Result then
       if FResponse<>EmptyStr then     // longpolling
         if not ResponseHandle then
@@ -2996,6 +3040,45 @@ begin
     finally
       Free;
     end;
+end;
+
+function TTelegramSender.sendMediaGroupByFileNames(chat_id: Int64; media: TInputMediaArray): Boolean;
+var
+  sendObj, aFiles: TStringList;
+  aMediaEnum: TJSONEnum;
+  aField, aFileName: String;
+  aMediaAlbum: TInputMediaArray;
+  aInputMedia: TJSONObject;
+begin
+  Result:=False;
+  aFiles:=nil;
+  sendObj:=TStringList.Create;
+  with sendObj do
+  try
+    AddPair(s_ChatId, IntToStr(chat_id));
+    if Assigned(media) then
+    begin
+      aFiles:=TStringList.Create;
+      aMediaAlbum:=media.Clone as TInputMediaArray;
+      try
+        for aMediaEnum in aMediaAlbum do
+        begin
+          aInputMedia:=aMediaEnum.Value as TJSONObject;
+          aFileName:=aInputMedia.Get(s_Media, EmptyStr);
+          aField:='file'+aMediaEnum.KeyNum.ToString;
+          aFiles.AddPair(aField, aFileName);
+          aInputMedia.Strings[s_Media]:='attach://'+aField;
+        end;
+        AddPair(s_Media, aMediaAlbum.AsJSON);
+      finally
+        aMediaAlbum.Free;
+      end;
+    end;
+    Result:=SendFiles(s_sendMediaGroup, aFiles, sendObj);
+  finally
+    aFiles.Free;
+    Free;
+  end;
 end;
 
 {  https://core.telegram.org/bots/api#sendmessage  }

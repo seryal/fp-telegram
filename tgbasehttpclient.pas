@@ -46,6 +46,7 @@ type
     class function EncodeUrlElement(S: String): String; virtual; abstract;
     procedure FileFormPost(const AURL: string; FormData: TStrings; AFieldName, AFileName: string;
       const Response: TStream); virtual; abstract;
+    function FilesFormPost(const AURL: string; FormData: TStrings; const AFiles: TStrings): String; virtual; abstract;
     function FormPost(const URL: string; FormData : TStrings): String; virtual; abstract;
     function Get(const AUrl: String): String; virtual; abstract;
     function Post(const URL: string) : String; virtual; abstract;

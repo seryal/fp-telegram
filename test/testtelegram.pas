@@ -36,7 +36,8 @@ type
     procedure sendVideoStream;
     procedure sendPhoto;
     procedure sendPhotoByFileName;
-    procedure sendMediaGroup;
+    procedure sendMediaGroup;      
+    procedure sendMediaGroupByFileName;
     procedure ChatMember;
     procedure getWebhookInfo;
     procedure setWebhook;    
@@ -374,6 +375,28 @@ begin
     for i in aJSONData do
       aMedias.Add(i.Value.Clone as TJSONObject);
     if not Bot.sendMediaGroup(ChatID, aMedias) then
+      Fail('Connection error. See log');
+  finally
+    aJSONData.Free;
+    aMedias.Free;
+  end;
+  if Bot.LastErrorCode<>0 then
+    Fail('Error from telegram API server. Error code: '+IntToStr(Bot.LastErrorCode)+
+      '. Description: '+Bot.LastErrorDescription);
+end;
+
+procedure TTestSender.sendMediaGroupByFileName;
+var
+  aJSONData: TJSONArray;
+  aMedias: TInputMediaArray;
+  i: TJSONEnum;
+begin
+  aJSONData:=GetJSON(JSONMediaGroup) as TJSONArray;
+  aMedias:=TInputMediaArray.Create;
+  try
+    for i in aJSONData do
+      aMedias.Add(i.Value.Clone as TJSONObject);
+    if not Bot.sendMediaGroupByFileNames(ChatID, aMedias) then
       Fail('Connection error. See log');
   finally
     aJSONData.Free;
