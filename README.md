@@ -24,6 +24,7 @@ Done:
   + sendLocation
   + sendInvoice
   + answerPreCheckOutQuery
+  + etc
 + Update events handling
   + All implemented    
 + Full json updates logging (without handling)
@@ -32,7 +33,7 @@ Done:
 + HTTP proxy support (still only with the synapse HTTP client broker)
 
 Todo:
-+ Extensive statistics *(Quantitative data on requests and unique users)*
++ ~~Extensive statistics~~
 + Other bots API methods
 + ~~Other update events handling~~
 + Please suggest me other functionalities
