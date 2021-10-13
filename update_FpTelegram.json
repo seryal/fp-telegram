@@ -9,7 +9,7 @@
   ],
   "UpdatePackageData" : {
     "DisableInOPM" : false,
-    "DownloadZipURL" : "",
+    "DownloadZipURL" : "https://github.com/Al-Muhandis/fp-telegram/archive/refs/tags/v0.0.2.5.zip",
     "Name" : "FpTelegram"
   }
 }
