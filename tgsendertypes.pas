@@ -370,6 +370,28 @@ type
     function AddLabeledPrice: TLabeledPrice;
   end;
 
+  { TBotCommand }
+
+  TBotCommand = class(TJSONObject)
+  private
+    function GetCommand: String;
+    function GetDescription: String;
+    procedure SetCommand(const AValue: String);
+    procedure SetDescription(const AValue: String);
+  public
+    constructor Create(const aCommand, aDescription: String);
+    property Command: String read GetCommand write SetCommand;
+    property Description: String read GetDescription write SetDescription;
+  end;
+
+  { TBotCommandArray }
+
+  TBotCommandArray = class(TJSONArray)
+  public
+    procedure AddCommands(aBotCommands: array of String);
+    procedure AddCommand(const aCommand, aDescription: String);
+  end;
+
   { TTelegramSender }
 
   TTelegramSender = class
@@ -511,7 +533,9 @@ type
     function getChatMember(chat_id: Int64; user_id: Integer;
       out aChatMember: TTelegramChatMember): Boolean; overload;
     function getMe: Boolean;
-    function getWebhookInfo(out aWebhookInfo: TTelegramWebhookInfo): Boolean;
+    function getMyCommands: Boolean;
+    function getWebhookInfo(out aWebhookInfo: TTelegramWebhookInfo): Boolean; 
+    function setMyCommands(aBotCommands: TBotCommandArray): Boolean;
     { Specify an empty Update set ([]) to receive all updates regardless of type (default).
       If not specified or [utUnknown], the previous setting will be used }
     function setWebhook(const url: String; MaxConnections: Integer = 0; AllowedUpdates: TUpdateSet = [utUnknown]): Boolean; 
@@ -696,6 +720,8 @@ const
   s_sendInvoice='sendInvoice';
   s_sendMediaGroup='sendMediaGroup';
   s_getChat = 'getChat';
+  s_getMyCommands = 'getMyCommands'; 
+  s_setMyCommands = 'setMyCommands';
   s_getWebhookInfo = 'getWebhookInfo';
   s_setWebhook = 'setWebhook';  
   s_deleteWebhook = 'deleteWebhook';
@@ -708,6 +734,7 @@ const
   s_deleteMessage='deleteMessage';
   s_getFile = 'getFile';
   s_kickChatMember = 'kickChatMember';
+  s_commands = 'commands';
 
 
   s_Method='method';
@@ -769,7 +796,8 @@ const
   s_Prices = 'prices';
   s_PreCheckoutQueryID = 'pre_checkout_query_id';
   s_FromChatID='from_chat_id';
-  s_UntilDate = 'until_date';
+  s_UntilDate = 'until_date'; 
+  s_Command = 'command';
 
   s_CallbackQueryID = 'callback_query_id';
   s_ShowAlert = 'show_alert';
@@ -876,6 +904,51 @@ begin
   finally
     ABot.Free;
   end;
+end;
+
+{ TBotCommand }
+
+function TBotCommand.GetCommand: String;
+begin
+  Result:=Strings[s_Command];
+end;
+
+function TBotCommand.GetDescription: String;
+begin
+  Result:=Strings[s_Description];
+end;
+
+procedure TBotCommand.SetCommand(const AValue: String);
+begin
+  Strings[s_Command]:=AValue;
+end;
+
+procedure TBotCommand.SetDescription(const AValue: String);
+begin
+  Strings[s_Description]:=AValue;
+end;
+
+constructor TBotCommand.Create(const aCommand, aDescription: String);
+begin
+  inherited Create;
+  Command:=aCommand;
+  Description:=aDescription;
+end;
+
+{ TBotCommandArray }
+
+procedure TBotCommandArray.AddCommands(aBotCommands: array of String);
+var
+  i, c: Integer;
+begin
+  c:=Length(aBotCommands) div 2;
+  for i:=0 to c-1 do
+    AddCommand(aBotCommands[i*2], aBotCommands[i*2+1]);
+end;
+
+procedure TBotCommandArray.AddCommand(const aCommand, aDescription: String);
+begin
+  Add(TBotCommand.Create(aCommand, aDescription));
 end;
 
 { TKeybordButtonArray }
@@ -2705,6 +2778,19 @@ begin
   end;
 end;
 
+function TTelegramSender.getMyCommands: Boolean;
+var
+  sendObj: TJSONObject;
+begin
+  Result:=False;
+  sendObj:=TJSONObject.Create;
+  try
+    Result:=SendMethod(s_getMyCommands, sendObj);
+  finally
+    sendObj.Free;
+  end;
+end;
+
 function TTelegramSender.getWebhookInfo(out aWebhookInfo: TTelegramWebhookInfo): Boolean;
 var
   sendObj: TJSONObject;
@@ -2720,6 +2806,21 @@ begin
         aWebhookInfo:=TTelegramWebhookInfo.CreateFromJSONObject(JSONResponse as TJSONObject) as TTelegramWebhookInfo;
   finally
     Free;
+  end;
+end;
+
+function TTelegramSender.setMyCommands(aBotCommands: TBotCommandArray): Boolean;
+var
+  sendObj: TJSONObject;
+begin
+  Result:=False;
+  sendObj:=TJSONObject.Create;
+  try
+    if Assigned(aBotCommands) then
+      sendObj.Add(s_commands, aBotCommands.Clone);
+    Result:=SendMethod(s_setMyCommands, sendObj);
+  finally
+    sendObj.Free;
   end;
 end;
 

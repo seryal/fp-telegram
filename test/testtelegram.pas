@@ -43,6 +43,8 @@ type
     procedure setWebhook;    
     procedure deleteWebhook;
     procedure testCodePage;
+    procedure getMyCommands;
+    procedure setMyCommands;
   end;
 
   { TTestProxySender }
@@ -475,6 +477,26 @@ begin
   if Bot.LastErrorCode<>0 then
     Fail('Error from telegram API server. Error code: '+IntToStr(Bot.LastErrorCode)+
       '. Description: '+Bot.LastErrorDescription);
+end;
+
+procedure TTestSender.getMyCommands;
+begin
+  if not Bot.getMyCommands then
+    Fail('Connection error. See log');
+end;
+
+procedure TTestSender.setMyCommands;
+var
+  aCommands: TBotCommandArray;
+begin
+  aCommands:=TBotCommandArray.Create;
+  try
+    aCommands.AddCommands(['start', 'Start command', 'help', 'Help command']);
+    if not Bot.setMyCommands(aCommands) then
+      Fail('Connection error. See log');
+  finally
+    aCommands.Free;
+  end;
 end;
 
 initialization
