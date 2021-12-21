@@ -57,6 +57,19 @@ type
       AFileName: string; const AStream: TStream; const Response: TStream); override;
   end;
 
+{$IF FPC_FULLVERSION <= 30004}
+{ TRawByteStringStream }
+
+  TRawByteStringStream = Class(TBytesStream)
+  public
+    Constructor Create (const aData : RawByteString); overload;
+    function DataString: RawByteString;
+
+    function ReadString(Count: Longint): RawByteString;
+    procedure WriteString(const AString: RawByteString);
+  end;
+{$ENDIF}
+
 implementation
 
 uses
@@ -66,6 +79,50 @@ uses
 
 Const
   CRLF = #13#10;
+
+{$IF FPC_FULLVERSION <= 30004}
+{ TRawByteStringStream }
+
+constructor TRawByteStringStream.Create(const aData: RawByteString);
+begin
+  Inherited Create;
+  If Length(aData)>0 then
+    begin
+    WriteBuffer(aData[1],Length(aData));
+    Position:=0;
+    end;
+end;
+
+function TRawByteStringStream.DataString: RawByteString;
+begin
+  Result:='';
+  SetLength(Result,Size);
+  if Size>0 then
+    Move(Memory^, Result[1], Size);
+end;
+
+function TRawByteStringStream.ReadString(Count: Longint): RawByteString;
+Var
+  NewLen : Longint;
+
+begin
+  NewLen:=Size-Position;
+  If NewLen>Count then NewLen:=Count;
+  Result:='';
+  if NewLen>0 then
+    begin
+    SetLength(Result, NewLen);
+    Move(Bytes[Position],Result[1],NewLen);
+    Position:=Position+Newlen;
+    end;
+end;
+
+procedure TRawByteStringStream.WriteString(const AString: RawByteString);
+begin
+  if Length(AString)>0 then
+    WriteBuffer(AString[1],Length(AString));
+end;
+{$ENDIF}
 
 { TFCLHTTPClient }
 

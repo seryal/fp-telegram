@@ -437,7 +437,8 @@ type
     FUpdateID: Integer;
     FUpdateLogger: TtgStatLog;
     FUpdateProcessed: Boolean;
-    FTimeout: Integer;
+    FTimeout: Integer; {$IF FPC_FULLVERSION <= 30004}
+    function AddPair(aStringList: TStrings; const AName, AValue: string): TStrings;  {$ENDIF}
     procedure AssignHTTProxy(aHTTPClient: TBaseHTTPClient; const aHost: String; aPort: Word;
       const aUserName, aPassword: String);
     procedure AssignHTTProxy(aHTTPClient: TBaseHTTPClient);
@@ -1880,6 +1881,13 @@ begin
   FBotUsername:=AValue;
 end;
 
+{$IF FPC_FULLVERSION <= 30004}
+function TTelegramSender.AddPair(aStringList: TStrings; const AName,
+  AValue: string): TStrings;
+begin
+  aStringList.AddObject(Concat(AName, aStringList.NameValueSeparator, AValue), nil);
+end;{$ENDIF}
+
 procedure TTelegramSender.AssignHTTProxy(aHTTPClient: TBaseHTTPClient; const aHost: String;
   aPort: Word; const aUserName, aPassword: String);
 begin
@@ -3156,7 +3164,7 @@ begin
   sendObj:=TStringList.Create;
   with sendObj do
   try
-    AddPair(s_ChatId, IntToStr(chat_id));
+    AddPair({$IF FPC_FULLVERSION <= 30004}sendObj, {$ENDIF}s_ChatId, IntToStr(chat_id));
     if Assigned(media) then
     begin
       aFiles:=TStringList.Create;
@@ -3166,11 +3174,13 @@ begin
         begin
           aInputMedia:=aMediaEnum.Value as TJSONObject;
           aFileName:=aInputMedia.Get(s_Media, EmptyStr);
-          aField:='file'+aMediaEnum.KeyNum.ToString;
+          aField:='file'+aMediaEnum.KeyNum.ToString; {$IF FPC_FULLVERSION <= 30004}
+          AddPair(aFiles, aField, aFileName);{$ELSE}
           aFiles.AddPair(aField, aFileName);
+          {$ENDIF}
           aInputMedia.Strings[s_Media]:='attach://'+aField;
         end;
-        AddPair(s_Media, aMediaAlbum.AsJSON);
+        AddPair({$IF FPC_FULLVERSION <= 30004}sendObj, {$ENDIF}s_Media, aMediaAlbum.AsJSON);
       finally
         aMediaAlbum.Free;
       end;

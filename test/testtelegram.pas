@@ -41,8 +41,8 @@ type
     procedure ChatMember;
     procedure getWebhookInfo;
     procedure setWebhook;    
-    procedure deleteWebhook;
-    procedure testCodePage;
+    procedure deleteWebhook; {$IF FPC_FULLVERSION > 30004}
+    procedure testCodePage;{$ENDIF}
     procedure getMyCommands;
     procedure setMyCommands;
   end;
@@ -455,7 +455,7 @@ begin
     Fail('Error from telegram API server. Error code: '+IntToStr(Bot.LastErrorCode)+
       '. Description: '+Bot.LastErrorDescription);
 end;
-
+{$IF FPC_FULLVERSION > 30004}
 procedure TTestSender.testCodePage;
 var
   aStream: TStringStream;
@@ -478,7 +478,7 @@ begin
     Fail('Error from telegram API server. Error code: '+IntToStr(Bot.LastErrorCode)+
       '. Description: '+Bot.LastErrorDescription);
 end;
-
+{$endif}
 procedure TTestSender.getMyCommands;
 begin
   if not Bot.getMyCommands then
