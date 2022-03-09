@@ -530,8 +530,8 @@ type
       message_id: Int64): Boolean;
     function getChat(chat_id: Int64; out aChat:TTelegramChatObj): Boolean;
     function getChat(chat_id: String; out aChat:TTelegramChatObj): Boolean;
-    function getChatMember(chat_id: Int64; user_id: Integer): Boolean;
-    function getChatMember(chat_id: Int64; user_id: Integer;
+    function getChatMember(chat_id: Int64; user_id: Int64): Boolean;
+    function getChatMember(chat_id: Int64; user_id: Int64;
       out aChatMember: TTelegramChatMember): Boolean; overload;
     function getMe: Boolean;
     function getMyCommands: Boolean;
@@ -2739,8 +2739,7 @@ begin
   end;
 end;
 
-function TTelegramSender.getChatMember(chat_id: Int64; user_id: Integer
-  ): Boolean;
+function TTelegramSender.getChatMember(chat_id: Int64; user_id: Int64): Boolean;
 var
   sendObj: TJSONObject;
 begin
@@ -2756,7 +2755,7 @@ begin
   end;
 end;
 
-function TTelegramSender.getChatMember(chat_id: Int64; user_id: Integer; out
+function TTelegramSender.getChatMember(chat_id: Int64; user_id: Int64; out
   aChatMember: TTelegramChatMember): Boolean;
 begin
   Result:=getChatMember(chat_id, user_id);

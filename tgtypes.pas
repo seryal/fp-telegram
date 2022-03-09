@@ -206,14 +206,14 @@ type
   TTelegramUserObj = class(TTelegramObj)
   private
     FFirst_name: String;
-    FID: Integer;
+    FID: Int64;
     FIs_bot: Boolean;
     FLanguage_code: String;
     FLast_name: String;
     FUsername: String;
   public
     constructor Create(JSONObject: TJSONObject); override;
-    property ID: Integer read FID;
+    property ID: Int64 read FID;
     property Is_bot: Boolean read FIs_bot;
     property First_name: String read FFirst_name;
     property Last_name: String read FLast_name;
@@ -842,7 +842,7 @@ end;
 constructor TTelegramUserObj.Create(JSONObject: TJSONObject);
 begin
   inherited Create(JSONObject);
-  FID := fJSON.Integers['id'];
+  FID := fJSON.Int64s['id'];
   FIs_bot := fJSON.Booleans['is_bot'];
   FFirst_name:=fJSON.Strings['first_name'];
 
