@@ -45,6 +45,7 @@ type
     procedure testCodePage;{$ENDIF}
     procedure getMyCommands;
     procedure setMyCommands;
+    procedure editMessageMediaStream;
   end;
 
   { TTestProxySender }
@@ -496,6 +497,29 @@ begin
       Fail('Connection error. See log');
   finally
     aCommands.Free;
+  end;
+end;
+
+procedure TTestSender.editMessageMediaStream;
+var
+  aMedia: TInputMedia;
+  aMessageID: Int64;
+  aStream: TFileStream;
+begin
+  if not Bot.sendPhoto(ChatID, PhotoUrl, Format(pht_cptn, [Self.ClassName, TestName])) then
+    Fail('Connection error. See log');
+  aMessageID:=(Bot.JSONResponse as TJSONObject).Int64s['message_id'];
+  if Bot.LastErrorCode<>0 then
+    Fail('Error from telegram API server. Error code: '+IntToStr(Bot.LastErrorCode)+
+      '. Description: '+Bot.LastErrorDescription);
+  aMedia:=TInputMediaPhoto.Create;
+  aStream:=TFileStream.Create(PhotoFile, fmOpenRead);
+  try
+    if not Bot.editMessageMediaStream(aStream, aMedia, ChatID, aMessageID) then
+      Fail('Connection error. See log');
+  finally
+    aStream.Free;
+    aMedia.Free;
   end;
 end;
 

@@ -524,6 +524,8 @@ type
       inline_message_id: String = ''; ReplyMarkup: TReplyMarkup = nil): Boolean;
     function editMessageText(const AMessage: String; ParseMode: TParseMode = pmDefault;
       DisableWebPagePreview: Boolean=False; ReplyMarkup: TReplyMarkup = nil): Boolean; overload;
+    function editMessageMediaStream(aStream: TStream; media: TInputMedia; chat_id: Int64; message_id: Int64 = 0;
+      inline_message_id: String = ''; ReplyMarkup: TReplyMarkup = nil): Boolean;
     function forwardMessage(chat_id: Int64; from_chat_id: Int64; DisableNotification: Boolean;
       message_id: Int64): Boolean;
     function forwardMessage(chat_id: String; from_chat_id: Int64; DisableNotification: Boolean;
@@ -708,7 +710,8 @@ uses
 const
 //  API names constants
 
-  s_editMessageText='editMessageText';
+  s_editMessageText='editMessageText'; 
+  s_editMessageMedia='editMessageMedia';
   s_editMessageReplyMarkup='editMessageReplyMarkup';
   s_sendMessage='sendMessage';
   s_sendPhoto='sendPhoto';
@@ -2540,11 +2543,20 @@ function TTelegramSender.SendStream(const AMethod, AFileField, AFileName: String
   AStream: TStream; MethodParameters: TStrings): Boolean;
 begin
   Result:=False;
+  JSONResponse:=nil;
+  FResponse:=EmptyStr;
   DebugMessage('Request for method "'+AMethod+'": '+FRequestBody);
   DebugMessage('Sending file '+AFileName);
   try
     Result:=HTTPPostStream(AMethod, AFileField, AFileName, AStream, MethodParameters);
     DebugMessage('Response: '+FResponse);
+    if Result then
+      if FResponse<>EmptyStr then     // longpolling
+        if not ResponseHandle then
+        begin
+          Result:=False;
+          ErrorMessage('Error request: '+FResponse);
+        end;
   except
     ErrorMessage('It is not succesful request to API! Request body: '+FRequestBody);
   end;
@@ -2675,6 +2687,36 @@ begin  { try to edit message if the message is present and chat is private with 
       ParseMode, DisableWebPagePreview, EmptyStr, ReplyMarkup)
   else
     Result:=sendMessage(AMessage, ParseMode, DisableWebPagePreview, ReplyMarkup);
+end;
+
+function TTelegramSender.editMessageMediaStream(aStream: TStream; media: TInputMedia; chat_id: Int64;
+  message_id: Int64; inline_message_id: String; ReplyMarkup: TReplyMarkup): Boolean;
+var
+  sendObj: TStringList;
+  aFileField, aFileName: String;
+const
+  _field='media';
+begin
+  Result:=False;
+  sendObj:=TStringList.Create;
+  with sendObj do
+  try
+    if chat_id<>0 then
+      Add(s_ChatId+'='+IntToStr(chat_id));
+    media.Media:='attach://'+_field;
+    AddPair(s_Media, media.AsJSON);
+    if message_id<>0 then
+      Add(s_MessageId+'='+message_id.ToString);
+    if inline_message_id<>EmptyStr then
+      Add(s_InlineMessageId+'='+inline_message_id);
+    if Assigned(ReplyMarkup) then
+      Add(s_ReplyMarkup+'='+ReplyMarkup.AsJSON);
+    aFileField:=_field;
+    aFileName:=_field;
+    Result:=SendStream(s_editMessageMedia, aFileField, aFileName, aStream, sendObj);
+  finally
+    Free;
+  end;
 end;
 
 function TTelegramSender.forwardMessage(chat_id: Int64; from_chat_id: Int64;
