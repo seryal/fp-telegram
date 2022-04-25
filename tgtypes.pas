@@ -98,6 +98,7 @@ type
     FPhoto: TTelegramPhotoSizeList;
     FReplyToMessage: TTelegramMessageObj;
     FSuccessfulPayment: TTelegramSuccessfulPayment;
+    FViaBot: TTelegramUserObj;
     FVideo: TTelegramVideo;
     fText: string;
     fEntities: TTelegramUpdateObjList;
@@ -123,6 +124,7 @@ type
     property Video: TTelegramVideo read FVideo;
     property Voice: TTelegramVoice read FVoice;
     property SuccessfulPayment: TTelegramSuccessfulPayment read FSuccessfulPayment;
+    property ViaBot: TTelegramUserObj read FViaBot;
   end;
 
   { TTelegramMessageEntityObj }
@@ -1021,7 +1023,8 @@ begin
   FDocument := TTelegramDocument.CreateFromJSONObject(fJSON.Find('document', jtObject) as TJSONObject) as TTelegramDocument;
   FVideo := TTelegramVideo.CreateFromJSONObject(fJSON.Find('video', jtObject) as TJSONObject) as TTelegramVideo;
   FAudio := TTelegramAudio.CreateFromJSONObject(fJSON.Find('audio', jtObject) as TJSONObject) as TTelegramAudio;
-  FVoice := TTelegramVoice.CreateFromJSONObject(fJSON.Find('voice', jtObject) as TJSONObject) as TTelegramVoice;
+  FVoice := TTelegramVoice.CreateFromJSONObject(fJSON.Find('voice', jtObject) as TJSONObject) as TTelegramVoice; 
+  FViaBot := TTelegramUserObj.CreateFromJSONObject(fJSON.Find('via_bot', jtObject) as TJSONObject) as TTelegramUserObj;
 
   FForwardFrom:=TTelegramUserObj.CreateFromJSONObject(fJSON.Find('forward_from', jtObject) as TJSONObject) as TTelegramUserObj;
   FForwardFromChat:=TTelegramChatObj.CreateFromJSONObject(fJSON.Find('forward_from_chat', jtObject) as TJSONObject) as TTelegramChatObj;
@@ -1054,6 +1057,7 @@ begin
   FForwardFrom.Free;
   FForwardFromChat.Free;
   FSuccessfulPayment.Free;
+  FViaBot.Free;
   FFrom.Free;
   FLocation.Free;
   FChat.Free;
