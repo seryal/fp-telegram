@@ -2704,7 +2704,11 @@ begin
     if chat_id<>0 then
       Add(s_ChatId+'='+IntToStr(chat_id));
     media.Media:='attach://'+_field;
+    {$IF FPC_FULLVERSION <= 30004}
+    Self.AddPair(sendObj,s_Media, media.AsJSON);
+    {$ELSE}
     AddPair(s_Media, media.AsJSON);
+    {$ENDIF}
     if message_id<>0 then
       Add(s_MessageId+'='+message_id.ToString);
     if inline_message_id<>EmptyStr then
