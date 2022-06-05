@@ -74,7 +74,8 @@ type
   public
     class function CreateFromObject(aObject: TJSONObject): TReplyMarkup;
     class function CreateFromString(const aJSONString: String): TReplyMarkup;
-    function CreateInlineKeyBoard: TInlineKeyboard;
+    function CreateInlineKeyBoard: TInlineKeyboard;                          
+    function CreateReplyKeyboard: TKeybordButtonArray;
     { Only one from InlineKeyboard or ReplyMarkup is must to set }
     property InlineKeyBoard: TInlineKeyboard read GetInlineKeyBoard write SetInlineKeyBoard;
 { ReplyKeyboard properties }
@@ -1739,6 +1740,12 @@ function TReplyMarkup.CreateInlineKeyBoard: TInlineKeyboard;
 begin
   Result:=TInlineKeyboard.Create;
   InlineKeyBoard:=Result;
+end;
+
+function TReplyMarkup.CreateReplyKeyboard: TKeybordButtonArray;
+begin
+  Result:=TKeybordButtonArray.Create;
+  ReplyKeyboardMarkup:=Result;
 end;
 
 { TInlineKeyboardButton }
