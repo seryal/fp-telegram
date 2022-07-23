@@ -527,6 +527,7 @@ type
       DisableWebPagePreview: Boolean=False; ReplyMarkup: TReplyMarkup = nil): Boolean; overload;
     function editMessageMediaStream(aStream: TStream; media: TInputMedia; chat_id: Int64; message_id: Int64 = 0;
       inline_message_id: String = ''; ReplyMarkup: TReplyMarkup = nil): Boolean;
+    function copyMessage(chat_id, from_chat_id, message_id: Int64; DisableNotification: Boolean = False): Boolean;
     function forwardMessage(chat_id: Int64; from_chat_id: Int64; DisableNotification: Boolean;
       message_id: Int64): Boolean;
     function forwardMessage(chat_id: String; from_chat_id: Int64; DisableNotification: Boolean;
@@ -733,7 +734,8 @@ const
   s_getUpdates='getUpdates';
   s_getMe='getMe';
   s_getChatMember='getChatMember';
-  s_forwardMessage='forwardMessage';
+  s_forwardMessage='forwardMessage';  
+  s_copyMessage='copyMessage';
   s_answerInlineQuery='answerInlineQuery';
   s_answerPreCheckoutQuery='answerPreCheckoutQuery';
   s_deleteMessage='deleteMessage';
@@ -2725,6 +2727,25 @@ begin
     aFileField:=_field;
     aFileName:=_field;
     Result:=SendStream(s_editMessageMedia, aFileField, aFileName, aStream, sendObj);
+  finally
+    Free;
+  end;
+end;
+
+function TTelegramSender.copyMessage(chat_id, from_chat_id, message_id: Int64; DisableNotification: Boolean): Boolean;
+var
+  sendObj: TJSONObject;
+begin
+  Result:=False;
+  sendObj:=TJSONObject.Create;
+  with sendObj do
+  try
+    Add(s_ChatId, chat_id);
+    Add(s_FromChatID, from_chat_id);
+    Add(s_MessageId, message_id);     
+    if DisableNotification then
+      Add(s_DsblNtfctn, DisableNotification);
+    Result:=SendMethod(s_copyMessage, sendObj);
   finally
     Free;
   end;
