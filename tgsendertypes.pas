@@ -550,7 +550,7 @@ type
       The offset itself will take it from the previous UpdateID and increment by one.
       LongPollingTimeout in seconds! Timeout with 0 sec only for test cases}
     function getUpdatesEx(limit: Integer; lp_timeout: Integer; allowed_updates: TUpdateSet = []): Boolean;
-    function kickChatMember(chat_id: Int64; user_id: Int64; kickDuration:Int64): Boolean;
+    function kickChatMember(chat_id: Int64; user_id: Int64; kickDuration:Int64): Boolean; deprecated; // use banChatMember
     function SendAudio(chat_id: Int64; const audio: String; const Caption: String = '';
       ParseMode: TParseMode = pmDefault; Duration: Integer = 0; DisableNotification: Boolean = False;
       ReplyToMessageID: Integer = 0; const Performer:String = ''; const Title: String = '';
@@ -622,6 +622,8 @@ type
       CacheTime: Integer = 300; IsPersonal: Boolean = False; const NextOffset: String = '';
       const SwitchPmText: String = ''; const SwitchPmParameter: String = ''): Boolean;
     function getFile(const FileID: String): Boolean;
+    function banChatMember(chat_id, user_id: Int64; until_date: Int64=0): Boolean; 
+    function unbanChatMember(chat_id, user_id: Int64; only_if_banned: Boolean = False): Boolean;
     property APIEndPoint: String read GetAPIEndPoint write SetAPIEndPoint;
     property BotUser: TTelegramUserObj read FBotUser;
     property JSONResponse: TJSONData read FJSONResponse write SetJSONResponse;
@@ -740,7 +742,9 @@ const
   s_answerPreCheckoutQuery='answerPreCheckoutQuery';
   s_deleteMessage='deleteMessage';
   s_getFile = 'getFile';
-  s_kickChatMember = 'kickChatMember';
+  //s_kickChatMember = 'kickChatMember';  
+  s_banChatMember = 'banChatMember';
+  s_unbanChatMember = 'unbanChatMember';
   s_commands = 'commands';
 
 
@@ -803,7 +807,8 @@ const
   s_Prices = 'prices';
   s_PreCheckoutQueryID = 'pre_checkout_query_id';
   s_FromChatID='from_chat_id';
-  s_UntilDate = 'until_date'; 
+  s_UntilDate = 'until_date';
+  s_OnlyIfBanned = 'only_if_banned';
   s_Command = 'command';
 
   s_CallbackQueryID = 'callback_query_id';
@@ -3007,7 +3012,7 @@ begin
     Add(s_ChatId, chat_id);
     Add(s_UserID, user_id);
     Add(s_UntilDate, kickDuration);
-    Result:=SendMethod(s_kickChatMember, sendObj);
+    Result:=SendMethod(s_banChatMember, sendObj);
   finally
     Free;
   end;
@@ -3613,6 +3618,42 @@ begin
   if Result then
     if Assigned(JSONResponse) then
       FileObj := TTelegramFile.CreateFromJSONObject(JSONResponse as TJSONObject) as TTelegramFile;
+end;
+
+function TTelegramSender.banChatMember(chat_id, user_id: Int64; until_date: Int64 = 0): Boolean;
+var
+  sendObj: TJSONObject;
+begin
+  Result:=False;
+  sendObj:=TJSONObject.Create;
+  with sendObj do
+  try
+    Add(s_ChatId, chat_id);
+    Add(s_UserID, user_id);
+    if until_date<>0 then
+      Add(s_UntilDate, until_date);
+    Result:=SendMethod(s_banChatMember, sendObj);
+  finally
+    Free;
+  end;
+end;
+
+function TTelegramSender.unbanChatMember(chat_id, user_id: Int64; only_if_banned: Boolean): Boolean;
+var
+  sendObj: TJSONObject;
+begin
+  Result:=False;
+  sendObj:=TJSONObject.Create;
+  with sendObj do
+  try
+    Add(s_ChatId, chat_id);
+    Add(s_UserID, user_id);
+    if only_if_banned then
+      Add(s_OnlyIfBanned, only_if_banned);
+    Result:=SendMethod(s_unbanChatMember, sendObj);
+  finally
+    Free;
+  end;
 end;
 
 end.
