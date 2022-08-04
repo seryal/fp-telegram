@@ -555,7 +555,7 @@ type
     function getChatMember(chat_id: Int64; user_id: Int64;
       out aChatMember: TTelegramChatMember): Boolean; overload;
     function getMe: Boolean;
-    function getMyCommands: Boolean;
+    function getMyCommands(aScope: TBotCommandScope = nil; const aLanguage: String = ''): Boolean;
     function getWebhookInfo(out aWebhookInfo: TTelegramWebhookInfo): Boolean; 
     function setMyCommands(aBotCommands: TBotCommandArray; aScope: TBotCommandScope = nil;
       const aLanguage: String = ''): Boolean;
@@ -2925,13 +2925,17 @@ begin
   end;
 end;
 
-function TTelegramSender.getMyCommands: Boolean;
+function TTelegramSender.getMyCommands(aScope: TBotCommandScope; const aLanguage: String): Boolean;
 var
   sendObj: TJSONObject;
 begin
   Result:=False;
   sendObj:=TJSONObject.Create;
   try
+    if Assigned(aScope) then
+      sendObj.Add(s_scope, aScope.Clone);
+    if not aLanguage.IsEmpty then
+      sendObj.Add(s_LanguageCode, aLanguage);
     Result:=SendMethod(s_getMyCommands, sendObj);
   finally
     sendObj.Free;
