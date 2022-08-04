@@ -393,6 +393,23 @@ type
     procedure AddCommand(const aCommand, aDescription: String);
   end;
 
+  TCommandScopeType = (stDefault, stAllPrivateChats, stAllGroupChats, stAllChatAdministrators, stSpecificChat,
+    stChatAdministrators, stChatMember);
+
+  { TBotCommandScope }
+
+  TBotCommandScope = class(TJSONObject)
+  private
+    FChatID: Int64;
+    FUserID: Int64;
+    function GetScopeType: TCommandScopeType;
+    procedure SetScopeChat(AValue: TCommandScopeType);
+  public
+    property ScopeType: TCommandScopeType read GetScopeType write SetScopeChat;
+    property ChatID: Int64 read FChatID write FChatID;   
+    property UserID: Int64 read FUserID write FUserID;
+  end;
+
   { TTelegramSender }
 
   TTelegramSender = class
@@ -540,7 +557,8 @@ type
     function getMe: Boolean;
     function getMyCommands: Boolean;
     function getWebhookInfo(out aWebhookInfo: TTelegramWebhookInfo): Boolean; 
-    function setMyCommands(aBotCommands: TBotCommandArray): Boolean;
+    function setMyCommands(aBotCommands: TBotCommandArray; aScope: TBotCommandScope = nil;
+      const aLanguage: String = ''): Boolean;
     { Specify an empty Update set ([]) to receive all updates regardless of type (default).
       If not specified or [utUnknown], the previous setting will be used }
     function setWebhook(const url: String; MaxConnections: Integer = 0; AllowedUpdates: TUpdateSet = [utUnknown]): Boolean; 
@@ -746,6 +764,7 @@ const
   s_banChatMember = 'banChatMember';
   s_unbanChatMember = 'unbanChatMember';
   s_commands = 'commands';
+  s_scope='scope';
 
 
   s_Method='method';
@@ -810,6 +829,7 @@ const
   s_UntilDate = 'until_date';
   s_OnlyIfBanned = 'only_if_banned';
   s_Command = 'command';
+  s_LanguageCode='language_code';
 
   s_CallbackQueryID = 'callback_query_id';
   s_ShowAlert = 'show_alert';
@@ -861,6 +881,15 @@ const
 
   s_AudioDuration = 'audio_duration';
   s_AudioUrl = 'audio_url';
+
+  s_Default='default';
+  s_AlPrvtChts='all_private_chats';
+  s_AlGrpChats='all_group_chats';
+  s_AlChtAdmnstrtrs='all_chat_administrators';
+  s_Cht='chat';
+  s_ChtAdmnstrtrs='chat_administrators';
+  s_ChtMmbr='chat_member';
+
 
 
   ParseModes: array[TParseMode] of PChar = ('', 'Markdown', 'HTML');
@@ -915,6 +944,38 @@ begin
     AReply:=ABot.Response;
   finally
     ABot.Free;
+  end;
+end;
+
+{ TBotCommandScope }
+
+function TBotCommandScope.GetScopeType: TCommandScopeType;
+begin
+  case Strings[s_Type] of
+    s_Default:         Result:=stDefault;
+    s_AlPrvtChts:      Result:=stAllPrivateChats;
+    s_AlGrpChats:      Result:=stAllGroupChats;
+    s_AlChtAdmnstrtrs: Result:=stAllChatAdministrators;
+    s_Cht:             Result:=stSpecificChat;
+    s_ChtAdmnstrtrs:   Result:=stChatAdministrators;
+    s_ChtMmbr:         Result:=stChatMember;
+  else
+    Result:=stDefault;
+  end;
+end;
+
+procedure TBotCommandScope.SetScopeChat(AValue: TCommandScopeType);
+begin
+  case AValue of
+    stDefault:               Strings[s_Type]:=s_Default;
+    stAllPrivateChats:       Strings[s_Type]:=s_AlPrvtChts;
+    stAllGroupChats:         Strings[s_Type]:=s_AlGrpChats;
+    stAllChatAdministrators: Strings[s_Type]:=s_AlChtAdmnstrtrs;
+    stSpecificChat:          Strings[s_Type]:=s_Cht;
+    stChatAdministrators:    Strings[s_Type]:=s_ChtAdmnstrtrs;
+    stChatMember:            Strings[s_Type]:=s_ChtMmbr;
+  else
+    Strings[s_Type]:=s_Default;
   end;
 end;
 
@@ -2895,7 +2956,8 @@ begin
   end;
 end;
 
-function TTelegramSender.setMyCommands(aBotCommands: TBotCommandArray): Boolean;
+function TTelegramSender.setMyCommands(aBotCommands: TBotCommandArray; aScope: TBotCommandScope; const aLanguage: String
+  ): Boolean;
 var
   sendObj: TJSONObject;
 begin
@@ -2904,6 +2966,10 @@ begin
   try
     if Assigned(aBotCommands) then
       sendObj.Add(s_commands, aBotCommands.Clone);
+    if Assigned(aScope) then
+      sendObj.Add(s_scope, aScope.Clone);               
+    if not aLanguage.IsEmpty then
+      sendObj.Add(s_LanguageCode, aLanguage);
     Result:=SendMethod(s_setMyCommands, sendObj);
   finally
     sendObj.Free;
