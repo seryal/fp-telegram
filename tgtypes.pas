@@ -80,6 +80,8 @@ type
     property PreCheckoutQuery: TTelegramPreCheckOutQuery read GetPreCheckoutQuery;
   end;
 
+  TContentType = (stText, stPhoto, stVideo, stAudio, stVoice, stDocument, stUnknown);
+
   { TTelegramMessageObj }
 
   TTelegramMessageObj = class(TTelegramObj)
@@ -106,6 +108,7 @@ type
   public
     constructor Create(JSONObject: TJSONObject); override;
     destructor Destroy; override;
+    function ContentFromMessage(out aText: String; out aMedia: String): TContentType;
     property Caption: String read FCaption;
     property MessageId: Integer read fMessageId;
     property From: TTelegramUserObj read FFrom;
@@ -1069,6 +1072,40 @@ begin
   FVoice.Free;
   fEntities.Free;
   inherited Destroy;
+end;
+
+function TTelegramMessageObj.ContentFromMessage(out aText: String; out aMedia: String): TContentType;
+begin
+  Result:=stUnknown;
+  aText:=Text;
+  if aText<>EmptyStr then
+    Exit(stText);
+  aText:=Caption;
+  if Assigned(Photo) then if (Photo.Count>0) then
+  begin
+    aMedia:=Photo.Last.FileID;
+    Exit(stPhoto);
+  end;
+  if Assigned(Video) then
+  begin
+    aMedia:=Video.FileID;
+    Exit(stVideo);
+  end;
+  if Assigned(Voice) then
+  begin
+    aMedia:=Voice.FileID;
+    Exit(stVoice);
+  end;
+  if Assigned(Audio) then
+  begin
+    aMedia:=Audio.FileID;
+    Exit(stAudio);
+  end;
+  if Assigned(Document) then
+  begin
+    aMedia:=Document.FileID;
+    Exit(stDocument);
+  end;
 end;
 
 { TTelegramMessageEntityObj }
