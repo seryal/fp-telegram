@@ -642,6 +642,10 @@ type
     function getFile(const FileID: String): Boolean;
     function banChatMember(chat_id, user_id: Int64; until_date: Int64=0): Boolean; 
     function unbanChatMember(chat_id, user_id: Int64; only_if_banned: Boolean = False): Boolean;
+    { A special analog function that is not available in the API.
+      It can be useful for simplifying and unifying the sending of content }
+    function SendContent(aChatID: Int64; aContentType: TContentType; const aText, aMedia: String;
+      aParseMode: TParseMode =pmDefault; aReplyMarkup: TReplyMarkup = nil): Boolean;
     property APIEndPoint: String read GetAPIEndPoint write SetAPIEndPoint;
     property BotUser: TTelegramUserObj read FBotUser;
     property JSONResponse: TJSONData read FJSONResponse write SetJSONResponse;
@@ -3723,6 +3727,20 @@ begin
     Result:=SendMethod(s_unbanChatMember, sendObj);
   finally
     Free;
+  end;
+end;
+
+function TTelegramSender.SendContent(aChatID: Int64; aContentType: TContentType; const aText, aMedia: String;
+  aParseMode: TParseMode; aReplyMarkup: TReplyMarkup): Boolean;
+begin
+  case aContentType of
+    cntText:     Result:=sendMessage(aChatID, aText, aParseMode, False, aReplyMarkup);
+    cntPhoto:    Result:=sendPhoto(aChatID, aMedia, aText, aParseMode, aReplyMarkup);
+    cntAudio:    Result:=SendAudio(aChatID, aMedia, aText, aParseMode, 0, False, 0, EmptyStr,
+      EmptyStr, aReplyMarkup);
+    cntVideo:    Result:=sendVideo(aChatID, aMedia, aText, aParseMode, aReplyMarkup);
+    cntVoice:    Result:=sendVoice(aChatID, aMedia, aText, aParseMode, 0, False, 0, aReplyMarkup);
+    cntDocument: Result:=sendDocument(aChatID, aMedia, aText, aParseMode, False, 0, aReplyMarkup);
   end;
 end;
 
