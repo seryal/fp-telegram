@@ -31,6 +31,7 @@ type
   published
     procedure sendMessage;
     procedure InlineKeyboard;
+    procedure SendReplyKeyboard;
     procedure sendVideo;  
     procedure sendVideoByFileName;
     procedure sendVideoStream;
@@ -305,6 +306,30 @@ begin
     Buttons.AddButtonUrl('Github.com',
       'https://github.com/Al-Muhandis/fp-telegram');
     ReplyMarkup.InlineKeyBoard.Add.AddButtons(['Button 1', 'Callback data 1', 'Button 2', 'Callback data 2']);
+    if not Bot.sendMessage(ChatID, Format(Msg_md, [Self.ClassName, TestName]), pmMarkdown,
+      False, ReplyMarkup) then
+      Fail('Connection error. See log');
+  finally
+    ReplyMarkup.Free;
+  end;
+  if Bot.LastErrorCode<>0 then
+    Fail('Error from telegram API server. Error code: '+IntToStr(Bot.LastErrorCode)+
+      '. Description: '+Bot.LastErrorDescription);
+end;
+
+procedure TTestSender.SendReplyKeyboard;
+var
+  ReplyMarkup: TReplyMarkup;
+  Buttons: TKeyboardButtons;
+  i: Integer;
+begin
+  ReplyMarkup:=TReplyMarkup.Create;
+  try
+    Buttons:=ReplyMarkup.CreateReplyKeyboard.Add;
+    i:=Buttons.AddButton('Send location');
+    Buttons.Buttons[i].RequestLocation:=True;    
+    i:=Buttons.AddButton('Send contact');
+    Buttons.Buttons[i].RequestContact:=True;
     if not Bot.sendMessage(ChatID, Format(Msg_md, [Self.ClassName, TestName]), pmMarkdown,
       False, ReplyMarkup) then
       Fail('Connection error. See log');
