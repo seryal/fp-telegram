@@ -80,7 +80,7 @@ type
     property PreCheckoutQuery: TTelegramPreCheckOutQuery read GetPreCheckoutQuery;
   end;
 
-  TContentType = (stText, stPhoto, stVideo, stAudio, stVoice, stDocument, stUnknown);
+  TContentType = (cntUnknown, cntText, cntPhoto, cntVideo, cntAudio, cntVoice, cntDocument);
 
   { TTelegramMessageObj }
 
@@ -1076,35 +1076,35 @@ end;
 
 function TTelegramMessageObj.ContentFromMessage(out aText: String; out aMedia: String): TContentType;
 begin
-  Result:=stUnknown;
+  Result:=cntUnknown;
   aText:=Text;
   if aText<>EmptyStr then
-    Exit(stText);
+    Exit(cntText);
   aText:=Caption;
   if Assigned(Photo) then if (Photo.Count>0) then
   begin
     aMedia:=Photo.Last.FileID;
-    Exit(stPhoto);
+    Exit(cntPhoto);
   end;
   if Assigned(Video) then
   begin
     aMedia:=Video.FileID;
-    Exit(stVideo);
+    Exit(cntVideo);
   end;
   if Assigned(Voice) then
   begin
     aMedia:=Voice.FileID;
-    Exit(stVoice);
+    Exit(cntVoice);
   end;
   if Assigned(Audio) then
   begin
     aMedia:=Audio.FileID;
-    Exit(stAudio);
+    Exit(cntAudio);
   end;
   if Assigned(Document) then
   begin
     aMedia:=Document.FileID;
-    Exit(stDocument);
+    Exit(cntDocument);
   end;
 end;
 
