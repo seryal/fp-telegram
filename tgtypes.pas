@@ -16,7 +16,8 @@ type
   TTelegramUserObj = class;
   TTelegramChatObj = class;
   TCallbackQueryObj = class;
-  TTelegramLocation = class;
+  TTelegramLocation = class; 
+  TTelegramContact = class;
   TArrayOfPhotoSize = class(TJSONArray);
   TTelegramPhotoSize = class;
   TTelegramPreCheckOutQuery = class;
@@ -80,7 +81,7 @@ type
     property PreCheckoutQuery: TTelegramPreCheckOutQuery read GetPreCheckoutQuery;
   end;
 
-  TContentType = (cntUnknown, cntText, cntPhoto, cntVideo, cntAudio, cntVoice, cntDocument);
+  TContentType = (cntUnknown, cntText, cntPhoto, cntVideo, cntAudio, cntVoice, cntDocument, cntLocation, cntContact);
 
   { TTelegramMessageObj }
 
@@ -89,6 +90,7 @@ type
     FAudio: TTelegramAudio;
     FCaption: String;
     FChat: TTelegramChatObj;
+    FContact: TTelegramContact;
     FDocument: TTelegramDocument;
     FForwardFrom: TTelegramUserObj;
     FForwardFromChat: TTelegramChatObj;
@@ -126,6 +128,7 @@ type
     property Audio: TTelegramAudio read FAudio;
     property Video: TTelegramVideo read FVideo;
     property Voice: TTelegramVoice read FVoice;
+    property Contact: TTelegramContact read FContact;
     property SuccessfulPayment: TTelegramSuccessfulPayment read FSuccessfulPayment;
     property ViaBot: TTelegramUserObj read FViaBot;
   end;
@@ -257,6 +260,24 @@ type
     constructor Create(JSONObject: TJSONObject); override;
     property Longitude: Double read FLongitude write FLongitude;
     property Latitude: Double read FLatitude write FLatitude;
+  end;
+
+  { TTelegramContact }
+
+  TTelegramContact = class(TTelegramObj)
+  private
+    Ffirst_name: String;
+    Flast_name: String;
+    Fphone_number: String;
+    FUser_id: Int64;
+    Fvcard: String;
+  public
+    constructor Create(JSONObject: TJSONObject); override;
+    property phone_number: String read Fphone_number write Fphone_number;
+    property first_name: String read Ffirst_name write Ffirst_name;  
+    property last_name: String read Flast_name write Flast_name;
+    property user_id: Int64 read FUser_id write Fuser_id;
+    property vcard: String read Fvcard write Fvcard;
   end;
 
   { TTelegramPhotoSize }
@@ -521,6 +542,18 @@ begin
   end;
   if Result=[] then
     Result:=utAllUpdates;
+end;
+
+{ TTelegramContact }
+
+constructor TTelegramContact.Create(JSONObject: TJSONObject);
+begin
+  inherited Create(JSONObject);
+  Fphone_number := fJSON.Strings['phone_number'];
+  Ffirst_name :=   fJSON.Strings['first_name'];
+  Flast_name :=    fJSON.Get('last_name', EmptyStr);
+  FUser_id :=      fJSON.Get('user_id', 0);
+  Fvcard :=        fJSON.Get('vcard', EmptyStr);
 end;
 
 { TTelegramWebhookInfo }
@@ -1035,6 +1068,8 @@ begin
 
   FLocation:=TTelegramLocation.CreateFromJSONObject(fJSON.Find('location', jtObject) as TJSONObject) as TTelegramLocation;
 
+  FContact:=TTelegramContact.CreateFromJSONObject(fJSON.Find('contact', jtObject) as TJSONObject) as TTelegramContact;
+
   FReplyToMessage:=
     TTelegramMessageObj.CreateFromJSONObject(fJSON.Find('reply_to_message', jtObject) as TJSONObject)
     as TTelegramMessageObj;
@@ -1062,6 +1097,7 @@ begin
   FSuccessfulPayment.Free;
   FViaBot.Free;
   FFrom.Free;
+  FContact.Free;
   FLocation.Free;
   FChat.Free;
   FReplyToMessage.Free;
@@ -1105,6 +1141,16 @@ begin
   begin
     aMedia:=Document.FileID;
     Exit(cntDocument);
+  end;
+  if Assigned(Location) then
+  begin
+    aMedia:=EmptyStr;
+    Exit(cntLocation);
+  end;
+  if Assigned(Contact) then
+  begin
+    aMedia:=EmptyStr;
+    Exit(cntContact);
   end;
 end;
 
