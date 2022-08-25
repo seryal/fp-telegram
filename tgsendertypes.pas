@@ -57,8 +57,10 @@ type
 
   TReplyMarkup = class(TJSONObject)
   private
+    FInputFieldPlaceholder: String;
     function GetForceReply: Boolean;
     function GetInlineKeyBoard: TInlineKeyboard;
+    function GetInputFieldPlaceholder: String;
     function GetOneTimeKeyboard: Boolean;
     function GetRemoveKeyboard: Boolean;
     function GetReplyKeyboardMarkup: TKeybordButtonArray;
@@ -66,6 +68,7 @@ type
     function GetSelective: Boolean;
     procedure SetForceReply(AValue: Boolean);
     procedure SetInlineKeyBoard(AValue: TInlineKeyboard);
+    procedure SetInputFieldPlaceholder(AValue: String);
     procedure SetOneTimeKeyboard(AValue: Boolean);
     procedure SetRemoveKeyboard(AValue: Boolean);
     procedure SetReplyKeyboardMarkup(AValue: TKeybordButtonArray);
@@ -88,6 +91,7 @@ type
 { ForceReply properties
   If property ForceReply is set then ReplyMarkup must be only ForceReply type }
     property ForceReply: Boolean read GetForceReply write SetForceReply;
+    property InputFieldPlaceholder: String read GetInputFieldPlaceholder write SetInputFieldPlaceholder;
     property Selective: Boolean read GetSelective write SetSelective;
   end;
 
@@ -809,6 +813,7 @@ const
   s_CallbackData = 'callback_data';
   s_SwitchInlineQueryCurrentChat = 's_switch_inline_query_current_chat';
   s_Selective = 'selective';
+  s_InputFieldPlaceholder = 'input_field_placeholder';
   s_ForceReply = 'force_reply';
   s_Offset = 'offset';
   s_Limit = 'limit';
@@ -1709,6 +1714,11 @@ begin
   Result:=Arrays[s_InlineKeyboard] as TInlineKeyboard;
 end;
 
+function TReplyMarkup.GetInputFieldPlaceholder: String;
+begin
+  Result:=Get(s_InputFieldPlaceholder, EmptyStr);
+end;
+
 function TReplyMarkup.GetOneTimeKeyboard: Boolean;
 begin
   Result:=Get(s_OneTimeKeyboard, False);
@@ -1750,6 +1760,11 @@ end;
 procedure TReplyMarkup.SetInlineKeyBoard(AValue: TInlineKeyboard);
 begin
   Arrays[s_InlineKeyboard]:=AValue;
+end;
+
+procedure TReplyMarkup.SetInputFieldPlaceholder(AValue: String);
+begin
+  Strings[s_InputFieldPlaceholder]:=AValue;
 end;
 
 procedure TReplyMarkup.SetOneTimeKeyboard(AValue: Boolean);
