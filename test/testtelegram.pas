@@ -39,6 +39,7 @@ type
     procedure sendPhotoByFileName;
     procedure sendMediaGroup;      
     procedure sendMediaGroupByFileName;
+    procedure SendPoll;
     procedure ChatMember;
     procedure getWebhookInfo;
     procedure setWebhook;    
@@ -430,6 +431,16 @@ begin
     aJSONData.Free;
     aMedias.Free;
   end;
+  if Bot.LastErrorCode<>0 then
+    Fail('Error from telegram API server. Error code: '+IntToStr(Bot.LastErrorCode)+
+      '. Description: '+Bot.LastErrorDescription);
+end;
+
+procedure TTestSender.SendPoll;
+begin
+  if not Bot.sendPoll(ChatID, 'Some poll question', ['Option1', 'Option 2'], True, ptRegular, False, -1, EmptyStr,
+    pmDefault, nil) then
+    Fail('Connection error. See log');
   if Bot.LastErrorCode<>0 then
     Fail('Error from telegram API server. Error code: '+IntToStr(Bot.LastErrorCode)+
       '. Description: '+Bot.LastErrorDescription);

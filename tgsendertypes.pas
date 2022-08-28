@@ -414,6 +414,8 @@ type
     property UserID: Int64 read FUserID write FUserID;
   end;
 
+  TPollType=(ptRegular, ptQuiz);
+
   { TTelegramSender }
 
   TTelegramSender = class
@@ -640,6 +642,10 @@ type
     function sendAnimationByFileName(chat_id: Int64; const AFileName: String; const ACaption: String = '';
       ParseMode: TParseMode = pmDefault; ReplyMarkup: TReplyMarkup = nil; ReplyToMessageID: Integer = 0;
       Width: Integer = 0; Height: Integer = 0): Boolean;
+    function sendPoll(chat_id: Int64; const Question: String; const Options: array of String;
+      IsAnonymous: Boolean = True; aType: TPollType = ptRegular; AllowMultipleAnswers: Boolean = False;
+      CorrectOptionID: Integer = -1; const Explanation: String = ''; explanation_parse_mode: TParseMode = pmDefault;
+      ReplyMarkup: TReplyMarkup = nil): Boolean;
     function answerInlineQuery(const AnInlineQueryID: String; Results: TInlineQueryResultArray;
       CacheTime: Integer = 300; IsPersonal: Boolean = False; const NextOffset: String = '';
       const SwitchPmText: String = ''; const SwitchPmParameter: String = ''): Boolean;
@@ -753,6 +759,7 @@ const
   s_sendLocation='sendLocation';
   s_sendInvoice='sendInvoice';
   s_sendMediaGroup='sendMediaGroup';
+  s_sendPoll='sendPoll';
   s_getChat = 'getChat';
   s_getMyCommands = 'getMyCommands'; 
   s_setMyCommands = 'setMyCommands';
@@ -839,6 +846,14 @@ const
   s_OnlyIfBanned = 'only_if_banned';
   s_Command = 'command';
   s_LanguageCode='language_code';
+  s_Question='question';
+  s_Options='options';
+  s_IsAnonymous='is_anonymous';
+  s_quiz='quiz';
+  s_regular='regular';  
+  s_AllowMultipleAnswers='allows_multiple_answers';
+  s_CorrectOptionID='correct_option_id';
+  s_Explanation='explanation';
 
   s_CallbackQueryID = 'callback_query_id';
   s_ShowAlert = 'show_alert';
@@ -907,6 +922,16 @@ const
     ('article', 'photo', 'video', 'audio', 'voice', 'mpeg4_gif', 'document', '');
 
   TgBotUrlStart = 'https://t.me/';
+
+function PollTypeToAlias(aType: TPollType): String;
+begin
+  case aType of
+    ptRegular: Result:=s_Regular;
+    ptQuiz:    Result:=s_quiz;
+  else
+    Result:=EmptyStr;
+  end;
+end;
 
 function StringToIQRType(const S: String): TInlineQueryResultType;
 var
@@ -3689,6 +3714,44 @@ begin
   finally
     Free;
   end;
+end;
+
+function TTelegramSender.sendPoll(chat_id: Int64; const Question: String; const Options: array of String;
+  IsAnonymous: Boolean; aType: TPollType; AllowMultipleAnswers: Boolean; CorrectOptionID: Integer;
+  const Explanation: String; explanation_parse_mode: TParseMode; ReplyMarkup: TReplyMarkup): Boolean;
+var
+  sendObj: TJSONObject;
+  s: String;
+  aJSONArray: TJSONArray;
+begin
+  Result:=False;
+  sendObj:=TJSONObject.Create;
+  with sendObj do
+    try
+      Add(s_ChatId, chat_id);
+      Add(s_Question, Question);
+      aJSONArray:=TJSONArray.Create;
+      for s in Options do
+        aJSONArray.Add(s);
+      Add(s_Options, aJSONArray);
+      if not IsAnonymous then
+        Add(s_IsAnonymous, IsAnonymous);
+      if aType<>ptRegular then
+        Add(s_Type, PollTypeToAlias(aType));
+      if AllowMultipleAnswers then
+        Add(s_AllowMultipleAnswers, AllowMultipleAnswers);
+      if CorrectOptionID<>-1 then
+        Add(s_CorrectOptionID, CorrectOptionID);
+      if not Explanation.IsEmpty then
+        Add(s_Explanation);
+      if explanation_parse_mode<>pmDefault then
+        Add(s_ParseMode, ParseModes[explanation_parse_mode]);
+      if Assigned(ReplyMarkup) then
+        Add(s_ReplyMarkup, ReplyMarkup.Clone); // Clone of ReplyMarkup object will have released with sendObject
+      Result:=SendMethod(s_sendPoll, sendObj);
+    finally
+      Free;
+    end;
 end;
 
 function TTelegramSender.answerInlineQuery(const AnInlineQueryID: String;
