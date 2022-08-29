@@ -57,7 +57,6 @@ type
 
   TReplyMarkup = class(TJSONObject)
   private
-    FInputFieldPlaceholder: String;
     function GetForceReply: Boolean;
     function GetInlineKeyBoard: TInlineKeyboard;
     function GetInputFieldPlaceholder: String;
