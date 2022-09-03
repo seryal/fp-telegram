@@ -2898,7 +2898,9 @@ begin
     Add(s_ChatId, chat_id);
     Result:=SendMethod(s_getChat, sendObj);
     if Result and Assigned(JSONResponse) then
-      aChat:=TTelegramChatObj.CreateFromJSONObject(JSONResponse as TJSONObject) as TTelegramChatObj;;
+      aChat:=TTelegramChatObj.CreateFromJSONObject(JSONResponse as TJSONObject) as TTelegramChatObj
+    else
+      aChat:=nil;
   finally
     Free;
   end;
