@@ -91,6 +91,7 @@ type
     FCaption: String;
     FChat: TTelegramChatObj;
     FContact: TTelegramContact;
+    FDate: Int64;
     FDocument: TTelegramDocument;
     FForwardFrom: TTelegramUserObj;
     FForwardFromChat: TTelegramChatObj;
@@ -114,6 +115,7 @@ type
     property Caption: String read FCaption;
     property MessageId: Integer read fMessageId;
     property From: TTelegramUserObj read FFrom;
+    property Date: Int64 read FDate;
     property Chat: TTelegramChatObj read FChat;
     property ForwardFrom: TTelegramUserObj read FForwardFrom;
     property ForwardFromChat: TTelegramChatObj read FForwardFromChat;
@@ -1052,7 +1054,7 @@ begin
   fEntities := TTelegramUpdateObjList.Create;
   FPhoto := TTelegramPhotoSizeList.Create;
   FCaption := fJSON.Get('caption', EmptyStr);
-
+  FDate:=fJSON.Int64s['date'];
   FChat:=TTelegramChatObj.CreateFromJSONObject(fJSON.Find('chat', jtObject) as TJSONObject) as TTelegramChatObj;
   fChatId := fJSON.Objects['chat'].Int64s['id']; // deprecated?
   FFrom:=TTelegramUserObj.CreateFromJSONObject(fJSON.Find('from', jtObject) as TJSONObject) as TTelegramUserObj;
