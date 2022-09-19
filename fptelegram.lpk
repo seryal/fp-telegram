@@ -18,13 +18,13 @@
       </CodeGeneration>
       <Other>
         <CompilerMessages>
-          <IgnoredMessages idx6058="True" idx3124="True"/>
+          <IgnoredMessages idx6058="True" idx3124="True" idx3123="True"/>
         </CompilerMessages>
       </Other>
     </CompilerOptions>
     <Description Value="Telegram bots API library"/>
     <License Value="MIT License"/>
-    <Version Release="2" Build="12"/>
+    <Version Release="2" Build="13"/>
     <Files Count="6">
       <Item1>
         <Filename Value="tgsendertypes.pas"/>

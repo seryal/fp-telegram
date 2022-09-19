@@ -211,43 +211,45 @@ type
     property Query: String read FQuery;
   end;
 
-  { TTelegramUserObj }
+  { TTelegramBaseChat }
 
-  TTelegramUserObj = class(TTelegramObj)
+  TTelegramBaseChat=class(TTelegramObj)
   private
     FFirst_name: String;
     FID: Int64;
-    FIs_bot: Boolean;
-    FLanguage_code: String;
     FLast_name: String;
     FUsername: String;
   public
     constructor Create(JSONObject: TJSONObject); override;
+    class function GetResolveUserLink(aID: Int64): String;
+    function GetResolveUserLink: String;
     property ID: Int64 read FID;
-    property Is_bot: Boolean read FIs_bot;
     property First_name: String read FFirst_name;
     property Last_name: String read FLast_name;
     property Username: String read FUsername;
+  end;
+
+  { TTelegramUserObj }
+
+  TTelegramUserObj = class(TTelegramBaseChat)
+  private
+    FIs_bot: Boolean;
+    FLanguage_code: String;
+  public
+    constructor Create(JSONObject: TJSONObject); override;
+    property Is_bot: Boolean read FIs_bot;
     property Language_code: String read FLanguage_code;
   end;
 
   { TTelegramChatObj }
 
-  TTelegramChatObj = class(TTelegramObj)
+  TTelegramChatObj = class(TTelegramBaseChat)
   private
     FChatType: TChatType;
-    FFirst_name: String;
-    FID: Int64;
-    FLast_name: String;
     FTitle: String;
-    FUsername: String;
     class function StringToChatType(const TypeString: String): TChatType;
   public
     constructor Create(JSONObject: TJSONObject); override;
-    property ID: Int64 read FID;
-    property First_name: String read FFirst_name;
-    property Last_name: String read FLast_name;
-    property Username: String read FUsername;
     property ChatType: TChatType read FChatType;
     property Title: String read FTitle;
   end;
@@ -546,6 +548,28 @@ begin
     Result:=utAllUpdates;
 end;
 
+{ TTelegramBaseChat }
+
+constructor TTelegramBaseChat.Create(JSONObject: TJSONObject);
+begin
+  inherited Create(JSONObject);
+  FID := fJSON.Int64s['id'];
+  FFirst_name:=fJSON.Strings['first_name'];
+
+  FLast_name:=fJSON.Get('last_name', '');
+  FUsername:=fJSON.Get('username', '');
+end;
+
+class function TTelegramBaseChat.GetResolveUserLink(aID: Int64): String;
+begin
+  Result:=Format('tg://user?id=%d', [aID]);
+end;
+
+function TTelegramBaseChat.GetResolveUserLink: String;
+begin
+  Result:=GetResolveUserLink(FID);
+end;
+
 { TTelegramContact }
 
 constructor TTelegramContact.Create(JSONObject: TJSONObject);
@@ -789,11 +813,7 @@ end;
 constructor TTelegramChatObj.Create(JSONObject: TJSONObject);
 begin
   inherited Create(JSONObject);
-  FID := fJSON.Int64s['id'];
   FChatType:=StringToChatType(fJSON.Strings['type']);
-  FFirst_name:=fJSON.Get('first_name', '');
-  FLast_name:=fJSON.Get('last_name', '');
-  FUsername:=fJSON.Get('username', '');
   FTitle:=fJSON.Get('title', '');
 end;
 
@@ -882,12 +902,7 @@ end;
 constructor TTelegramUserObj.Create(JSONObject: TJSONObject);
 begin
   inherited Create(JSONObject);
-  FID := fJSON.Int64s['id'];
   FIs_bot := fJSON.Booleans['is_bot'];
-  FFirst_name:=fJSON.Strings['first_name'];
-
-  FLast_name:=fJSON.Get('last_name', '');
-  FUsername:=fJSON.Get('username', '');
   FLanguage_code:=fJSON.Get('language_code', '');
 end;
 
