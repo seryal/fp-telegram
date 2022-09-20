@@ -5,7 +5,7 @@ unit tgutils;
 interface
 
 uses
-  Classes, SysUtils, strutils, tgtypes
+  Classes, SysUtils, strutils, tgtypes, tgsendertypes
   ;
 
 const
@@ -14,6 +14,7 @@ const
 function MarkdownEscape(const S: String): String;
 function CaptionFromChat(aChat: TTelegramChatObj): String;
 function CaptionFromUser(AUser: TTelegramUserObj): String;
+function BuildLink(const aCaption, aLink: String; aMarkup: TParseMode = pmDefault): String;
 
 implementation
 
@@ -59,6 +60,16 @@ begin
       Result+='@'+Username;
   end;
   Result:=Trim(Result);
+end;
+
+function BuildLink(const aCaption, aLink: String; aMarkup: TParseMode): String;
+begin
+  case aMarkup of
+    pmMarkdown: Result:=Format('[%s](%s)', [aCaption, aLink]);
+    pmHTML:     Result:=Format('<a href="%s">%s</a>', [aLink, aCaption]);
+  else
+    Result:=aLink;
+  end;
 end;
 
 end.
