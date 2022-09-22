@@ -554,10 +554,9 @@ constructor TTelegramBaseChat.Create(JSONObject: TJSONObject);
 begin
   inherited Create(JSONObject);
   FID := fJSON.Int64s['id'];
-  FFirst_name:=fJSON.Strings['first_name'];
-
-  FLast_name:=fJSON.Get('last_name', '');
-  FUsername:=fJSON.Get('username', '');
+  FFirst_name:=fJSON.Get('first_name', EmptyStr);
+  FLast_name:=fJSON.Get('last_name', EmptyStr);
+  FUsername:=fJSON.Get('username', EmptyStr);
 end;
 
 class function TTelegramBaseChat.GetResolveUserLink(aID: Int64): String;
