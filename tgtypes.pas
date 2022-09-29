@@ -423,6 +423,7 @@ type
   private
     FDuration: Integer;
     FFileID: String;
+    FFileName: String;
     FFileSize: Integer;
     FHeight: Integer;
     FMimeType: String;
@@ -438,6 +439,7 @@ type
     property Thumb: TTelegramPhotoSize read FThumb;
     property MimeType: String read FMimeType;
     property FileSize: Integer read FFileSize;
+    property FileName: String read FFileName;
   end;
 
 
@@ -522,6 +524,9 @@ uses
 const
   API_URL_FILE='https://api.telegram.org/file/bot';
   utAllUpdates = [utMessage..utPreCheckoutQuery];
+
+  s_FileSize = 'file_size';  
+  s_FileName = 'file_name';
 
 function AllowedUpdatesToJSON(const AllowedUpdates: TUpdateSet): TJSONArray;
 var
@@ -614,8 +619,8 @@ begin
   FFileID := fJSON.Strings['file_id'];
   FThumb:=TTelegramPhotoSize.CreateFromJSONObject(fJSON.Find('thumb', jtObject) as TJSONObject) as TTelegramPhotoSize;
   FMimeType:=fJSON.Get('mime_type', EmptyStr);
-  FFileSize := fJSON.Get('file_size', 0);
-  FFileName := fJSON.Get('file_name', EmptyStr);
+  FFileSize := fJSON.Get(s_FileSize, 0);
+  FFileName := fJSON.Get(s_FileName, EmptyStr);
 end;
 
 destructor TTelegramDocument.Destroy;
@@ -635,7 +640,7 @@ begin
   FTitle:=fJSON.Get('title', EmptyStr);
   FThumb:=TTelegramPhotoSize.CreateFromJSONObject(fJSON.Find('thumb', jtObject) as TJSONObject) as TTelegramPhotoSize;
   FMimeType:=fJSON.Get('mime_type', EmptyStr);
-  FFileSize := fJSON.Get('file_size', 0);
+  FFileSize := fJSON.Get(s_FileSize, 0);
 end;
 
 destructor TTelegramAudio.Destroy;
@@ -652,7 +657,7 @@ begin
   FFileID := fJSON.Strings['file_id'];
   FDuration:=fJSON.Integers['duration'];
   FMimeType:=fJSON.Get('mime_type', EmptyStr);
-  FFileSize := fJSON.Get('file_size', 0);
+  FFileSize := fJSON.Get(s_FileSize, 0);
 end;
 
 { TTelegramVideo }
@@ -666,7 +671,8 @@ begin
   FDuration:=fJSON.Integers['duration'];
   FThumb:=TTelegramPhotoSize.CreateFromJSONObject(fJSON.Find('thumb', jtObject) as TJSONObject) as TTelegramPhotoSize;
   FMimeType:=fJSON.Get('mime_type', EmptyStr);
-  FFileSize := fJSON.Get('file_size', 0);
+  FFileSize := fJSON.Get(s_FileSize, 0);
+  FFileName := fJSON.Get(s_FileName, EmptyStr);
 end;
 
 destructor TTelegramVideo.Destroy;
@@ -767,7 +773,7 @@ constructor TTelegramFile.Create(JSONObject: TJSONObject);
 begin
   inherited Create(JSONObject);
   FFileID := fJSON.Strings['file_id'];
-  FFileSize := fJSON.Get('file_size', 0);
+  FFileSize := fJSON.Get(s_FileSize, 0);
   FFilePath := fJSON.Get('file_path', '');
 end;
 
@@ -790,7 +796,7 @@ begin
   FFileID := fJSON.Strings['file_id'];
   FWidth := fJSON.Integers['width'];
   FHeight := fJSON.Integers['height'];
-  FFileSize:=fJSON.Get('file_size', 0);
+  FFileSize:=fJSON.Get(s_FileSize, 0);
 end;
 
 { TTelegramChatObj }
