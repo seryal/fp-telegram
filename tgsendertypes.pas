@@ -549,7 +549,8 @@ type
       DisableWebPagePreview: Boolean=False; ReplyMarkup: TReplyMarkup = nil): Boolean; overload;
     function editMessageMediaStream(aStream: TStream; media: TInputMedia; chat_id: Int64; message_id: Int64 = 0;
       inline_message_id: String = ''; ReplyMarkup: TReplyMarkup = nil): Boolean;
-    function copyMessage(chat_id, from_chat_id, message_id: Int64; DisableNotification: Boolean = False): Boolean;
+    function copyMessage(chat_id, from_chat_id, message_id: Int64; DisableNotification: Boolean = False;
+      ReplyMarkup: TReplyMarkup = nil): Boolean;
     function forwardMessage(chat_id: Int64; from_chat_id: Int64; DisableNotification: Boolean;
       message_id: Int64): Boolean;
     function forwardMessage(chat_id: String; from_chat_id: Int64; DisableNotification: Boolean;
@@ -2841,7 +2842,8 @@ begin
   end;
 end;
 
-function TTelegramSender.copyMessage(chat_id, from_chat_id, message_id: Int64; DisableNotification: Boolean): Boolean;
+function TTelegramSender.copyMessage(chat_id, from_chat_id, message_id: Int64; DisableNotification: Boolean;
+  ReplyMarkup: TReplyMarkup): Boolean;
 var
   sendObj: TJSONObject;
 begin
@@ -2854,6 +2856,8 @@ begin
     Add(s_MessageId, message_id);     
     if DisableNotification then
       Add(s_DsblNtfctn, DisableNotification);
+    if Assigned(ReplyMarkup) then
+      Add(s_ReplyMarkup, ReplyMarkup.Clone); // Clone of ReplyMarkup object will have released with sendObject
     Result:=SendMethod(s_copyMessage, sendObj);
   finally
     Free;
