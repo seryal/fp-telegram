@@ -30,7 +30,8 @@ type
   TTelegramDocument = class;
 
   TUpdateType = (utMessage, utEditedMessage, utChannelPost, utEditedChannelPost, utInlineQuery,
-    utChosenInlineResult, utCallbackQuery, utShippingQuery, utPreCheckoutQuery, utUnknown);
+    utChosenInlineResult, utCallbackQuery, utShippingQuery, utPreCheckoutQuery, utMyChatMember, utChatMember,
+    utUnknown);
   TChatType = (ctPrivate, ctGroup, ctSuperGroup, ctChannel, ctUnknown);
   TChatMemberStatus = (msCreator, msAdministrator, msMember, msRestricted, msLeft, msKicked, msUnknown);
   TUpdateSet = set of TUpdateType;
@@ -507,11 +508,11 @@ type
     TELEGRAM_REQUEST_GETUPDATES = 'getUpdates';
     UpdateTypeAliases: array[TUpdateType] of String = ('message', 'edited_message', 'channel_post',
       'edited_channel_post', 'inline_query', 'chosen_inline_result', 'callback_query',
-      'shipping_query', 'pre_checkout_query', '');
+      'shipping_query', 'pre_checkout_query', 'my_chat_member', 'chat_member', '');
     UpdateTypeClasses: array[TUpdateType] of TTelegramObjClass = (TTelegramMessageObj,
       TTelegramMessageObj, TTelegramMessageObj, TTelegramMessageObj, TTelegramInlineQueryObj,
       TTelegramChosenInlineResultObj, TCallbackQueryObj, TTelegramObj, TTelegramPreCheckOutQuery,
-      TTelegramObj);
+      TTelegramObj, TTelegramObj, TTelegramObj);
 
 function AllowedUpdatesToJSON(const AllowedUpdates: TUpdateSet): TJSONArray;
 

@@ -514,7 +514,9 @@ type
     procedure DoReceiveEditedChannelPost(AChannelPost: TTelegramMessageObj); virtual;
     procedure DoReceiveInlineQuery(AnInlineQuery: TTelegramInlineQueryObj);  virtual;
     procedure DoReceiveChosenInlineResult(AChosenInlineResult: TTelegramChosenInlineResultObj); virtual;
-    procedure DoReceivePreCheckoutQuery(APreCheckoutQuery: TTelegramPreCheckOutQuery); virtual;
+    procedure DoReceivePreCheckoutQuery(APreCheckoutQuery: TTelegramPreCheckOutQuery); virtual;  
+    procedure DoReceiveMyChatMemberQuery(AMyChatMember: TTelegramObj); virtual;
+    procedure DoReceiveChatMemberQuery(AChatMember: TTelegramObj); virtual;
     procedure DoReceiveSuccessfulPayment(AMessage: TTelegramMessageObj); virtual;
     procedure DebugMessage(const Msg: String); virtual; // it will send all requests and responses to the log. Useful during development
     procedure ErrorMessage(const Msg: String); virtual;
@@ -2202,6 +2204,16 @@ begin
     FOnReceivePreCheckoutQuery(Self, APreCheckoutQuery);
 end;
 
+procedure TTelegramSender.DoReceiveMyChatMemberQuery(AMyChatMember: TTelegramObj);
+begin
+  { #todo : Parser }
+end;
+
+procedure TTelegramSender.DoReceiveChatMemberQuery(AChatMember: TTelegramObj);
+begin
+  { #todo :  Parser }
+end;
+
 procedure TTelegramSender.DoReceiveSuccessfulPayment(
   AMessage: TTelegramMessageObj);
 begin
@@ -2236,7 +2248,9 @@ begin
         utInlineQuery: DoReceiveInlineQuery(AnUpdate.InlineQuery); 
         utChosenInlineResult: DoReceiveChosenInlineResult(AnUpdate.ChosenInlineResult);
         utCallbackQuery: DoReceiveCallbackQuery(AnUpdate.CallbackQuery);
-        utPreCheckoutQuery: DoReceivePreCheckoutQuery(AnUpdate.PreCheckoutQuery);
+        utPreCheckoutQuery: DoReceivePreCheckoutQuery(AnUpdate.PreCheckoutQuery); 
+        utMyChatMember: DoReceiveMyChatMemberQuery(AnUpdate);
+        utChatMember:   DoReceiveChatMemberQuery(AnUpdate);
       end;
       if Assigned(FUpdateLogger) then
         if CurrentIsSimpleUser then  // This is to ensure that admins and moderators do not affect the statistics
