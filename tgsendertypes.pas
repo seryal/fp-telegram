@@ -602,6 +602,7 @@ type
     function sendMediaGroup(chat_id: Int64; media: TInputMediaArray;
       DisableWebPagePreview: Boolean=False; ReplyToMessageID: Integer = 0): Boolean;
     function sendMediaGroupByFileNames(chat_id: Int64; media: TInputMediaArray): Boolean;
+    function sendMediaGroupByStreams(chat_id: Int64; const ACaption: String; StreamsList:TStringList): Boolean;
     function sendMessage(chat_id: Int64; const AMessage: String; ParseMode: TParseMode = pmDefault;
       DisableWebPagePreview: Boolean=False; ReplyMarkup: TReplyMarkup = nil;
       ReplyToMessageID: Integer = 0): Boolean;
@@ -3392,6 +3393,52 @@ begin
           aInputMedia.Strings[s_Media]:='attach://'+aField;
         end;
         AddPair({$IF FPC_FULLVERSION <= 30004}sendObj, {$ENDIF}s_Media, aMediaAlbum.AsJSON);
+      finally
+        aMediaAlbum.Free;
+      end;
+    end;
+    Result:=SendFiles(s_sendMediaGroup, aFiles, sendObj);
+  finally
+    aFiles.Free;
+    Free;
+  end;
+end;
+
+function TTelegramSender.sendMediaGroupByStreams(chat_id: Int64;
+  const ACaption: String; StreamsList: TStringList): Boolean;
+var
+  sendObj, aFiles: TStringList;
+  aMediaEnum: TJSONEnum;
+  aField, aFileName, aMediaType: String;
+  aMediaAlbum: TJSONArray;
+  aInputMedia: TJSONObject;
+  f: Integer;
+begin
+  Result:=False;
+  aFiles:=nil;
+  sendObj:=TStringList.Create;
+  //with sendObj do
+  try
+    sendObj.AddPair({$IF FPC_FULLVERSION <= 30004}sendObj, {$ENDIF}s_ChatId, IntToStr(chat_id));
+    if Assigned(StreamsList) then
+    begin
+      aFiles:=TStringList.Create;
+      aMediaAlbum:=TJSONArray.Create;
+      try
+        for f:=0 to StreamsList.Count-1 do
+        begin
+          if not (StreamsList.Objects[f] is TStream) then continue;
+          StreamsList.GetNameValue(f,aFileName,aMediaType);
+          aInputMedia :=TJSONObject.Create;
+          aInputMedia.Add(s_Media,   'attach://'+aField);
+          aInputMedia.Add(s_Type,    aMediaType);
+          aInputMedia.Add(s_Caption, ACaption);
+          aMediaAlbum.Add(aInputMedia);
+          aField:='file'+f.ToString;
+          aFiles.AddPair(aField, aFileName,StreamsList.Objects[f]);
+
+        end;
+        sendObj.AddPair({$IF FPC_FULLVERSION <= 30004}sendObj, {$ENDIF}s_Media, aMediaAlbum.AsJSON);
       finally
         aMediaAlbum.Free;
       end;
