@@ -5,7 +5,7 @@ unit tgbasehttpclient;
 interface
 
 uses
-  Classes, SysUtils, Contnrs;
+  Classes, SysUtils;
 
 type
 
