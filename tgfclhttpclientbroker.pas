@@ -212,14 +212,10 @@ begin
           s:=s+'Content-Type: application/octet-string'+CRLF+CRLF;
           SS.WriteBuffer(S[1],Length(S));
           F:=AFiles.Objects[i] as TStream;
-          try
-            F.Seek(0, soFromBeginning);
-            SS.CopyFrom(F,F.Size);
-            S:=CRLF;
-            SS.WriteBuffer(S[1],Length(S));
-          finally
-            F.Free;
-          end;
+          F.Seek(0, soFromBeginning);
+          SS.CopyFrom(F,F.Size);
+          S:=CRLF;
+          SS.WriteBuffer(S[1],Length(S));
         end;
 
     S:='--'+Sep+'--'+CRLF;

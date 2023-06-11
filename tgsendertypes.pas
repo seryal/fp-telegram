@@ -481,6 +481,7 @@ type
     function HTTPPostJSON(const Method: String): Boolean;
     function HTTPPostStream(const Method, FileField, FileName: String;
       AStream: TStream; AFormData: TStrings): Boolean;
+    function HTTPPostStreams(const Method: String; aFormData, aStreams: TStrings): Boolean;
     procedure ProcessCommands(AMessage: TTelegramMessageObj; AHandlers: TCommandHandlersMap);
     function ResponseToJSONObject: TJSONObject;
     function ResponseHandle: Boolean;
@@ -490,6 +491,7 @@ type
     function SendMethod(const Method: String; MethodParameters: TJSONObject): Boolean; overload;
     function SendStream(const AMethod, AFileField, AFileName: String; AStream: TStream;
       MethodParameters: TStrings): Boolean;
+    function SendStreams(const AMethod: String; AStreams, MethodParameters: TStrings): Boolean;
     procedure SetFileObj(AValue: TTelegramFile);
     procedure SetJSONResponse(AValue: TJSONData);
     procedure SetLastErrorCode(AValue: Integer);
@@ -2503,6 +2505,28 @@ begin
   HTTP.Free;
 end;
 
+function TTelegramSender.HTTPPostStreams(const Method: String; aFormData,
+  aStreams: TStrings): Boolean;
+var
+  HTTP: TBaseHTTPClient;
+begin
+  Result:=False;
+  JSONResponse:=nil;
+  FResponse:=EmptyStr;
+  HTTP:=TBaseHTTPClient.GetClientClass.Create(nil);
+  AssignHTTProxy(HTTP);
+  try
+    try
+      FResponse:=HTTP.StreamsFormPost(APIEndPoint+FToken+'/'+Method, aFormData, aStreams);
+      Result:=True;
+    except
+      Result:=False;
+    end;
+  finally
+    HTTP.Free;
+  end;
+end;
+
 procedure TTelegramSender.ProcessCommands(AMessage: TTelegramMessageObj;
   AHandlers: TCommandHandlersMap);
 var
@@ -2691,6 +2715,27 @@ begin
           Result:=False;
           ErrorMessage('Error request: '+FResponse);
         end;
+  except
+    ErrorMessage('It is not succesful request to API! Request body: '+FRequestBody);
+  end;
+end;
+
+function TTelegramSender.SendStreams(const AMethod: String; AStreams,
+  MethodParameters: TStrings): Boolean;
+begin
+  Result:=False;
+  RequestBody:=MethodParameters.CommaText;
+  DebugMessage('Request for method "'+AMethod+'": '+FRequestBody);
+  try
+    Result:=HTTPPostStreams(AMethod, MethodParameters, AStreams);
+    if Result then
+      if FResponse<>EmptyStr then     // longpolling
+        if not ResponseHandle then
+        begin
+          Result:=False;
+          ErrorMessage('Error request: '+FResponse);
+        end;
+    DebugMessage('Response: '+FResponse);
   except
     ErrorMessage('It is not succesful request to API! Request body: '+FRequestBody);
   end;
@@ -3413,40 +3458,46 @@ var
   aMediaAlbum: TJSONArray;
   aInputMedia: TJSONObject;
   f: Integer;
+  obj: TObject;
+  aux: TJSONStringType;
 begin
   Result:=False;
   aFiles:=nil;
+  if not Assigned(StreamsList) then exit(false);
   sendObj:=TStringList.Create;
-  //with sendObj do
   try
     sendObj.AddPair({$IF FPC_FULLVERSION <= 30004}sendObj, {$ENDIF}s_ChatId, IntToStr(chat_id));
-    if Assigned(StreamsList) then
-    begin
-      aFiles:=TStringList.Create;
+
+    aFiles:=TStringList.Create;
+    try
       aMediaAlbum:=TJSONArray.Create;
       try
-        for f:=0 to StreamsList.Count-1 do
-        begin
-          if not (StreamsList.Objects[f] is TStream) then continue;
+
+        for f:=0 to StreamsList.Count-1 do begin
+          if (not assigned(StreamsList.Objects[f])) or (not (StreamsList.Objects[f] is TStream)) then continue;
           StreamsList.GetNameValue(f,aFileName,aMediaType);
+          aField:='file'+f.ToString;
           aInputMedia :=TJSONObject.Create;
           aInputMedia.Add(s_Media,   'attach://'+aField);
           aInputMedia.Add(s_Type,    aMediaType);
-          aInputMedia.Add(s_Caption, ACaption);
+          if f=0 then
+            aInputMedia.Add(s_Caption, ACaption);
           aMediaAlbum.Add(aInputMedia);
           aField:='file'+f.ToString;
           aFiles.AddPair(aField, aFileName,StreamsList.Objects[f]);
-
         end;
-        sendObj.AddPair({$IF FPC_FULLVERSION <= 30004}sendObj, {$ENDIF}s_Media, aMediaAlbum.AsJSON);
+        aux:=aMediaAlbum.AsJSON;
+        sendObj.AddPair({$IF FPC_FULLVERSION <= 30004}sendObj, {$ENDIF}s_Media, aux);
+
+        Result:=SendStreams(s_sendMediaGroup, aFiles, sendObj);
       finally
         aMediaAlbum.Free;
       end;
+    finally
+      aFiles.Free
     end;
-    Result:=SendFiles(s_sendMediaGroup, aFiles, sendObj);
   finally
-    aFiles.Free;
-    Free;
+    sendObj.Free;
   end;
 end;
 
