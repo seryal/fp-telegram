@@ -3453,12 +3453,11 @@ function TTelegramSender.sendMediaGroupByStreams(chat_id: Int64;
   const ACaption: String; StreamsList: TStringList): Boolean;
 var
   sendObj, aFiles: TStringList;
-  aMediaEnum: TJSONEnum;
   aField, aFileName, aMediaType: String;
   aMediaAlbum: TJSONArray;
   aInputMedia: TJSONObject;
-  f: Integer;
-  obj: TObject;
+  f: Integer;{$IF FPC_FULLVERSION <= 30004}
+  obj: TObject;{$ENDIF}
   aux: TJSONStringType;
 begin
   Result:=False;
