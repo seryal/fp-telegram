@@ -3512,7 +3512,7 @@ begin
   with sendObj do
     try
       Add(s_ChatId, chat_id);
-      Add(s_Text, TJSONUnicodeStringType(AMessage));
+      Add(s_Text, {$IF FPC_FULLVERSION < 30202}TJSONUnicodeStringType(AMessage){$else}AMessage{$endif});
       if ParseMode<>pmDefault then
         Add(s_ParseMode, ParseModes[ParseMode]);
       Add(s_DsblWbpgPrvw, DisableWebPagePreview);
