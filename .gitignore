@@ -35,3 +35,4 @@ lib/
 *.app/
 
 test/console
+test/gui

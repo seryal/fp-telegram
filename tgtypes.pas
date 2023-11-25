@@ -99,6 +99,7 @@ type
     FForwardFromMessageID: LongInt;
     FFrom: TTelegramUserObj;
     FLocation: TTelegramLocation;
+    FMediaGroupID: String;
     fMessageId: Integer;
     fChatId: Int64;
     FPhoto: TTelegramPhotoSizeList;
@@ -134,6 +135,7 @@ type
     property Contact: TTelegramContact read FContact;
     property SuccessfulPayment: TTelegramSuccessfulPayment read FSuccessfulPayment;
     property ViaBot: TTelegramUserObj read FViaBot;
+    property MediaGroupID: String read FMediaGroupID;
   end;
 
   { TTelegramMessageEntityObj }
@@ -1093,6 +1095,8 @@ begin
 
   FContact:=TTelegramContact.CreateFromJSONObject(fJSON.Find('contact', jtObject) as TJSONObject) as TTelegramContact;
 
+  FMediaGroupID:=fJSON.Get('media_group_id', EmptyStr);
+
   FReplyToMessage:=
     TTelegramMessageObj.CreateFromJSONObject(fJSON.Find('reply_to_message', jtObject) as TJSONObject)
     as TTelegramMessageObj;
@@ -1110,6 +1114,8 @@ begin
   FSuccessfulPayment:=
     TTelegramSuccessfulPayment.CreateFromJSONObject(fJSON.Find('successful_payment', jtObject) as TJSONObject)
     as TTelegramSuccessfulPayment;
+
+
 
 end;
 
