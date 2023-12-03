@@ -15,6 +15,7 @@ type
   TCustomDTTelegramBot = class(TComponent)
   private
     FActive: Boolean;
+    FBotUsername: String;
     FHelpStrings: TStringList;
     FLongPollingTime: Integer;
     FOnReceiveCallack: TCallbackEvent;
@@ -22,6 +23,7 @@ type
     FOnReceiveMessageUpdate: TMessageEvent;
     FOnReceiveUpdate: TOnUpdateEvent;
     FReceiver: TLongPollingThread;
+    FSenderBot: TTelegramSender;
     FStartStrings: TStringList;
     FToken: String;
     function GetHelpText: TStrings;
@@ -30,11 +32,15 @@ type
     procedure SetStartText(AValue: TStrings);
     procedure SetActive(AValue: Boolean);
   public
+    procedure BotgetMe;
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
     procedure StartReceiver;
     procedure StopReceiver;
     property Active: Boolean read FActive write SetActive;
+    { It can be arrived with getMe command for example or specified manually.
+      Required for some commands }
+    property BotUsername: String read FBotUsername write FBotUsername;
     property Token: String read FToken write FToken;
     property StartText: TStrings read GetStartText write SetStartText;
     property HelpText: TStrings read GetHelpText write SetHelpText;
@@ -48,6 +54,10 @@ type
   end;
 
 implementation
+
+uses
+  Dialogs
+  ;
 
 type
   EDTTelegramBot = class(Exception);
@@ -139,6 +149,26 @@ begin
   FStartStrings.Free;
   StopReceiver;
   inherited Destroy;
+end;
+
+procedure TCustomDTTelegramBot.BotgetMe;
+begin
+  FSenderBot:=TTelegramSender.Create(Token);
+  try
+    if FSenderBot.getMe then
+    begin
+      FBotUsername:=FSenderBot.BotUsername;
+      if (csDesigning in ComponentState) then
+        with FSenderBot.BotUser do
+          MessageDlg('Telegram response for getMe',
+            Format('Bot username: %s. User_id: %d. First_Name: %s', [Username, ID, First_name]), mtInformation, [mbOK],
+            '');
+    end
+    else
+      raise EDTTelegramBot.Create('Unsuccessful request!');
+  finally
+    FSenderBot.Free;
+  end;
 end;
 
 end.

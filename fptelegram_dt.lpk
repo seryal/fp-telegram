@@ -32,6 +32,9 @@
     </Files>
     <RequiredPkgs>
       <Item>
+        <PackageName Value="IDEIntf"/>
+      </Item>
+      <Item>
         <PackageName Value="LCLBase"/>
       </Item>
       <Item>
