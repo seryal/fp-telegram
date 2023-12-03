@@ -45,11 +45,8 @@ type
       );
     procedure SetCommandReply({%H-}ASender: TObject; const ACommand: String;
       AMessage: TTelegramMessageObj);
-    procedure SetHelpText(AValue: String);
-    //procedure SetOnRate(AValue: TRateEvent);
     procedure SetOnReceiveDeepLinking(AValue: TReceiveDeepLinkEvent);
     procedure SetPublicStat(AValue: Boolean);
-    procedure SetStartText(AValue: String);
     procedure SetStatLogger(AValue: TtgStatLog);
     procedure SetUserStatus(ID: Int64; AValue: TUserStatus);
     procedure TlgrmStartHandler({%H-}ASender: TObject; const {%H-}ACommand: String;
@@ -58,8 +55,6 @@ type
       {%H-}AMessage: TTelegramMessageObj);
     procedure TlgrmFeedback({%H-}ASender: TObject; const {%H-}ACommand: String;
       {%H-}AMessage: TTelegramMessageObj);
-    //procedure TlgrmRate({%H-}ASender: TObject; const {%H-}ACommand: String;
-    //  {%H-}AMessage: TTelegramMessageObj);
     procedure TlgrmStatHandler({%H-}ASender: TObject;
       const {%H-}ACommand: String; AMessage: TTelegramMessageObj);
     procedure TlgrmStatFHandler({%H-}ASender: TObject;
@@ -100,8 +95,8 @@ type
     procedure LoadUserStatusValues(AStrings: TStrings);
     property CallbackHandlers [const Command: String]: TCallbackEvent read GetCallbackHandlers
       write SetCallbackHandlers;  // It can create command handlers by assigning their to array elements
-    property StartText: String read FStartText write SetStartText; // Text for /start command reply
-    property HelpText: String read FHelpText write SetHelpText;  // Text for /help command reply
+    property StartText: String read FStartText write FStartText; // Text for /start command reply
+    property HelpText: String read FHelpText write FHelpText;  // Text for /help command reply
     property FeedbackText: String read FFeedbackText write FFeedbackText;
     property FeedbackThanks: String read FFeedbackThanks write FFeedbackThanks;
     property UserStatus [ID: Int64]: TUserStatus read GetUserStatus write SetUserStatus;
@@ -117,7 +112,7 @@ function FormatStatRec(const S: String): String;
 implementation
 
 uses
-  tgutils, fpjson, StrUtils, DateUtils, {$IFDEF poi18n}Translations, {$ENDIF}LazUTF8, FileUtil
+  tgutils, fpjson, StrUtils, DateUtils, {$IFDEF poi18n}Translations, {$ENDIF} FileUtil
   ;
 
 resourcestring
@@ -253,12 +248,6 @@ begin
   sendMessage(str_TxtRplyIsScsChngd);
 end;
 
-procedure TTelegramBot.SetHelpText(AValue: String);
-begin
-  if FHelpText=AValue then Exit;
-  FHelpText:=AValue;
-end;
-
 procedure TTelegramBot.SetOnReceiveDeepLinking(AValue: TReceiveDeepLinkEvent);
 begin
   if FOnReceiveDeepLinking=AValue then Exit;
@@ -269,12 +258,6 @@ procedure TTelegramBot.SetPublicStat(AValue: Boolean);
 begin
   if FPublicStat=AValue then Exit;
   FPublicStat:=AValue;
-end;
-
-procedure TTelegramBot.SetStartText(AValue: String);
-begin
-  if FStartText=AValue then Exit;
-  FStartText:=AValue;
 end;
 
 procedure TTelegramBot.SetStatLogger(AValue: TtgStatLog);
@@ -694,10 +677,7 @@ procedure TTelegramBot.TlgrmStartHandler(ASender: TObject;
 begin
   UpdateProcessed:=True;
   if not {%H-}AMessage.Text.Contains(' ') then
-  begin
-    RequestWhenAnswer:=True;
-    sendMessage(FStartText, pmMarkdown);
-  end
+    sendMessage(FStartText, pmMarkdown)
   else
     DoReceiveDeepLinking(RightStr(AMessage.Text, AMessage.Text.Length-Length(ACommand)));
 end;
@@ -706,7 +686,6 @@ procedure TTelegramBot.TlgrmHelpHandler(ASender: TObject;
   const ACommand: String; AMessage: TTelegramMessageObj);
 begin
   UpdateProcessed:=True;
-  RequestWhenAnswer:=True;
   sendMessage(FHelpText, pmMarkdown);
 end;
 
@@ -817,7 +796,10 @@ begin
     Exit;
   if AMessage=EmptyStr then
     Exit;
-  EscMsg:=UTF8LeftStr(AMessage, 150);
+  if AMessage.Length>150 then
+    EscMsg:='... to big text...'{ #todo : Truncate UTF8 text }
+  else
+    EscMsg:=AMessage;
   try
     if Assigned(CurrentUser)then
     begin

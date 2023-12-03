@@ -3,7 +3,6 @@
   <Package Version="5">
     <PathDelim Value="\"/>
     <Name Value="fptelegram"/>
-    <Type Value="RunTimeOnly"/>
     <Author Value="Al-muhandis (Renat Suleymanov)"/>
     <CompilerOptions>
       <Version Value="11"/>
@@ -24,7 +23,7 @@
     </CompilerOptions>
     <Description Value="Telegram bots API library"/>
     <License Value="MIT License"/>
-    <Version Release="2" Build="13"/>
+    <Version Release="3"/>
     <Files Count="6">
       <Item1>
         <Filename Value="tgsendertypes.pas"/>
