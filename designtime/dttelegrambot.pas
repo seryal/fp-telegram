@@ -28,6 +28,7 @@ type
     property OnReceiveMessageUpdate;
     property OnReceiveCallack;
     property OnReceiveUpdate;
+    property ReplyMarkups;
   end;
 
   { TLPTelegramBotEditor }
