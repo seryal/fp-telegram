@@ -10,27 +10,6 @@ uses
 
 type
 
-  { TDTLongPolBot }
-
-  TDTLongPolBot = class(TCustomDTTelegramBot)
-  private
-
-  protected
-
-  public
-
-  published
-    property BotUsername;
-    property Token;
-    property StartText;
-    property HelpText;
-    property LongPollingTime;
-    property OnReceiveMessageUpdate;
-    property OnReceiveCallack;
-    property OnReceiveUpdate;
-    property ReplyMarkups;
-  end;
-
   { TLPTelegramBotEditor }
 
   TLPTelegramBotEditor = class(TComponentEditor)
