@@ -34,7 +34,7 @@ var
 implementation
 
 uses
-  tgutils
+  tgutils, tgbot_dt
   ;
 
 {$R *.lfm}
@@ -42,9 +42,18 @@ uses
 { TForm1 }
 
 procedure TForm1.BtnStartClick(Sender: TObject);
-begin                         
+begin
   BtnStart.Enabled:=False;
-  DTLongPolBot1.StartReceiver;
+  try
+    DTLongPolBot1.StartReceiver;
+  except
+    on E: EDTTelegramBot do
+    begin
+      BtnStart.Enabled:=True;
+      BtnStop.Enabled:=False;
+      raise;
+    end;
+  end;
   BtnStop.Enabled:=True;
 end;
 
@@ -62,18 +71,32 @@ var
 begin
   aReplyMarkup:=nil;
   try
-    if AMessage.Text='/command1' then
+    if AMessage.Text='/inlinekeyboard' then
     begin
       if DTLongPolBot1.ReplyMarkups.Count>=1 then
         aReplyMarkup:=DTLongPolBot1.ReplyMarkups.ReplyMarkups[0].GetJSONReplyMarkup;
       aMsg:=Format('Hi, %s', [CaptionFromUser(AMessage.From)])+'!'+LineEnding+'This message with inline keyboard';
       TTelegramSender(ASender).UpdateProcessed:=True;
     end;
-    if AMessage.Text='/command2' then
+    if AMessage.Text='/replykeyboard' then
     begin
       if DTLongPolBot1.ReplyMarkups.Count>=2 then
         aReplyMarkup:=DTLongPolBot1.ReplyMarkups.ReplyMarkups[1].GetJSONReplyMarkup;
       aMsg:=Format('Hi, %s', [CaptionFromUser(AMessage.From)])+'!'+LineEnding+'This message with reply keyboard';
+      TTelegramSender(ASender).UpdateProcessed:=True;
+    end;                            
+    if AMessage.Text='/forcereply' then
+    begin
+      if DTLongPolBot1.ReplyMarkups.Count>=3 then
+        aReplyMarkup:=DTLongPolBot1.ReplyMarkups.ReplyMarkups[2].GetJSONReplyMarkup;
+      aMsg:=Format('Hi, %s', [CaptionFromUser(AMessage.From)])+'!'+LineEnding+'This message with ForceReply';
+      TTelegramSender(ASender).UpdateProcessed:=True;
+    end;
+    if AMessage.Text='/removekeyboard' then
+    begin
+      if DTLongPolBot1.ReplyMarkups.Count>=2 then
+        aReplyMarkup:=DTLongPolBot1.ReplyMarkups.ReplyMarkups[3].GetJSONReplyMarkup;
+      aMsg:=Format('Hi, %s', [CaptionFromUser(AMessage.From)])+'!'+LineEnding+'This message remove replykeyboard';
       TTelegramSender(ASender).UpdateProcessed:=True;
     end;
     if not TTelegramSender(ASender).UpdateProcessed then

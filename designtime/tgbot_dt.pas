@@ -201,14 +201,13 @@ type
     property ReplyMarkups: TReplyMarkupCollection read FReplyMarkup write SetReplyMarkups;
   end;
 
+  EDTTelegramBot = class(Exception);
+
 implementation
 
 uses
   Dialogs
   ;
-
-type
-  EDTTelegramBot = class(Exception);
 
 const
   _StartText = 'Welcome! This is start text for `/start` command.'+LineEnding+

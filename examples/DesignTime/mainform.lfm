@@ -67,17 +67,18 @@ object Form1: TForm1
     ParentColor = False
   end
   object DTLongPolBot1: TDTLongPolBot
+    Token = '2011142799:AAERbpkXeGcNn_y7JfXGWIuGQAwW_crtxd8'
     StartText.Strings = (
       'Welcome! This is start text for `/start` command.'
       'You can change this text by the property `TDTLongPolBot.StartText`.'
       'Caution: it is markdown markup.'
-      'Try commands: /start, /help, /command1, /command2 or any other word'
+      'Try commands: /start, /help, /inlinekeyboard, /replykeyboard, /forcereply, /removekeyboard or any other word'
     )
     HelpText.Strings = (
       'This is help text for `/help` command.'
       'You can change this text by the property `TDTLongPolBot.HelpText`.'
       'Caution: it is markdown markup'
-      'Try commands: /start, /help, /command1, /command2 or any other word'
+      'Try commands: /start, /help, /inlinekeyboard, /replykeyboard, /forcereply, /removekeyboard or any other word'
     )
     LongPollingTime = 8
     OnReceiveMessageUpdate = DTLongPolBot1ReceiveMessageUpdate
@@ -123,6 +124,24 @@ object Form1: TForm1
               end>
           end>
         RemoveKeyboard = False
+        ResizeKeyboard = False
+        OneTimeKeyboard = False
+        Selective = False
+      end    
+      item
+        ForceReply = True
+        InlineKeyboard = <>
+        ReplyKeyboard = <>
+        RemoveKeyboard = False
+        ResizeKeyboard = False
+        OneTimeKeyboard = False
+        Selective = False
+      end    
+      item
+        ForceReply = False
+        InlineKeyboard = <>
+        ReplyKeyboard = <>
+        RemoveKeyboard = True
         ResizeKeyboard = False
         OneTimeKeyboard = False
         Selective = False
