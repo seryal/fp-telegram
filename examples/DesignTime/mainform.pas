@@ -57,24 +57,34 @@ end;
 
 procedure TForm1.DTLongPolBot1ReceiveMessageUpdate(ASender: TObject; AMessage: TTelegramMessageObj);
 var
-  aReply: String;
+  aReply, aMsg: String;
   aReplyMarkup: TReplyMarkup;
 begin
   aReplyMarkup:=nil;
-  if DTLongPolBot1.ReplyMarkups.Count>0 then
-    aReplyMarkup:=DTLongPolBot1.ReplyMarkups.ReplyMarkups[0].GetJSONReplyMarkup;
   try
-    if AMessage.Text='/hi' then
-      TgBotSendMessage(DTLongPolBot1.Token, TTelegramSender(ASender).CurrentChatId,
-        Format('Hi, %s', [CaptionFromUser(AMessage.From)])+'!', aReply, pmDefault, False, aReplyMarkup)
-    else
-      TgBotSendMessage(DTLongPolBot1.Token, TTelegramSender(ASender).CurrentChatId,
-        Format('You sent a command `%s`', [AMessage.Text]), aReply, pmMarkdown);
+    if AMessage.Text='/command1' then
+    begin
+      if DTLongPolBot1.ReplyMarkups.Count>=1 then
+        aReplyMarkup:=DTLongPolBot1.ReplyMarkups.ReplyMarkups[0].GetJSONReplyMarkup;
+      aMsg:=Format('Hi, %s', [CaptionFromUser(AMessage.From)])+'!'+LineEnding+'This message with inline keyboard';
+      TTelegramSender(ASender).UpdateProcessed:=True;
+    end;
+    if AMessage.Text='/command2' then
+    begin
+      if DTLongPolBot1.ReplyMarkups.Count>=2 then
+        aReplyMarkup:=DTLongPolBot1.ReplyMarkups.ReplyMarkups[1].GetJSONReplyMarkup;
+      aMsg:=Format('Hi, %s', [CaptionFromUser(AMessage.From)])+'!'+LineEnding+'This message with reply keyboard';
+      TTelegramSender(ASender).UpdateProcessed:=True;
+    end;
+    if not TTelegramSender(ASender).UpdateProcessed then
+      aMsg:=Format('You sent the text: %s', [AMessage.Text]);
+    TgBotSendMessage(DTLongPolBot1.Token, TTelegramSender(ASender).CurrentChatId, aMsg, aReply, pmDefault, False,
+      aReplyMarkup);
   finally
+    TTelegramSender(ASender).UpdateProcessed:=True;
     aReplyMarkup.Free;
+    Memo1.Lines.Add(aReply);
   end;
-  Memo1.Lines.Add(aReply);
-  TTelegramSender(ASender).UpdateProcessed:=True;
 end;
 
 end.

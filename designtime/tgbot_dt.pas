@@ -10,9 +10,9 @@ uses
 
 type
 
-  { TInlineKeyboardButtonItem }
+  { TInlineButtonItem }
 
-  TInlineKeyboardButtonItem = class(TCollectionItem)
+  TInlineButtonItem = class(TCollectionItem)
   private
     FCallbackData: String;
     FSwitchInlineQuery: String;
@@ -63,23 +63,29 @@ type
 
   TReplyButtonItem = class(TCollectionItem)
   private
+    Frequest_contact: Boolean;
+    Frequest_location: Boolean;
+    FText: String;
   public
     procedure AssignTo(Dest: TPersistent); override;
   published
+    property text: String read FText write FText;
+    property request_contact: Boolean read Frequest_contact write Frequest_contact;
+    property request_location: Boolean read Frequest_location write Frequest_location;
   end;
 
-  TReplyKeyboardRowItem = class;
+  TReplyButtonRowItem = class;
 
   { TReplyButtonCollection }
 
   TReplyButtonCollection = class(TOwnedCollection)
   public
-    constructor Create(AOwner: TReplyKeyboardRowItem);
+    constructor Create(AOwner: TReplyButtonRowItem);
   end;
 
-  { TReplyKeyboardRowItem }
+  { TReplyButtonRowItem }
 
-  TReplyKeyboardRowItem = class(TCollectionItem)
+  TReplyButtonRowItem = class(TCollectionItem)
   private
     FButtonRows: TReplyButtonCollection;
     procedure SetButtonRows(AValue: TReplyButtonCollection);
@@ -216,57 +222,67 @@ const
 
 procedure TReplyButtonItem.AssignTo(Dest: TPersistent);
 begin
-  inherited AssignTo(Dest);
+  if Dest is TReplyButtonItem then
+  begin
+    TReplyButtonItem(Dest).Ftext:=Ftext;
+    TReplyButtonItem(Dest).Frequest_location:=Frequest_location;
+    TReplyButtonItem(Dest).Frequest_contact:=Frequest_contact;
+  end
+  else
+    inherited AssignTO(Dest);
 end;
 
 { TReplyButtonCollection }
 
-constructor TReplyButtonCollection.Create(AOwner: TReplyKeyboardRowItem);
+constructor TReplyButtonCollection.Create(AOwner: TReplyButtonRowItem);
 begin
   inherited Create(aOwner, TReplyButtonItem);
 end;
 
-{ TReplyKeyboardRowItem }
+{ TReplyButtonRowItem }
 
-procedure TReplyKeyboardRowItem.SetButtonRows(AValue: TReplyButtonCollection);
+procedure TReplyButtonRowItem.SetButtonRows(AValue: TReplyButtonCollection);
 begin
   FButtonRows.Assign(AValue);
 end;
 
-constructor TReplyKeyboardRowItem.Create(ACollection: TCollection);
+constructor TReplyButtonRowItem.Create(ACollection: TCollection);
 begin
   inherited Create(ACollection);
   FButtonRows:=TReplyButtonCollection.Create(Self);
 end;
 
-destructor TReplyKeyboardRowItem.Destroy;
+destructor TReplyButtonRowItem.Destroy;
 begin
   FButtonRows.Free;
   inherited Destroy;
 end;
 
-procedure TReplyKeyboardRowItem.AssignTo(Dest: TPersistent);
+procedure TReplyButtonRowItem.AssignTo(Dest: TPersistent);
 begin
-  inherited AssignTo(Dest);
+  if Dest is TReplyButtonRowItem then
+    TReplyButtonRowItem(Dest).FButtonRows.Assign(FButtonRows)
+  else
+    inherited AssignTO(Dest);
 end;
 
 { TReplyKeyboardCollection }
 
 constructor TReplyKeyboardCollection.Create(aOwner: TReplyMarkupItem);
 begin
-  inherited Create(aOwner, TReplyKeyboardRowItem);
+  inherited Create(aOwner, TReplyButtonRowItem);
 end;
 
-{ TInlineKeyboardButtonItem }
+{ TInlineButtonItem }
 
-procedure TInlineKeyboardButtonItem.AssignTo(Dest: TPersistent);
+procedure TInlineButtonItem.AssignTo(Dest: TPersistent);
 begin
-  if Dest is TInlineKeyboardButtonItem then
+  if Dest is TInlineButtonItem then
   begin                                                        
-    TInlineKeyboardButtonItem(Dest).Text:=Text;
-    TInlineKeyboardButtonItem(Dest).CallbackData:=CallbackData;
-    TInlineKeyboardButtonItem(Dest).SwitchInlineQuery:=SwitchInlineQuery;
-    TInlineKeyboardButtonItem(Dest).Url:=Url;
+    TInlineButtonItem(Dest).Text:=Text;
+    TInlineButtonItem(Dest).CallbackData:=CallbackData;
+    TInlineButtonItem(Dest).SwitchInlineQuery:=SwitchInlineQuery;
+    TInlineButtonItem(Dest).Url:=Url;
   end
   else
     inherited AssignTO(Dest);
@@ -303,7 +319,7 @@ end;
 
 constructor TInlineButtonCollection.Create(aOwner: TInlineButtonRowItem);
 begin
-  inherited Create(aOwner, TInlineKeyboardButtonItem);
+  inherited Create(aOwner, TInlineButtonItem);
 end;
 
 { TInlineKeyboardCollection }
@@ -319,22 +335,35 @@ function TReplyMarkupItem.GetJSONReplyMarkup: TReplyMarkup;
 var
   aRowItem, aButtonItem: TCollectionItem;
   aInlineKeyboard: TInlineKeyboard;
-  aRow: TInlineKeyboardButtons;
+  aInlineButtonRow: TInlineKeyboardButtons;
+  aReplyButtonRow: TKeyboardButtons;
+  aReplyKeyboard: TKeybordButtonArray;
 
-  procedure AddKeyboardButton(aButton: TInlineKeyboardButtonItem);
+  procedure AddKeyboardButton(aButton: TInlineButtonItem);
   begin
     if aButton.CallbackData<>EmptyStr then
     begin
-      aRow.AddButton(aButton.Text, aButton.CallbackData);
+      aInlineButtonRow.AddButton(aButton.Text, aButton.CallbackData);
       Exit;
     end;
     if aButton.Url<>EmptyStr then
     begin
-      aRow.AddButtonUrl(aButton.Text, aButton.Url);
+      aInlineButtonRow.AddButtonUrl(aButton.Text, aButton.Url);
       Exit;
     end;   
     if aButton.SwitchInlineQuery<>EmptyStr then
-      aRow.AddButtonInline(aButton.Text, aButton.SwitchInlineQuery)
+      aInlineButtonRow.AddButtonInline(aButton.Text, aButton.SwitchInlineQuery)
+  end;
+  procedure AddKeyboardButton(aButton: TReplyButtonItem);
+  var
+    aJSONBtn: TKeyboardButton;
+  begin
+    aJSONBtn:=TKeyboardButton.Create(aButton.text);
+    if aButton.request_contact then
+      aJSONBtn.RequestContact:=aButton.request_contact;
+    if aButton.request_location then
+      aJSONBtn.RequestLocation:=aButton.request_location;
+    aReplyButtonRow.Add(aJSONBtn);
   end;
 
 begin
@@ -351,9 +380,19 @@ begin
     aInlineKeyboard:=Result.CreateInlineKeyBoard;
     for aRowItem in FInlineKeyBoard do
     begin
-      aRow:=aInlineKeyboard.Add;
+      aInlineButtonRow:=aInlineKeyboard.Add;
       for aButtonItem in (aRowItem as TInlineButtonRowItem).ButtonRows do
-        AddKeyboardButton(aButtonItem as TInlineKeyboardButtonItem);
+        AddKeyboardButton(aButtonItem as TInlineButtonItem);
+    end;
+  end;
+  if FReplyKeyboard.Count>0 then
+  begin
+    aReplyKeyboard:=Result.CreateReplyKeyboard;
+    for aRowItem in FReplyKeyboard do
+    begin
+      aReplyButtonRow:=aReplyKeyboard.Add;
+      for aButtonItem in (aRowItem as TReplyButtonRowItem).ButtonRows do
+        AddKeyboardButton(aButtonItem as TReplyButtonItem);
     end;
   end;
 end;
@@ -372,10 +411,12 @@ constructor TReplyMarkupItem.Create(ACollection: TCollection);
 begin
   inherited Create(ACollection);
   FInlineKeyBoard:=TInlineKeyboardCollection.Create(Self);
+  FReplyKeyboard:=TReplyKeyboardCollection.Create(Self);
 end;
 
 destructor TReplyMarkupItem.Destroy;
 begin
+  FReplyKeyboard.Free;
   FInlineKeyBoard.Free;
   inherited Destroy;
 end;
@@ -386,7 +427,7 @@ begin
   begin
     TReplyMarkupItem(Dest).FForceReply:=FForceReply;
     TReplyMarkupItem(Dest).FInlineKeyBoard.Assign(FInlineKeyBoard);
-    //TReplyMarkupItem(Dest).ReplyKeyboardMarkup:=ReplyKeyboardMarkup.Clone;
+    TReplyMarkupItem(Dest).FReplyKeyboard.Assign(FReplyKeyboard);
     TReplyMarkupItem(Dest).FOneTimeKeyboard:=FOneTimeKeyboard;
     TReplyMarkupItem(Dest).FRemoveKeyboard:=FRemoveKeyboard;
     TReplyMarkupItem(Dest).FResizeKeyboard:=FResizeKeyboard;
