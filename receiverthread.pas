@@ -17,6 +17,11 @@ type
   TThreadedBot=class(TTelegramBot)
   private
     FThread: TLongPollingThread;
+    FCurrentCallback: TCallbackQueryObj;
+    procedure SynDoReceiveMessage;
+    procedure SynDoReceiveCallback;
+    procedure SynDoReceiveUpdate;  
+    procedure SynDoReceiveEditedMessage;
   public
     procedure DoReceiveMessageUpdate(AMessage: TTelegramMessageObj); override;
     procedure DoReceiveCallbackQuery(ACallback: TCallbackQueryObj); override;
@@ -59,32 +64,55 @@ uses
 
 { TThreadedBot }
 
+procedure TThreadedBot.SynDoReceiveMessage;
+begin
+  FThread.FOnReceiveMessageUpdate(Self, CurrentMessage);
+end;
+
+procedure TThreadedBot.SynDoReceiveCallback;
+begin
+  FThread.FOnReceiveCallack(Self, FCurrentCallback)
+end;
+
+procedure TThreadedBot.SynDoReceiveUpdate;
+begin
+  FThread.FOnReceiveUpdate(Self, CurrentUpdate);
+end;
+
+procedure TThreadedBot.SynDoReceiveEditedMessage;
+begin
+  FThread.FOnReceiveEditedMessage(Self, CurrentMessage);
+end;
+
 procedure TThreadedBot.DoReceiveMessageUpdate(AMessage: TTelegramMessageObj);
 begin
   inherited DoReceiveMessageUpdate(AMessage);
   if Assigned(FThread.FOnReceiveMessageUpdate) and not UpdateProcessed then
-    FThread.FOnReceiveMessageUpdate(Self, AMessage);                 { #todo : Must be a synchronise here? }
+    FThread.Synchronize(@SynDoReceiveMessage);
 end;
 
 procedure TThreadedBot.DoReceiveCallbackQuery(ACallback: TCallbackQueryObj);
 begin
   inherited DoReceiveCallbackQuery(ACallback);
   if Assigned(FThread.FOnReceiveCallack) and not UpdateProcessed then
-    FThread.FOnReceiveCallack(Self, ACallback);               { #todo : Must be a synchronise here? }
+  begin
+    FCurrentCallback:=ACallback;
+    FThread.Synchronize(@SynDoReceiveCallback);
+  end;
 end;
 
 procedure TThreadedBot.DoReceiveUpdate(AnUpdate: TTelegramUpdateObj);
 begin
   inherited DoReceiveUpdate(AnUpdate);
   if Assigned(FThread.FOnReceiveUpdate) and not UpdateProcessed then
-    FThread.FOnReceiveUpdate(Self, AnUpdate);               { #todo : Must be a synchronise here? }
+    FThread.Synchronize(@SynDoReceiveUpdate);
 end;
 
 procedure TThreadedBot.DoReceiveEditedMessage(AMessage: TTelegramMessageObj);
 begin
   inherited DoReceiveEditedMessage(AMessage);
   if Assigned(FThread.FOnReceiveEditedMessage) and not UpdateProcessed then
-    FThread.FOnReceiveEditedMessage(Self, AMessage);                 { #todo : Must be a synchronise here? }
+    FThread.Synchronize(@SynDoReceiveEditedMessage);
 end;
 
 { TLongPollingThread }
