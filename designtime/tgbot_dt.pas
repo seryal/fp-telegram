@@ -59,18 +59,59 @@ type
     constructor Create(aOwner: TReplyMarkupItem);
   end;
 
+  { TReplyButtonItem }
+
+  TReplyButtonItem = class(TCollectionItem)
+  private
+  public
+    procedure AssignTo(Dest: TPersistent); override;
+  published
+  end;
+
+  TReplyKeyboardRowItem = class;
+
+  { TReplyButtonCollection }
+
+  TReplyButtonCollection = class(TOwnedCollection)
+  public
+    constructor Create(AOwner: TReplyKeyboardRowItem);
+  end;
+
+  { TReplyKeyboardRowItem }
+
+  TReplyKeyboardRowItem = class(TCollectionItem)
+  private
+    FButtonRows: TReplyButtonCollection;
+    procedure SetButtonRows(AValue: TReplyButtonCollection);
+  public
+    constructor Create(ACollection: TCollection); override;
+    destructor Destroy; override;
+    procedure AssignTo(Dest: TPersistent); override;
+  published
+    property ButtonRows: TReplyButtonCollection read FButtonRows write SetButtonRows;
+  end;
+
+  { TReplyKeyboardCollection }
+
+  TReplyKeyboardCollection = class(TOwnedCollection)
+  public
+    constructor Create(aOwner: TReplyMarkupItem);
+  end;
+
   { TReplyMarkupItem }
 
   TReplyMarkupItem = class(TCollectionItem)
   private
     FForceReply: Boolean;
-    FInlineKeyBoard: TInlineKeyboardCollection;
+    FInlineKeyboard: TInlineKeyboardCollection;
     FInputFieldPlaceholder: String;
     FOneTimeKeyboard: Boolean;
     FRemoveKeyboard: Boolean;
+    FReplyKeyboard: TReplyKeyboardCollection;
     FResizeKeyboard: Boolean;
     FSelective: Boolean;
     procedure SetInlineKeyBoard(AValue: TInlineKeyboardCollection);
+    procedure SetReplyKeyboard(AValue: TReplyKeyboardCollection);
   public
     constructor Create(ACollection: TCollection); override;
     destructor Destroy; override;
@@ -81,7 +122,8 @@ type
     function GetJSONReplyMarkup: TReplyMarkup;
   published
     property ForceReply: Boolean read FForceReply write FForceReply;
-    property InlineKeyBoard: TInlineKeyboardCollection read FInlineKeyBoard write SetInlineKeyBoard;
+    property InlineKeyboard: TInlineKeyboardCollection read FInlineKeyBoard write SetInlineKeyBoard;
+    property ReplyKeyboard: TReplyKeyboardCollection read FReplyKeyboard write SetReplyKeyboard;
     property RemoveKeyboard: Boolean read FRemoveKeyboard write FRemoveKeyboard;
     property ResizeKeyboard: Boolean read FResizeKeyboard write FResizeKeyboard;
     property OneTimeKeyboard: Boolean read FOneTimeKeyboard write FOneTimeKeyboard;
@@ -169,6 +211,51 @@ const
   _HelpText = 'This is help text for `/help` command.'+LineEnding+
     'You can change this text by the property `TDTLongPolBot.HelpText`.'+LineEnding+
     'Caution: it is markdown markup';
+
+{ TReplyButtonItem }
+
+procedure TReplyButtonItem.AssignTo(Dest: TPersistent);
+begin
+  inherited AssignTo(Dest);
+end;
+
+{ TReplyButtonCollection }
+
+constructor TReplyButtonCollection.Create(AOwner: TReplyKeyboardRowItem);
+begin
+  inherited Create(aOwner, TReplyButtonItem);
+end;
+
+{ TReplyKeyboardRowItem }
+
+procedure TReplyKeyboardRowItem.SetButtonRows(AValue: TReplyButtonCollection);
+begin
+  FButtonRows.Assign(AValue);
+end;
+
+constructor TReplyKeyboardRowItem.Create(ACollection: TCollection);
+begin
+  inherited Create(ACollection);
+  FButtonRows:=TReplyButtonCollection.Create(Self);
+end;
+
+destructor TReplyKeyboardRowItem.Destroy;
+begin
+  FButtonRows.Free;
+  inherited Destroy;
+end;
+
+procedure TReplyKeyboardRowItem.AssignTo(Dest: TPersistent);
+begin
+  inherited AssignTo(Dest);
+end;
+
+{ TReplyKeyboardCollection }
+
+constructor TReplyKeyboardCollection.Create(aOwner: TReplyMarkupItem);
+begin
+  inherited Create(aOwner, TReplyKeyboardRowItem);
+end;
 
 { TInlineKeyboardButtonItem }
 
@@ -274,6 +361,11 @@ end;
 procedure TReplyMarkupItem.SetInlineKeyBoard(AValue: TInlineKeyboardCollection);
 begin
   FInlineKeyBoard.Assign(AValue);
+end;
+
+procedure TReplyMarkupItem.SetReplyKeyboard(AValue: TReplyKeyboardCollection);
+begin
+  FReplyKeyboard.Assign(AValue);
 end;
 
 constructor TReplyMarkupItem.Create(ACollection: TCollection);
