@@ -67,7 +67,6 @@ object Form1: TForm1
     ParentColor = False
   end
   object DTLongPolBot1: TDTLongPolBot
-    Token = '2011142799:AAGOn1b47QpiQ-2IVU9ikW1LmEDht1mNbb4'
     StartText.Strings = (
       'Welcome! This is start text for `/start` command.'
       'You can change this text by the property `TDTLongPolBot.StartText`.'
