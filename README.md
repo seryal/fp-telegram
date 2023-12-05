@@ -10,10 +10,11 @@ for example, as a plug-in to Brook-framework https://github.com/Al-Muhandis/broo
 # Design-time
 
 Library has two packages: run-time (`fptelegram.lpk`) and design-time (`fp-telegram_dt.lpk`). `fp-telegram_dt.lpk` contains component  `DTLongPolBot`. 
-It is ready-made longpolling bot which you can use for the rapid developments of longpolling telegram bots. Look about longpolling [here](https://github.com/Al-Muhandis/fp-telegram/wiki/How-to-step-by-step.-Creation-telegram-bot-in-Lazarus-(longpolling)).
+It is ready-made longpolling bot which you can use for the rapid developments of longpolling telegram bots. 
+Look about longpolling [here](https://github.com/Al-Muhandis/fp-telegram/wiki/How-to-step-by-step.-Creation-telegram-bot-in-Lazarus-(longpolling)).
 This component ca be used in GUI and non-GUI applications, daemons and services and 
 even in web-server (however, in the latter case, it is preferable to use a webhook mechanism to receive updates. 
-About webhook is [here](https://github.com/Al-Muhandis/fp-telegram/wiki/How-to-step-by-step.-Creation-telegram-bot-in-Lazarus-(webhook)))
+About webhook is [here](https://github.com/Al-Muhandis/fp-telegram/wiki/How-to-step-by-step.-Creation-telegram-bot-in-Lazarus-(webhook))
 
 # Examples
 You can find in the `examples` folder various architectures for using the library: 
@@ -33,9 +34,11 @@ FreePascal библиотека классов для работы с API тел
 # DesignTime (компонент "времени разработки")
 
 Библиотека содержит два пакета: runtime (`fptelegram.lpk`) и design-time (`fp-telegram_dt.lpk`). `fp-telegram_dt.lpk` содержит компонент `DTLongPolBot`. 
-Это готовый бот для longpolling ботов, который вы можете использовать для быстрой разработки telegram. О создании longpolling бота, к примеру [здесь](https://github.com/Al-Muhandis/fp-telegram/wiki/How-to-step-by-step.-Создание-telegram-бота-в-Lazarus-(длинный опрос)).
+Это готовый бот для longpolling ботов, который вы можете использовать для быстрой разработки telegram. О создании longpolling бота, 
+к примеру [здесь](https://github.com/Al-Muhandis/fp-telegram/wiki/How-to-step-by-step.-Creation-telegram-bot-in-Lazarus-(longpolling)).
 Этот компонент может использоваться в приложениях с графическим интерфейсом и без него, демонах и сервисах и 
-даже на веб-сервере (однако в последнем случае предпочтительнее использовать механизм webhook для получения обновлений. О таких ботах [здесь](https://github.com/Al-Muhandis/fp-telegram/wiki/How-to-step-by-step.-Создание-telegram-бота-в-Lazarus-(webhook)))
+даже на веб-сервере (однако в последнем случае предпочтительнее использовать механизм webhook для получения обновлений. 
+О таких ботах [здесь](https://github.com/Al-Muhandis/fp-telegram/wiki/How-to-step-by-step.-Creation-telegram-bot-in-Lazarus-(webhook))
 
 # Примеры в папке examples
 
