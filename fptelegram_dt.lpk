@@ -17,7 +17,7 @@
         </CompilerMessages>
       </Other>
     </CompilerOptions>
-    <Version Build="1"/>
+    <Version Build="2"/>
     <Files>
       <Item>
         <Filename Value="designtime\tgbot_dt.pas"/>
