@@ -201,9 +201,9 @@ type
     property ReplyMarkups: TReplyMarkupCollection read FReplyMarkup write SetReplyMarkups;
   end;
 
-  { TDTLongPolBot }
+  { TDTLongPollBot }
 
-  TDTLongPolBot = class(TCustomDTTelegramBot)
+  TDTLongPollBot = class(TCustomDTTelegramBot)
   published
     property BotUsername;
     property Token;

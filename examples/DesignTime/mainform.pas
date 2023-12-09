@@ -5,7 +5,8 @@ unit MainForm;
 interface
 
 uses
-  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, DTTelegramBot, tgtypes, tgsendertypes;
+  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, DTTelegramBot, tgtypes, tgsendertypes, tgbot_dt
+  ;
 
 type
 
@@ -14,7 +15,7 @@ type
   TForm1 = class(TForm)
     BtnStart: TButton;
     BtnStop: TButton;
-    DTLongPolBot1: TDTLongPolBot;
+    DTLongPolBot1: TDTLongPollBot;
     GroupBox1: TGroupBox;
     Label1: TLabel;
     Label2: TLabel;
@@ -34,7 +35,7 @@ var
 implementation
 
 uses
-  tgutils, tgbot_dt
+  tgutils
   ;
 
 {$R *.lfm}

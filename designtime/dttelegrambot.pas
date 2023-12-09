@@ -32,15 +32,15 @@ uses
 procedure Register;
 begin
   {$I dttelegrambot_icon.lrs}
-  RegisterComponentEditor(TDTLongPolBot, TLPTelegramBotEditor);
-  RegisterComponents('Misc', [TDTLongPolBot]);
+  RegisterComponentEditor(TDTLongPollBot, TLPTelegramBotEditor);
+  RegisterComponents('Misc', [TDTLongPollBot]);
 end;
 
 { TLPTelegramBotEditor }
 
 procedure TLPTelegramBotEditor.getMe;
 begin
-  (Component as TDTLongPolBot).BotgetMe;
+  (Component as TDTLongPollBot).BotgetMe;
 end;
 
 procedure TLPTelegramBotEditor.ExecuteVerb(Index: Integer);
