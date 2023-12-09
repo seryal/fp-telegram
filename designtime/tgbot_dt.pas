@@ -160,7 +160,7 @@ type
     FBotUsername: String;
     FHelpStrings: TStringList;
     FLongPollingTime: Integer;
-    FOnReceiveCallack: TCallbackEvent;
+    FOnReceiveCallback: TCallbackEvent;
     FOnReceiveEditedMessage: TMessageEvent;
     FOnReceiveMessageUpdate: TMessageEvent;
     FOnReceiveUpdate: TOnUpdateEvent;
@@ -192,7 +192,7 @@ type
     property StartText: TStrings read GetStartText write SetStartText;
     property HelpText: TStrings read GetHelpText write SetHelpText;
     property LongPollingTime: Integer read FLongPollingTime write FLongPollingTime;
-    property OnReceiveCallack: TCallbackEvent read FOnReceiveCallack write FOnReceiveCallack;
+    property OnReceiveCallback: TCallbackEvent read FOnReceiveCallback write FOnReceiveCallback;
     property OnReceiveMessageUpdate: TMessageEvent read FOnReceiveMessageUpdate write FOnReceiveMessageUpdate; 
     property OnReceiveEditedMessage: TMessageEvent read FOnReceiveEditedMessage write FOnReceiveEditedMessage;
     { This event will be triggered if none of the other events have been handled (UpdateProcessed = True) after
@@ -211,7 +211,7 @@ type
     property HelpText;
     property LongPollingTime;
     property OnReceiveMessageUpdate;
-    property OnReceiveCallack;
+    property OnReceiveCallback;
     property OnReceiveUpdate;
     property ReplyMarkups;
   end;
@@ -482,7 +482,7 @@ begin
   FReceiver.Bot.HelpText:=FHelpStrings.Text;
   FReceiver.OnReceiveMessageUpdate:=FOnReceiveMessageUpdate;
   FReceiver.OnReceiveEditedMessage:=FOnReceiveEditedMessage;
-  FReceiver.OnReceiveCallack:=FOnReceiveCallack;
+  FReceiver.OnReceiveCallack:=FOnReceiveCallback;
   FReceiver.OnReceiveUpdate:=FOnReceiveUpdate;
   FReceiver.Start;
 end;
