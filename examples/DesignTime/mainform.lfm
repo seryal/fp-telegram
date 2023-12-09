@@ -80,7 +80,7 @@ object Form1: TForm1
       'Try commands: /start, /help, /inlinekeyboard, /replykeyboard, /forcereply, /removekeyboard or any other word'
     )
     LongPollingTime = 8
-    OnReceiveMessageUpdate = DTLongPolBot1ReceiveMessageUpdate
+    OnReceiveMessageUpdate = DTLongPollBot1ReceiveMessageUpdate
     ReplyMarkups = <    
       item
         ForceReply = False

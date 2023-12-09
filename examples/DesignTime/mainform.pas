@@ -22,7 +22,7 @@ type
     Memo1: TMemo;
     procedure BtnStartClick(Sender: TObject);
     procedure BtnStopClick(Sender: TObject);
-    procedure DTLongPolBot1ReceiveMessageUpdate(ASender: TObject; AMessage: TTelegramMessageObj);
+    procedure DTLongPollBot1ReceiveMessageUpdate(ASender: TObject; AMessage: TTelegramMessageObj);
   private
 
   public
@@ -65,7 +65,7 @@ begin
   BtnStart.Enabled:=True;
 end;
 
-procedure TForm1.DTLongPolBot1ReceiveMessageUpdate(ASender: TObject; AMessage: TTelegramMessageObj);
+procedure TForm1.DTLongPollBot1ReceiveMessageUpdate(ASender: TObject; AMessage: TTelegramMessageObj);
 var
   aReply, aMsg: String;
   aReplyMarkup: TReplyMarkup;
