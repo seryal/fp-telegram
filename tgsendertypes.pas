@@ -607,13 +607,13 @@ type
     function sendMediaGroupByStreams(chat_id: Int64; const ACaption: String; StreamsList:TStringList): Boolean;
     function sendMessage(chat_id: Int64; const AMessage: String; ParseMode: TParseMode = pmDefault;
       DisableWebPagePreview: Boolean=False; ReplyMarkup: TReplyMarkup = nil;
-      ReplyToMessageID: Integer = 0): Boolean;
+      ReplyToMessageID: Integer = 0; DisableNotification: Boolean = False): Boolean;
     function sendMessageChannel(const chat_id, AMessage: String; ParseMode: TParseMode = pmDefault;
       DisableWebPagePreview: Boolean=False; ReplyMarkup: TReplyMarkup = nil;
       ReplyToMessageID: Integer = 0): Boolean;
     function sendMessage(const AMessage: String; ParseMode: TParseMode = pmDefault;
       DisableWebPagePreview: Boolean=False; ReplyMarkup: TReplyMarkup = nil;
-      ReplyToMessageID: Integer = 0): Boolean; overload;
+      ReplyToMessageID: Integer = 0; DisableNotification: Boolean = False): Boolean; overload;
     function sendPhoto(chat_id: Int64; const APhoto: String; const ACaption: String = '';
       ParseMode: TParseMode = pmDefault; ReplyMarkup: TReplyMarkup = nil;
       ReplyToMessageID: Integer = 0): Boolean;
@@ -664,6 +664,7 @@ type
     property APIEndPoint: String read GetAPIEndPoint write SetAPIEndPoint;
     property BotUser: TTelegramUserObj read FBotUser;
     property JSONResponse: TJSONData read FJSONResponse write SetJSONResponse;
+    { Current chat_id that was received when processing the last update from the telegram server }
     property CurrentChatId: Int64 read FCurrentChatId;
     property CurrentUser: TTelegramUserObj read FCurrentUser;
     property CurrentChat: TTelegramChatObj read FCurrentChat;
@@ -3501,9 +3502,9 @@ begin
 end;
 
 {  https://core.telegram.org/bots/api#sendmessage  }
-function TTelegramSender.sendMessage(chat_id: Int64; const AMessage: String;
-  ParseMode: TParseMode; DisableWebPagePreview: Boolean;
-  ReplyMarkup: TReplyMarkup; ReplyToMessageID: Integer): Boolean;
+function TTelegramSender.sendMessage(chat_id: Int64; const AMessage: String; ParseMode: TParseMode;
+  DisableWebPagePreview: Boolean; ReplyMarkup: TReplyMarkup; ReplyToMessageID: Integer; DisableNotification: Boolean
+  ): Boolean;
 var
   sendObj: TJSONObject;
 begin
@@ -3516,6 +3517,7 @@ begin
       if ParseMode<>pmDefault then
         Add(s_ParseMode, ParseModes[ParseMode]);
       Add(s_DsblWbpgPrvw, DisableWebPagePreview);
+      Add(s_DsblNtfctn, DisableNotification);
       if Assigned(ReplyMarkup) then
         Add(s_ReplyMarkup, ReplyMarkup.Clone); // Clone of ReplyMarkup object will have released with sendObject
       if ReplyToMessageID<>0 then
@@ -3551,12 +3553,11 @@ begin
   end;
 end;
 
-function TTelegramSender.sendMessage(const AMessage: String;
-  ParseMode: TParseMode; DisableWebPagePreview: Boolean;
-  ReplyMarkup: TReplyMarkup; ReplyToMessageID: Integer): Boolean;
+function TTelegramSender.sendMessage(const AMessage: String; ParseMode: TParseMode; DisableWebPagePreview: Boolean;
+  ReplyMarkup: TReplyMarkup; ReplyToMessageID: Integer; DisableNotification: Boolean): Boolean;
 begin
   Result:=sendMessage(FCurrentChatId, AMessage, ParseMode, DisableWebPagePreview, ReplyMarkup,
-    ReplyToMessageID);
+    ReplyToMessageID, DisableNotification);
 end;
 
 { https://core.telegram.org/bots/api#sendphoto }
