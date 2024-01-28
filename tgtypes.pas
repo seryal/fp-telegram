@@ -898,10 +898,8 @@ end;
 
 destructor TCallbackQueryObj.Destroy;
 begin
-  if Assigned(FMessage) then
-    FMessage.Free;
-  if Assigned(FFrom) then
-    FFrom.Free;
+  FMessage.Free;
+  FFrom.Free;
   inherited Destroy;
 end;
 
@@ -924,15 +922,13 @@ begin
   FOffset:=fJSON.Get('offset', '');
 
   FFrom:=TTelegramUserObj.CreateFromJSONObject(fJSON.Find('from', jtObject) as TJSONObject) as TTelegramUserObj;
-  FLocation:=TTelegramUserObj.CreateFromJSONObject(fJSON.Find('location', jtObject) as TJSONObject) as TTelegramLocation;
+  FLocation:=TTelegramLocation.CreateFromJSONObject(fJSON.Find('location', jtObject) as TJSONObject) as TTelegramLocation;
 end;
 
 destructor TTelegramInlineQueryObj.Destroy;
 begin
-  if Assigned(FLocation) then
-    FLocation.Free;
-  if Assigned(FFrom) then
-    FFrom.Free;
+  FLocation.Free;
+  FFrom.Free;
   inherited Destroy;
 end;
 
