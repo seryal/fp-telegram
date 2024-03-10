@@ -98,10 +98,12 @@ type
     FForwardFromChat: TTelegramChatObj;
     FForwardFromMessageID: LongInt;
     FFrom: TTelegramUserObj;
+    FIsTopicMessage: Boolean;
     FLocation: TTelegramLocation;
     FMediaGroupID: String;
     fMessageId: Integer;
     fChatId: Int64;
+    FMessageThreadID: Integer;
     FPhoto: TTelegramPhotoSizeList;
     FReplyToMessage: TTelegramMessageObj;
     FSuccessfulPayment: TTelegramSuccessfulPayment;
@@ -136,6 +138,8 @@ type
     property SuccessfulPayment: TTelegramSuccessfulPayment read FSuccessfulPayment;
     property ViaBot: TTelegramUserObj read FViaBot;
     property MediaGroupID: String read FMediaGroupID;
+    property MessageThreadID: Integer read FMessageThreadID;
+    property IsTopicMessage: Boolean read FIsTopicMessage;
   end;
 
   { TTelegramMessageEntityObj }
@@ -515,6 +519,7 @@ type
       TTelegramMessageObj, TTelegramMessageObj, TTelegramMessageObj, TTelegramInlineQueryObj,
       TTelegramChosenInlineResultObj, TCallbackQueryObj, TTelegramObj, TTelegramPreCheckOutQuery,
       TTelegramObj, TTelegramObj, TTelegramObj);
+    _nullThrd = 0;
 
 function AllowedUpdatesToJSON(const AllowedUpdates: TUpdateSet): TJSONArray;
 
@@ -530,6 +535,8 @@ const
 
   s_FileSize = 'file_size';  
   s_FileName = 'file_name';
+  s_IsTpcMsg = 'is_topic_message';
+  s_MsgThrdID ='message_thread_id';
 
 function AllowedUpdatesToJSON(const AllowedUpdates: TUpdateSet): TJSONArray;
 var
@@ -1068,6 +1075,9 @@ var
 begin
   inherited Create(JSONObject);
   fMessageId := fJSON.Integers['message_id'];
+
+  FIsTopicMessage:=fJSON.Get(s_IsTpcMsg, False);
+  FMessageThreadID:=fJSON.Get(s_MsgThrdID, 0);
 
   fText := fJSON.Get('text', EmptyStr);
   fEntities := TTelegramUpdateObjList.Create;

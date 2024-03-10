@@ -423,6 +423,8 @@ type
     FBotUsername: String;
     FCurrentChat: TTelegramChatObj;
     FCurrentChatId: Int64;
+    FCurrentIsTopicMessage: Boolean;
+    FCurrentThreadId: Integer;
     FCurrentMessage: TTelegramMessageObj;
     FCurrentUser: TTelegramUserObj;
     FBotUser: TTelegramUserObj;
@@ -607,7 +609,7 @@ type
     function sendMediaGroupByStreams(chat_id: Int64; const ACaption: String; StreamsList:TStringList): Boolean;
     function sendMessage(chat_id: Int64; const AMessage: String; ParseMode: TParseMode = pmDefault;
       DisableWebPagePreview: Boolean=False; ReplyMarkup: TReplyMarkup = nil;
-      ReplyToMessageID: Integer = 0; DisableNotification: Boolean = False): Boolean;
+      ReplyToMessageID: Integer = 0; DisableNotification: Boolean = False; MessageThreadID: Integer = _nullThrd): Boolean;
     function sendMessageChannel(const chat_id, AMessage: String; ParseMode: TParseMode = pmDefault;
       DisableWebPagePreview: Boolean=False; ReplyMarkup: TReplyMarkup = nil;
       ReplyToMessageID: Integer = 0): Boolean;
@@ -919,8 +921,7 @@ const
   s_Cht='chat';
   s_ChtAdmnstrtrs='chat_administrators';
   s_ChtMmbr='chat_member';
-
-
+  s_MsgThrdID ='message_thread_id';
 
   ParseModes: array[TParseMode] of PChar = ('', 'Markdown', 'HTML');
   MediaTypes: array[TMediaType] of PChar = ('photo', 'video', '');
@@ -2080,6 +2081,8 @@ procedure TTelegramSender.DoReceiveMessageUpdate(AMessage: TTelegramMessageObj);
 begin
   FCurrentMessage:=AMessage;
   FCurrentChatID:=AMessage.ChatId;
+  FCurrentThreadId:=AMessage.MessageThreadID;
+  FCurrentIsTopicMessage:=AMessage.IsTopicMessage;
   FCurrentChat:=AMessage.Chat;
   FCurrentUser:=AMessage.From;
   if CurrentIsBanned then
@@ -2098,6 +2101,8 @@ procedure TTelegramSender.DoReceiveEditedMessage(AMessage: TTelegramMessageObj);
 begin
   FCurrentMessage:=AMessage;
   FCurrentChatID:=AMessage.ChatId;
+  FCurrentThreadId:=AMessage.MessageThreadID;
+  FCurrentIsTopicMessage:=AMessage.IsTopicMessage;
   FCurrentChat:=AMessage.Chat;
   FCurrentUser:=AMessage.From;
   if CurrentIsBanned then
@@ -2117,6 +2122,8 @@ begin
     FCurrentChat:=FCurrentMessage.Chat;
   FCurrentUser:=ACallback.From;
   FCurrentChatID:=FCurrentUser.ID; { Bot will send to private chat if in channel is called } {ACallback.Message.ChatId;}
+  FCurrentThreadId:=_nullThrd;
+  FCurrentIsTopicMessage:=False;
   if CurrentIsBanned then
     Exit;
   if Assigned(FCurrentMessage) then
@@ -2133,7 +2140,9 @@ procedure TTelegramSender.DoReceiveChannelPost(AChannelPost: TTelegramMessageObj
 begin
   FCurrentMessage:=AChannelPost;
   FCurrentChat:=AChannelPost.Chat;
-  FCurrentChatID:=AChannelPost.ChatId;
+  FCurrentChatID:=AChannelPost.ChatId;  
+  FCurrentThreadId:=AChannelPost.MessageThreadID;
+  FCurrentIsTopicMessage:=AChannelPost.IsTopicMessage;
   FCurrentUser:=AChannelPost.From;
   if CurrentIsBanned then
     Exit;
@@ -2145,12 +2154,13 @@ begin
     FOnReceiveChannelPost(Self, AChannelPost);
 end;
 
-procedure TTelegramSender.DoReceiveEditedChannelPost(
-  AChannelPost: TTelegramMessageObj);
+procedure TTelegramSender.DoReceiveEditedChannelPost(AChannelPost: TTelegramMessageObj);
 begin
   FCurrentMessage:=AChannelPost;
   FCurrentChat:=AChannelPost.Chat;
-  FCurrentChatID:=AChannelPost.ChatId;
+  FCurrentChatID:=AChannelPost.ChatId;  
+  FCurrentThreadId:=AChannelPost.MessageThreadID;
+  FCurrentIsTopicMessage:=AChannelPost.IsTopicMessage;
   FCurrentUser:=AChannelPost.From;
   if CurrentIsBanned then
     Exit;
@@ -2168,6 +2178,8 @@ begin
   FCurrentMessage:=nil;
   FCurrentChat:=nil;
   FCurrentChatID:=AnInlineQuery.From.ID;
+  FCurrentThreadId:=_nullThrd;
+  FCurrentIsTopicMessage:=False;
   FCurrentUser:=AnInlineQuery.From;
   if CurrentIsBanned then
     Exit;
@@ -2183,7 +2195,9 @@ procedure TTelegramSender.DoReceiveChosenInlineResult(
 begin
   FCurrentMessage:=nil;
   FCurrentChat:=nil;
-  FCurrentChatID:=AChosenInlineResult.From.ID;
+  FCurrentChatID:=AChosenInlineResult.From.ID; 
+  FCurrentThreadId:=_nullThrd;
+  FCurrentIsTopicMessage:=False;
   FCurrentUser:=AChosenInlineResult.From;
   if CurrentIsBanned then
     Exit;
@@ -2198,7 +2212,9 @@ procedure TTelegramSender.DoReceivePreCheckoutQuery(
   APreCheckoutQuery: TTelegramPreCheckOutQuery);
 begin
   FCurrentUser:=APreCheckoutQuery.From;
-  FCurrentChatID:=FCurrentUser.ID;
+  FCurrentChatID:=FCurrentUser.ID; 
+  FCurrentThreadId:=_nullThrd;
+  FCurrentIsTopicMessage:=False;
   if CurrentIsBanned then
     Exit;
   DoAfterParseUpdate;
@@ -2234,6 +2250,8 @@ begin
   FUpdate:=AnUpdate;
   FCurrentMessage:=nil;
   FCurrentChatId:=0;
+  FCurrentThreadId:=_nullThrd;
+  FCurrentIsTopicMessage:=False;
   FCurrentUser:=nil;
   FCurrentChat:=nil;
   FLanguage:='';
@@ -3503,8 +3521,8 @@ end;
 
 {  https://core.telegram.org/bots/api#sendmessage  }
 function TTelegramSender.sendMessage(chat_id: Int64; const AMessage: String; ParseMode: TParseMode;
-  DisableWebPagePreview: Boolean; ReplyMarkup: TReplyMarkup; ReplyToMessageID: Integer; DisableNotification: Boolean
-  ): Boolean;
+  DisableWebPagePreview: Boolean; ReplyMarkup: TReplyMarkup; ReplyToMessageID: Integer; DisableNotification: Boolean;
+  MessageThreadID: Integer): Boolean;
 var
   sendObj: TJSONObject;
 begin
@@ -3522,6 +3540,8 @@ begin
         Add(s_ReplyMarkup, ReplyMarkup.Clone); // Clone of ReplyMarkup object will have released with sendObject
       if ReplyToMessageID<>0 then
         Add(s_ReplyToMessageID, ReplyToMessageID);
+      if MessageThreadID<>_nullThrd then
+        Add(s_MsgThrdID, MessageThreadID);
       Result:=SendMethod(s_sendMessage, sendObj);
     finally
       Free;
@@ -3555,9 +3575,15 @@ end;
 
 function TTelegramSender.sendMessage(const AMessage: String; ParseMode: TParseMode; DisableWebPagePreview: Boolean;
   ReplyMarkup: TReplyMarkup; ReplyToMessageID: Integer; DisableNotification: Boolean): Boolean;
+var
+  aMsgThrdID: Integer;
 begin
+  if FCurrentIsTopicMessage then  // Need for the checking is questionable
+    aMsgThrdID:=FCurrentThreadId
+  else
+    aMsgThrdID:=_nullThrd;
   Result:=sendMessage(FCurrentChatId, AMessage, ParseMode, DisableWebPagePreview, ReplyMarkup,
-    ReplyToMessageID, DisableNotification);
+    ReplyToMessageID, DisableNotification, aMsgThrdID);
 end;
 
 { https://core.telegram.org/bots/api#sendphoto }
