@@ -16,6 +16,7 @@ type
   TTelegramUserObj = class;
   TTelegramChatObj = class;
   TCallbackQueryObj = class;
+  TTelegramBusinessConnectionObj = class;
   TTelegramLocation = class; 
   TTelegramContact = class;
   TArrayOfPhotoSize = class(TJSONArray);
@@ -31,7 +32,7 @@ type
 
   TUpdateType = (utMessage, utEditedMessage, utChannelPost, utEditedChannelPost, utInlineQuery,
     utChosenInlineResult, utCallbackQuery, utShippingQuery, utPreCheckoutQuery, utMyChatMember, utChatMember,
-    utUnknown);
+    utBusinessConnection, utBusinessMessage, utUnknown);
   TChatType = (ctPrivate, ctGroup, ctSuperGroup, ctChannel, ctUnknown);
   TChatMemberStatus = (msCreator, msAdministrator, msMember, msRestricted, msLeft, msKicked, msUnknown);
   TUpdateSet = set of TUpdateType;
@@ -57,6 +58,8 @@ type
     FUpdateParameter: TTelegramObj;
     fUpdateId: Integer;
     FUpdateType: TUpdateType;
+    function GetBusinessConnection: TTelegramBusinessConnectionObj;
+    function GetBusinessMessage: TTelegramMessageObj;
     function GetCallbackQuery: TCallbackQueryObj;
     function GetChannelPost: TTelegramMessageObj;
     function GetChosenInlineResult: TTelegramChosenInlineResultObj;
@@ -80,6 +83,8 @@ type
     property ChannelPost: TTelegramMessageObj read GetChannelPost;
     property EditedChannelPost: TTelegramMessageObj read GetEditedChannelPost;
     property PreCheckoutQuery: TTelegramPreCheckOutQuery read GetPreCheckoutQuery;
+    property BusinessConnection: TTelegramBusinessConnectionObj read GetBusinessConnection; 
+    property BusinessMessage: TTelegramMessageObj read GetBusinessMessage;
   end;
 
   TContentType = (cntUnknown, cntText, cntPhoto, cntVideo, cntAudio, cntVoice, cntDocument, cntLocation, cntContact);
@@ -89,6 +94,7 @@ type
   TTelegramMessageObj = class(TTelegramObj)
   private
     FAudio: TTelegramAudio;
+    FBusinessConnectionID: String;
     FCaption: String;
     FChat: TTelegramChatObj;
     FContact: TTelegramContact;
@@ -117,6 +123,7 @@ type
     destructor Destroy; override;
     function ContentFromMessage(out aText: String; out aMedia: String): TContentType;
     property Caption: String read FCaption;
+    property BusinessConnectionID: String read FBusinessConnectionID;
     property MessageId: Integer read fMessageId;
     property From: TTelegramUserObj read FFrom;
     property Date: Int64 read FDate;
@@ -173,6 +180,27 @@ type
     property Message: TTelegramMessageObj read FMessage;
     property ChatInstance: String read FChatInstance;
     property Data: String read FData;  // optional 1-64 bytes!!!
+  end;
+
+  { TTelegramBusinessConnectionObj }
+
+  TTelegramBusinessConnectionObj = class(TTelegramObj)
+  private
+    FCanReply: Boolean;
+    FDate: Int64;
+    FID: Int64;
+    FUser: TTelegramUserObj;
+    FUserChatID: Int64;
+    FIsEnabled: Boolean;
+  public
+    constructor Create(JSONObject: TJSONObject); override;
+    destructor Destroy; override;
+    property ID: Int64 read FID;
+    property User: TTelegramUserObj read FUser;
+    property UserChatID: Int64 read FUserChatID;
+    property Date: Int64 read FDate; // Unix Time
+    property CanReply: Boolean read FCanReply;
+    property IsEnabled: Boolean read FIsEnabled;
   end;
 
   { TTelegramInlineQueryObj }
@@ -514,11 +542,12 @@ type
     TELEGRAM_REQUEST_GETUPDATES = 'getUpdates';
     UpdateTypeAliases: array[TUpdateType] of String = ('message', 'edited_message', 'channel_post',
       'edited_channel_post', 'inline_query', 'chosen_inline_result', 'callback_query',
-      'shipping_query', 'pre_checkout_query', 'my_chat_member', 'chat_member', '');
+      'shipping_query', 'pre_checkout_query', 'my_chat_member', 'chat_member', 'business_connection',
+      'business_message', '');
     UpdateTypeClasses: array[TUpdateType] of TTelegramObjClass = (TTelegramMessageObj,
       TTelegramMessageObj, TTelegramMessageObj, TTelegramMessageObj, TTelegramInlineQueryObj,
       TTelegramChosenInlineResultObj, TCallbackQueryObj, TTelegramObj, TTelegramPreCheckOutQuery,
-      TTelegramObj, TTelegramObj, TTelegramObj);
+      TTelegramObj, TTelegramObj, TTelegramBusinessConnectionObj, TTelegramMessageObj, TTelegramObj);
     _nullThrd = 0;
 
 function AllowedUpdatesToJSON(const AllowedUpdates: TUpdateSet): TJSONArray;
@@ -537,6 +566,7 @@ const
   s_FileName = 'file_name';
   s_IsTpcMsg = 'is_topic_message';
   s_MsgThrdID ='message_thread_id';
+  s_BsnsCnctnID='business_connection_id';
 
 function AllowedUpdatesToJSON(const AllowedUpdates: TUpdateSet): TJSONArray;
 var
@@ -910,6 +940,25 @@ begin
   inherited Destroy;
 end;
 
+{ TTelegramBusinessConnectionObj }
+
+constructor TTelegramBusinessConnectionObj.Create(JSONObject: TJSONObject);
+begin
+  inherited Create(JSONObject);
+  FID := fJSON.Int64s['id'];
+  FUser:=TTelegramUserObj.CreateFromJSONObject(fJSON.Find('user', jtObject) as TJSONObject) as TTelegramUserObj;
+  FUserChatID:= fJSON.Int64s['user_chat_id'];
+  FDate:=fJSON.Int64s['date'];
+  FCanReply:=fJSON.Booleans['can_reply'];    
+  FIsEnabled:=fJSON.Booleans['is_enabled'];
+end;
+
+destructor TTelegramBusinessConnectionObj.Destroy;
+begin
+  FUser.Free;
+  inherited Destroy;
+end;
+
 { TTelegramUserObj }
 
 constructor TTelegramUserObj.Create(JSONObject: TJSONObject);
@@ -1003,6 +1052,22 @@ function TTelegramUpdateObj.GetCallbackQuery: TCallbackQueryObj;
 begin
   if FUpdateType=utCallbackQuery then
     Result:=TCallbackQueryObj(FUpdateParameter)
+  else
+    Result:=nil;
+end;
+
+function TTelegramUpdateObj.GetBusinessConnection: TTelegramBusinessConnectionObj;
+begin
+  if FUpdateType=utBusinessConnection then
+    Result:=TTelegramBusinessConnectionObj(FUpdateParameter)
+  else
+    Result:=nil;
+end;
+
+function TTelegramUpdateObj.GetBusinessMessage: TTelegramMessageObj;
+begin
+  if FUpdateType=utBusinessMessage then
+    Result:=TTelegramMessageObj(FUpdateParameter)
   else
     Result:=nil;
 end;
@@ -1121,7 +1186,7 @@ begin
     TTelegramSuccessfulPayment.CreateFromJSONObject(fJSON.Find('successful_payment', jtObject) as TJSONObject)
     as TTelegramSuccessfulPayment;
 
-
+  FBusinessConnectionID:=fJSON.Get(s_BsnsCnctnID, EmptyStr);
 
 end;
 
