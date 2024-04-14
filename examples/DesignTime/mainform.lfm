@@ -7,7 +7,7 @@ object Form1: TForm1
   ClientHeight = 552
   ClientWidth = 415
   DesignTimePPI = 120
-  LCLVersion = '2.2.6.0'
+  LCLVersion = '3.2.0.0'
   object GroupBox1: TGroupBox
     Left = 16
     Height = 184
@@ -24,8 +24,8 @@ object Form1: TForm1
       Top = 16
       Width = 200
       Caption = 'Activate telegram bot'
-      OnClick = BtnStartClick
       TabOrder = 0
+      OnClick = BtnStartClick
     end
     object BtnStop: TButton
       Left = 232
@@ -35,8 +35,8 @@ object Form1: TForm1
       Width = 94
       Caption = 'Deactivate'
       Enabled = False
-      OnClick = BtnStopClick
       TabOrder = 1
+      OnClick = BtnStopClick
     end
     object Label1: TLabel
       Left = 17
