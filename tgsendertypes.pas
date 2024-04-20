@@ -10,7 +10,7 @@ uses
   ;
 
 type
-  TParseMode = (pmDefault, pmMarkdown, pmHTML);
+  TParseMode = (pmDefault, pmMarkdown, pmHTML, pmMarkdownV2);
   TMediaType = (mtPhoto, mtVideo, mtUnknown);
   TInlineQueryResultType = (qrtArticle, qrtPhoto, qrtVideo, qrtAudio, qrtVoice, qrtMpeg4Gif,
     qrtDocument, qrtUnknown);
@@ -935,7 +935,7 @@ const
 
   s_BsnsCnctnID='business_connection_id';
 
-  ParseModes: array[TParseMode] of PChar = ('', 'Markdown', 'HTML');
+  ParseModes: array[TParseMode] of PChar = ('', 'Markdown', 'HTML', 'MarkdownV2');
   MediaTypes: array[TMediaType] of PChar = ('photo', 'video', '');
   QueryResultTypeArray: array[TInlineQueryResultType] of PChar =
     ('article', 'photo', 'video', 'audio', 'voice', 'mpeg4_gif', 'document', '');
