@@ -11,7 +11,8 @@ uses
 const
   mdCode='`';
 
-function MarkdownEscape(const S: String): String;
+function MarkdownEscape(const S: String): String; 
+function MarkdownEscapeV2(const S: String): String;
 function CaptionFromChat(aChat: TTelegramChatObj): String;
 function CaptionFromUser(AUser: TTelegramUserObj): String;
 function BuildLink(const aCaption, aLink: String; aMarkup: TParseMode = pmDefault): String;
@@ -20,6 +21,8 @@ implementation
 
 const
   MarkdownSpChars: array[0..3] of AnsiChar = ('\', '_', '*', '`');
+  MarkdownSpCharsV2: array[0..17] of AnsiChar = ('_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|',
+    '{', '}', '.', '!');
 
 function MarkdownEscape(const S: String): String;
 var
@@ -27,6 +30,15 @@ var
 begin
   Result:=S;
   for a in MarkdownSpChars do
+    Result:=StringReplace(Result, a, '\'+a, [rfReplaceAll]);
+end;
+
+function MarkdownEscapeV2(const S: String): String;
+var
+  a: AnsiChar;
+begin
+  Result:=S;
+  for a in MarkdownSpCharsV2 do
     Result:=StringReplace(Result, a, '\'+a, [rfReplaceAll]);
 end;
 
