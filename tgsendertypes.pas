@@ -2330,7 +2330,12 @@ end;
 
 function TTelegramSender.CurrentIsAdminUser: Boolean;
 begin
-  Result:=IsAdminUser(FCurrentChatId);
+{ for example, for business message security admin is only business message sender ("from" field)
+  but is not current chat id }
+  if Assigned(FCurrentUser) then
+    Result:=IsAdminUser(FCurrentUser.ID)
+  else
+    Result:=IsAdminUser(FCurrentChatId);
 end;
 
 function TTelegramSender.answerCallbackQuery(const CallbackQueryId: String;
