@@ -678,8 +678,8 @@ type
     property CurrentChat: TTelegramChatObj read FCurrentChat;
     property CurrentMessage: TTelegramMessageObj read FCurrentMessage;
     property CurrentUpdate: TTelegramUpdateObj read FUpdate;
-    { If the bot works in a country where telegram API is not available, one of the easiest ways is
-      to change the API endpoint to its mirror proxy }
+    property CurrentIsTopicMessage: Boolean read FCurrentIsTopicMessage; 
+    property CurrentThreadID: Integer read FCurrentThreadId;
     property FileObj: TTelegramFile read FFileObj write SetFileObj;
     property Language: string read FLanguage write SetLanguage;
     property LogDebug: Boolean read FLogDebug write SetLogDebug;
