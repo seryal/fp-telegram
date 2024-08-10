@@ -2321,7 +2321,7 @@ begin
       end;
       if Assigned(FUpdateLogger) then
         if CurrentIsSimpleUser then  // This is to ensure that admins and moderators do not affect the statistics
-          FUpdateLogger.Log(FUpdate.AsString);
+          FUpdateLogger.Log(AnUpdate.AsString);
     end;
     if Assigned(FOnReceiveUpdate) and not FUpdateProcessed then
       FOnReceiveUpdate(Self, AnUpdate);
