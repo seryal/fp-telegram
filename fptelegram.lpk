@@ -23,7 +23,7 @@
     </CompilerOptions>
     <Description Value="Telegram bots API library"/>
     <License Value="MIT License"/>
-    <Version Release="4" Build="2"/>
+    <Version Release="5"/>
     <Files Count="6">
       <Item1>
         <Filename Value="tgsendertypes.pas"/>

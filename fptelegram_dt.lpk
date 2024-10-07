@@ -4,6 +4,7 @@
     <PathDelim Value="\"/>
     <Name Value="fptelegram_dt"/>
     <Type Value="RunAndDesignTime"/>
+    <Author Value="Al-Muhandis (Renat Suleymanov) (https://github.com/Al-Muhandis/)"/>
     <CompilerOptions>
       <Version Value="11"/>
       <PathDelim Value="\"/>
@@ -17,7 +18,9 @@
         </CompilerMessages>
       </Other>
     </CompilerOptions>
-    <Version Release="1" Build="2"/>
+    <Description Value="DesignTime library for telegram bots"/>
+    <License Value="MIT"/>
+    <Version Release="1" Build="3"/>
     <Files>
       <Item>
         <Filename Value="designtime\tgbot_dt.pas"/>
