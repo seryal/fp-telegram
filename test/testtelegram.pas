@@ -48,6 +48,7 @@ type
     procedure getMyCommands;
     procedure setMyCommands;
     procedure editMessageMediaStream;
+    procedure getChatAdministators;
   end;
 
   { TTestProxySender }
@@ -557,6 +558,15 @@ begin
     aStream.Free;
     aMedia.Free;
   end;
+end;
+
+procedure TTestSender.getChatAdministators;
+var
+  aAdministrators: TJSONArray;
+begin
+  Bot.getChatAdministrators(ChatID, aAdministrators);
+  SaveJSONData(Bot.JSONResponse, '~responce.json');
+  aAdministrators.Free;
 end;
 
 initialization

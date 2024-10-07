@@ -669,6 +669,7 @@ type
       It can be useful for simplifying and unifying the sending of content }
     function SendContent(aChatID: Int64; aContentType: TContentType; const aText, aMedia: String;
       aParseMode: TParseMode =pmDefault; aReplyMarkup: TReplyMarkup = nil): Boolean;
+    function getChatAdministrators(chat_id: Int64; out aChatMembers: TJSONArray): Boolean;
     property APIEndPoint: String read GetAPIEndPoint write SetAPIEndPoint;
     property BotUser: TTelegramUserObj read FBotUser;
     property JSONResponse: TJSONData read FJSONResponse write SetJSONResponse;
@@ -932,6 +933,8 @@ const
   s_ChtAdmnstrtrs='chat_administrators';
   s_ChtMmbr='chat_member';
   s_MsgThrdID ='message_thread_id';
+
+  s_GetChatAdministrators='getChatAdministrators';
 
   s_BsnsCnctnID='business_connection_id';
 
@@ -4014,6 +4017,25 @@ begin
     cntVideo:    Result:=sendVideo(aChatID, aMedia, aText, aParseMode, aReplyMarkup);
     cntVoice:    Result:=sendVoice(aChatID, aMedia, aText, aParseMode, 0, False, 0, aReplyMarkup);
     cntDocument: Result:=sendDocument(aChatID, aMedia, aText, aParseMode, False, 0, aReplyMarkup);
+  end;
+end;
+
+function TTelegramSender.getChatAdministrators(chat_id: Int64; out aChatMembers: TJSONArray): Boolean;
+var
+  sendObj: TJSONObject;
+begin
+  Result:=False;
+  sendObj:=TJSONObject.Create;
+  with sendObj do
+  try
+    Add(s_ChatId, chat_id);
+    Result:=SendMethod(s_GetChatAdministrators, sendObj);
+    if Result and Assigned(JSONResponse) then
+      aChatMembers:=JSONResponse.Clone as TJSONArray
+    else
+      aChatMembers:=TJSONArray.Create;
+  finally
+    Free;
   end;
 end;
 

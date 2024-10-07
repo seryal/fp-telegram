@@ -62,7 +62,7 @@ begin
   FChatID:=Conf.ReadInt64('Chat', 'ID', 0);
   if FChatID=0 then
     Fail('Please, specify chat ID in testtelegram.ini! See readme.md');
-  FUserID:=Conf.ReadInteger('User', 'ID', 0);
+  FUserID:=Conf.ReadInt64('User', 'ID', 0);
 end;
 
 procedure TTestTelegramClass.TearDown;
