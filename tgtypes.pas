@@ -11,6 +11,7 @@ type
   TTelegramUpdateObj = class;
   TTelegramMessageObj = class;
   TTelegramMessageEntityObj = class;
+  TTelegramChatMemberUpdated = class;
   TTelegramInlineQueryObj = class;
   TTelegramChosenInlineResultObj = class;
   TTelegramUserObj = class;
@@ -62,11 +63,13 @@ type
     function GetBusinessMessage: TTelegramMessageObj;
     function GetCallbackQuery: TCallbackQueryObj;
     function GetChannelPost: TTelegramMessageObj;
+    function GetChatMember: TTelegramChatMemberUpdated;
     function GetChosenInlineResult: TTelegramChosenInlineResultObj;
     function GetEditedChannelPost: TTelegramMessageObj;
     function GetEditedMessage: TTelegramMessageObj;
     function GetInlineQuery: TTelegramInlineQueryObj;
     function GetMessage: TTelegramMessageObj;
+    function GetMyChatMember: TTelegramChatMemberUpdated;
     function GetPreCheckoutQuery: TTelegramPreCheckOutQuery;
     function ParseUpdateParameter: TUpdateType;
   public
@@ -84,7 +87,9 @@ type
     property EditedChannelPost: TTelegramMessageObj read GetEditedChannelPost;
     property PreCheckoutQuery: TTelegramPreCheckOutQuery read GetPreCheckoutQuery;
     property BusinessConnection: TTelegramBusinessConnectionObj read GetBusinessConnection; 
-    property BusinessMessage: TTelegramMessageObj read GetBusinessMessage;
+    property BusinessMessage: TTelegramMessageObj read GetBusinessMessage;   
+    property MyChatMember: TTelegramChatMemberUpdated read GetMyChatMember;
+    property ChatMember: TTelegramChatMemberUpdated read GetChatMember;
   end;
 
   TContentType = (cntUnknown, cntText, cntPhoto, cntVideo, cntAudio, cntVoice, cntDocument, cntLocation, cntContact);
@@ -428,6 +433,26 @@ type
     property StatusType: TChatMemberStatus read FChatMemberStatus;
   end;
 
+  { TTelegramChatMemberUpdated }
+
+  TTelegramChatMemberUpdated = class(TTelegramObj)
+  private
+    fChat: TTelegramChatObj;
+    fDate: Integer;
+    fNewChatMember: TTelegramChatMember;
+    fOldChatMember: TTelegramChatMember;
+    fFrom: TTelegramUserObj;
+  public
+    constructor Create(JSONObject: TJSONObject); override;
+    destructor Destroy; override;
+    property Chat: TTelegramChatObj read fChat;
+    property From: TTelegramUserObj read fFrom;
+    property Date: Integer read fDate;
+    property OldChatMember: TTelegramChatMember read fOldChatMember;
+    property NewChatMember: TTelegramChatMember read fNewChatMember;
+  end;
+
+
   { TTelegramWebhookInfo }
 
   TTelegramWebhookInfo = class(TTelegramObj)
@@ -544,13 +569,17 @@ type
       'edited_channel_post', 'inline_query', 'chosen_inline_result', 'callback_query',
       'shipping_query', 'pre_checkout_query', 'my_chat_member', 'chat_member', 'business_connection',
       'business_message', '');
-    UpdateTypeClasses: array[TUpdateType] of TTelegramObjClass = (TTelegramMessageObj,
-      TTelegramMessageObj, TTelegramMessageObj, TTelegramMessageObj, TTelegramInlineQueryObj,
-      TTelegramChosenInlineResultObj, TCallbackQueryObj, TTelegramObj, TTelegramPreCheckOutQuery,
-      TTelegramObj, TTelegramObj, TTelegramBusinessConnectionObj, TTelegramMessageObj, TTelegramObj);
+    UpdateTypeClasses: array[TUpdateType] of TTelegramObjClass = (TTelegramMessageObj, TTelegramMessageObj,
+      TTelegramMessageObj, TTelegramMessageObj, TTelegramInlineQueryObj, TTelegramChosenInlineResultObj,
+      TCallbackQueryObj, TTelegramObj, TTelegramPreCheckOutQuery, TTelegramChatMemberUpdated,
+      TTelegramChatMemberUpdated, TTelegramBusinessConnectionObj, TTelegramMessageObj, TTelegramObj);
     _nullThrd = 0;
 
 function AllowedUpdatesToJSON(const AllowedUpdates: TUpdateSet): TJSONArray;
+
+const
+  utAllUpdates = [Low(TUpdateType)..Pred(High(TUpdateType))];
+  utDefaultUpdates = utAllUpdates-[utChatMember];
 
 implementation
 
@@ -560,7 +589,6 @@ uses
 
 const
   API_URL_FILE='https://api.telegram.org/file/bot';
-  utAllUpdates = [utMessage..utPreCheckoutQuery];
 
   s_FileSize = 'file_size';  
   s_FileName = 'file_name';
@@ -752,6 +780,29 @@ end;
 destructor TTelegramChatMember.Destroy;
 begin
   FUser.Free;
+  inherited Destroy;
+end;
+
+{ TTelegramChatMemberUpdated }
+
+constructor TTelegramChatMemberUpdated.Create(JSONObject: TJSONObject);
+begin
+  inherited Create(JSONObject);
+  fChat:=TTelegramChatObj.CreateFromJSONObject(fJSON.Find('chat', jtObject) as TJSONObject) as TTelegramChatObj;
+  fFrom:=TTelegramUserObj.CreateFromJSONObject(fJSON.Find('from', jtObject) as TJSONObject) as TTelegramUserObj;
+  fDate:=fJSON.Integers['date'];
+  fOldChatMember:=TTelegramChatMember.CreateFromJSONObject(fJSON.Find('old_chat_member', jtObject) as TJSONObject)
+    as TTelegramChatMember;   
+  fNewChatMember:=TTelegramChatMember.CreateFromJSONObject(fJSON.Find('new_chat_member', jtObject) as TJSONObject)
+    as TTelegramChatMember;
+end;
+
+destructor TTelegramChatMemberUpdated.Destroy;
+begin
+  fChat.Free;
+  fFrom.Free;
+  fOldChatMember.Free;
+  fNewChatMember.Free;
   inherited Destroy;
 end;
 
@@ -1040,6 +1091,14 @@ begin
     Result:=nil;
 end;
 
+function TTelegramUpdateObj.GetMyChatMember: TTelegramChatMemberUpdated;
+begin
+  if FUpdateType=utMyChatMember then
+    Result:=TTelegramChatMemberUpdated(FUpdateParameter)
+  else
+    Result:=nil;
+end;
+
 function TTelegramUpdateObj.GetPreCheckoutQuery: TTelegramPreCheckOutQuery;
 begin
   if FUpdateType=utPreCheckoutQuery then
@@ -1076,6 +1135,14 @@ function TTelegramUpdateObj.GetChannelPost: TTelegramMessageObj;
 begin
   if FUpdateType=utChannelPost then
     Result:=TTelegramMessageObj(FUpdateParameter)
+  else
+    Result:=nil;
+end;
+
+function TTelegramUpdateObj.GetChatMember: TTelegramChatMemberUpdated;
+begin
+  if FUpdateType=utChatMember then
+    Result:=TTelegramChatMemberUpdated(FUpdateParameter)
   else
     Result:=nil;
 end;

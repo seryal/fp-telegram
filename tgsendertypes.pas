@@ -15,6 +15,7 @@ type
   TInlineQueryResultType = (qrtArticle, qrtPhoto, qrtVideo, qrtAudio, qrtVoice, qrtMpeg4Gif,
     qrtDocument, qrtUnknown);
   TLogMessageEvent = procedure(ASender: TObject; EventType: TEventType; const Msg: String) of object;
+  TTelegramSender = class;
   TInlineKeyboardButton = class;
   TKeyboardButton = class;
   TKeybordButtonArray = class;
@@ -25,7 +26,8 @@ type
   TCommandEvent = procedure (ASender: TObject; const ACommand: String;
     AMessage: TTelegramMessageObj) of object;
   TCallbackEvent = procedure (ASender: TObject; ACallback: TCallbackQueryObj) of object;
-  TMessageEvent = procedure (ASender: TObject; AMessage: TTelegramMessageObj) of object;  
+  TMessageEvent = procedure (ASender: TObject; AMessage: TTelegramMessageObj) of object;
+  TChatMemberEvent = procedure (ASender: TTelegramSender; aChatMemberUpdated: TTelegramChatMemberUpdated) of object;
   TBusinessConnectionEvent = procedure (ASender: TObject; ABusinessConnection: TTelegramBusinessConnectionObj) of object;
   TInlineQueryEvent = procedure (ASender: TObject; AnInlineQuery: TTelegramInlineQueryObj) of object;
   TChosenInlineResultEvent = procedure (ASender: TObject;
@@ -444,11 +446,13 @@ type
     FOnReceiveBusinessMessage: TMessageEvent;
     FOnReceiveCallbackQuery: TCallbackEvent;
     FOnReceiveChannelPost: TMessageEvent;
+    FOnReceiveChatMemberUpdated: TChatMemberEvent;
     FOnReceiveChosenInlineResult: TChosenInlineResultEvent;
     FOnReceiveEditedChannelPost: TMessageEvent;
     FOnReceiveEditedMessage: TMessageEvent;
     FOnReceiveInlineQuery: TInlineQueryEvent;
     FOnReceiveMessage: TMessageEvent;
+    FOnReceiveMyChatMemberUpdated: TChatMemberEvent;
     FOnReceivePreCheckoutQuery: TPreCheckoutQueryEvent;
     FOnReceiveSuccessfulPayment: TMessageEvent;
     FUpdate: TTelegramUpdateObj;
@@ -522,8 +526,8 @@ type
     procedure DoReceiveInlineQuery(AnInlineQuery: TTelegramInlineQueryObj);  virtual;
     procedure DoReceiveChosenInlineResult(AChosenInlineResult: TTelegramChosenInlineResultObj); virtual;
     procedure DoReceivePreCheckoutQuery(APreCheckoutQuery: TTelegramPreCheckOutQuery); virtual;  
-    procedure DoReceiveMyChatMemberQuery(AMyChatMember: TTelegramObj); virtual;
-    procedure DoReceiveChatMemberQuery(AChatMember: TTelegramObj); virtual;
+    procedure DoReceiveMyChatMemberQuery(AMyChatMember: TTelegramChatMemberUpdated); virtual;
+    procedure DoReceiveChatMemberQuery(AChatMember: TTelegramChatMemberUpdated); virtual;
     procedure DoReceiveSuccessfulPayment(AMessage: TTelegramMessageObj); virtual;  
     procedure DoReceiveBusinessConnection(ABusinessConnection: TTelegramBusinessConnectionObj); virtual; 
     procedure DoReceiveBusinessMessage(ABusinessMessage: TTelegramMessageObj); virtual;
@@ -738,7 +742,11 @@ type
     property OnReceiveBusinessConnection: TBusinessConnectionEvent read FOnReceiveBusinessConnection
       write FOnReceiveBusinessConnection;
     property OnReceiveBusinessMessage: TMessageEvent read FOnReceiveBusinessMessage
-      write FOnReceiveBusinessMessage;
+      write FOnReceiveBusinessMessage;    
+    property OnReceiveMyChatMemberUpdated: TChatMemberEvent read FOnReceiveMyChatMemberUpdated
+      write FOnReceiveMyChatMemberUpdated;
+    property OnReceiveChatMemberUpdated: TChatMemberEvent read FOnReceiveChatMemberUpdated
+      write FOnReceiveChatMemberUpdated;
   end;
 
  { Procedure style method to send message from Bot to chat/user }
@@ -2239,14 +2247,38 @@ begin
     FOnReceivePreCheckoutQuery(Self, APreCheckoutQuery);
 end;
 
-procedure TTelegramSender.DoReceiveMyChatMemberQuery(AMyChatMember: TTelegramObj);
+procedure TTelegramSender.DoReceiveMyChatMemberQuery(AMyChatMember: TTelegramChatMemberUpdated);
 begin
-  { #todo : Parser }
+  FCurrentMessage:=nil;
+  FCurrentChat:=AMyChatMember.Chat;
+  FCurrentUser:=AMyChatMember.From;
+  FCurrentThreadId:=_nullThrd;
+  FCurrentIsTopicMessage:=False;
+  FCurrentChatId:=FCurrentUser.ID;
+  if CurrentIsBanned then
+    Exit;                          
+  DoAfterParseUpdate;
+  if FLanguage=EmptyStr then
+    SetLanguage(CurrentLanguage(FCurrentUser));
+  if Assigned(FOnReceiveMyChatMemberUpdated) then
+    FOnReceiveMyChatMemberUpdated(Self, AMyChatMember);
 end;
 
-procedure TTelegramSender.DoReceiveChatMemberQuery(AChatMember: TTelegramObj);
+procedure TTelegramSender.DoReceiveChatMemberQuery(AChatMember: TTelegramChatMemberUpdated);
 begin
-  { #todo :  Parser }
+  FCurrentMessage:=nil;
+  FCurrentChat:=AChatMember.Chat;
+  FCurrentUser:=AChatMember.From;
+  FCurrentThreadId:=_nullThrd;
+  FCurrentIsTopicMessage:=False;
+  FCurrentChatId:=FCurrentUser.ID;
+  if CurrentIsBanned then
+    Exit;
+  DoAfterParseUpdate;
+  if FLanguage=EmptyStr then
+    SetLanguage(CurrentLanguage(FCurrentUser));
+  if Assigned(FOnReceiveChatMemberUpdated) then
+    FOnReceiveChatMemberUpdated(Self, AChatMember);
 end;
 
 procedure TTelegramSender.DoReceiveSuccessfulPayment(
@@ -2317,8 +2349,8 @@ begin
         utChosenInlineResult: DoReceiveChosenInlineResult(AnUpdate.ChosenInlineResult);
         utCallbackQuery:      DoReceiveCallbackQuery(AnUpdate.CallbackQuery);
         utPreCheckoutQuery:   DoReceivePreCheckoutQuery(AnUpdate.PreCheckoutQuery);
-        utMyChatMember:       DoReceiveMyChatMemberQuery(AnUpdate);
-        utChatMember:         DoReceiveChatMemberQuery(AnUpdate);
+        utMyChatMember:       DoReceiveMyChatMemberQuery(AnUpdate.MyChatMember);
+        utChatMember:         DoReceiveChatMemberQuery(AnUpdate.ChatMember);
         utBusinessConnection: DoReceiveBusinessConnection(AnUpdate.BusinessConnection);
         utBusinessMessage:    DoReceiveBusinessMessage(AnUpdate.BusinessMessage);
       end;
