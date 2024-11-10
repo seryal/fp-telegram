@@ -16,13 +16,16 @@ type
   { TTelegramBot }
   TTelegramBot = class(TTelegramSender)
   private
+    FAutoTranslate: Boolean;
     FCallbackAnswered: Boolean;
     FCallbackHandlers: TCallbackHandlersMap;
     FHelpText: String;
+
     FFeedbackText: String;
     FFeedbackThanks: String;
     //FOnRate: TRateEvent;
     FOnReceiveDeepLinking: TReceiveDeepLinkEvent;
+
     FPublicStat: Boolean;
     FStartText: String;
     FStatLogger: TtgStatLog;
@@ -59,7 +62,6 @@ type
       const {%H-}ACommand: String; AMessage: TTelegramMessageObj);
     procedure TlgrmStatFHandler({%H-}ASender: TObject;
       const {%H-}ACommand: String; AMessage: TTelegramMessageObj);
-    procedure LangTranslate(const {%H-}ALang: String);
     procedure SendStatInlineKeyboard(SendFile: Boolean = False);
     procedure StatLog(const AMessage: String; UpdateType: TUpdateType);
   protected
@@ -91,8 +93,10 @@ type
     destructor Destroy; override;
     procedure DoReceiveDeepLinking(const AParameter: String);
     procedure EditOrSendMessage(const AMessage: String; AParseMode: TParseMode = pmDefault;
-      ReplyMarkup: TReplyMarkup = nil; TryEdit: Boolean = False);
-    procedure LoadUserStatusValues(AStrings: TStrings);
+      ReplyMarkup: TReplyMarkup = nil; TryEdit: Boolean = False);    
+    procedure LangTranslate(const {%H-}ALang: String);
+    procedure LoadUserStatusValues(AStrings: TStrings); 
+    property AutoTranslate: Boolean read FAutoTranslate write FAutoTranslate;
     property CallbackHandlers [const Command: String]: TCallbackEvent read GetCallbackHandlers
       write SetCallbackHandlers;  // It can create command handlers by assigning their to array elements
     property StartText: String read FStartText write FStartText; // Text for /start command reply
@@ -112,7 +116,7 @@ function FormatStatRec(const S: String): String;
 implementation
 
 uses
-  tgutils, fpjson, StrUtils, DateUtils, {$IFDEF poi18n}Translations, {$ENDIF} FileUtil
+  tgutils, fpjson, StrUtils, DateUtils, {$IFNDEF ni18n} Translations,{$ENDIF} FileUtil
   ;
 
 resourcestring
@@ -958,6 +962,7 @@ begin
   FCallbackHandlers:=TCallbackHandlersMap.create;
   FPublicStat:=False;
   FCallbackAnswered:=False;
+  FAutoTranslate:=True;
 end;
 
 destructor TTelegramBot.Destroy;
@@ -993,41 +998,46 @@ var
   H: TCallbackEvent;
 begin
   AHandled:=False;
-  FCallbackAnswered:=False;
-  inherited DoReceiveCallbackQuery(ACallback);
-  if CurrentIsAdminUser or PublicStat then
-  begin
-    if AnsiStartsStr(s_GetStat+' ', ACallback.Data) then
+  FCallbackAnswered:=False;   
+  try
+    inherited DoReceiveCallbackQuery(ACallback);
+    if CurrentIsAdminUser or PublicStat then
+    begin
+      if AnsiStartsStr(s_GetStat+' ', ACallback.Data) then
+      begin
+        AHandled:=True;
+        DoCallbackQueryStat(ACallback);
+      end;
+      if AnsiStartsStr(s_GetStat+s_File+' ', ACallback.Data) then
+      begin
+        AHandled:=True;
+        DoCallbackQueryStat(ACallback, True);
+      end;
+    end;
+    if CurrentIsAdminUser and AnsiStartsStr(s_GetUsers+' ', ACallback.Data) then
     begin
       AHandled:=True;
-      DoCallbackQueryStat(ACallback);
+      DoCallbackQueryGetUsers(ACallback);
     end;
-    if AnsiStartsStr(s_GetStat+s_File+' ', ACallback.Data) then
+    StatLog(ACallback.Data, utCallbackQuery);
+    if not AHandled then
     begin
-      AHandled:=True;
-      DoCallbackQueryStat(ACallback, True);
+      AFlag:=RequestWhenAnswer;
+      ACommand:=ExtractWord(1, ACallback.Data, [' ']);
+      if FCallbackHandlers.contains(ACommand) then
+      begin
+        H:=FCallbackHandlers.Items[ACommand];
+        H(Self, ACallback);
+        RequestWhenAnswer:=False;
+        if not FCallbackAnswered then
+          answerCallbackQuery(ACallback.ID); // if user do not call this in callback procedure
+        RequestWhenAnswer:=AFlag;
+        AHandled:=True;
+      end;
     end;
-  end;
-  if CurrentIsAdminUser and AnsiStartsStr(s_GetUsers+' ', ACallback.Data) then
-  begin
-    AHandled:=True;
-    DoCallbackQueryGetUsers(ACallback);
-  end;
-  StatLog(ACallback.Data, utCallbackQuery);
-  if not AHandled then
-  begin
-    AFlag:=RequestWhenAnswer;
-    ACommand:=ExtractWord(1, ACallback.Data, [' ']);
-    if FCallbackHandlers.contains(ACommand) then
-    begin
-      H:=FCallbackHandlers.Items[ACommand];
-      H(Self, ACallback);
-      RequestWhenAnswer:=False;
-      if not FCallbackAnswered then
-        answerCallbackQuery(ACallback.ID); // if user do not call this in callback procedure
-      RequestWhenAnswer:=AFlag;
-      AHandled:=True;
-    end;
+  except
+    on E:Exception do
+      Logger.Error('Error TTelegramBot.DoReceiveCallbackQuery ('+E.ClassName+': '+E.Message+')'); 
   end;
 end;
 
@@ -1097,7 +1107,8 @@ end;
 procedure TTelegramBot.SetLanguage(const ALang: String);
 begin
   inherited SetLanguage(ALang);
-  LangTranslate(ALang);
+  if FAutoTranslate then
+    LangTranslate(ALang);
 end;
 
 function TTelegramBot.answerCallbackQuery(const CallbackQueryId: String; const Text: String; ShowAlert: Boolean;
