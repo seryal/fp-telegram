@@ -5,7 +5,7 @@ unit tgbot_dt;
 interface
 
 uses
-  Classes, SysUtils, tgbot, receiverthread, tgsendertypes, fpjson
+  Classes, SysUtils, receiverthread, tgsendertypes, fpjson
   ;
 
 type

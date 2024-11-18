@@ -8,7 +8,7 @@ unit fptelegram_dt;
 interface
 
 uses
-  DTTelegramBot, LazarusPackageIntf;
+  tgbot_dt, DTTelegramBot, receiverthread, LazarusPackageIntf;
 
 implementation
 

@@ -5,7 +5,7 @@ unit MainForm;
 interface
 
 uses
-  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, DTTelegramBot, tgtypes, tgsendertypes, tgbot_dt
+  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, tgtypes, tgsendertypes, tgbot_dt
   ;
 
 type
