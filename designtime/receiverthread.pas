@@ -131,7 +131,6 @@ begin
     FLogger:=TEventLog.Create(nil);
     FLogger.Identification:='Receiver thread';
     FLogger.LogType:=ltFile;
-    FLogger.Active:=True;
     FLogger.AppendContent:=True;
   end;
   Result:=FLogger;
@@ -146,7 +145,7 @@ begin
   FBot.Logger:=Logger;
   FTerminated:=False;
   FLPTimeout:=4;
-  Logger.Info('Log started');
+  //Logger.Info('Log started');
 end;
 
 destructor TLongPollingThread.Destroy;

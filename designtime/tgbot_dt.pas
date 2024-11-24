@@ -169,6 +169,9 @@ type
     FOnReceiveUpdate: TOnUpdateEvent;
     FOnDisconnectReceiver: TTelegramBotEvent;
     FReceiver: TDTLongPollingThread;
+    FReceiverLogActive: Boolean;
+    FReceiverLogDebug: Boolean;
+    FReceiverLogFilename: String;
     FReplyMarkup: TReplyMarkupCollection;
     FSenderBot: TTelegramSender;
     FStartStrings: TStringList;
@@ -205,6 +208,9 @@ type
     { This event will be triggered if none of the other events have been handled (UpdateProcessed = True) after
       receiving the update from the telegram server. }
     property OnReceiveUpdate: TOnUpdateEvent read FOnReceiveUpdate write FOnReceiveUpdate;
+    property ReceiverLogFilename: String read FReceiverLogFilename write FReceiverLogFilename;
+    property ReceiverLogActive: Boolean read FReceiverLogActive write FReceiverLogActive;    
+    property ReceiverLogDebug: Boolean read FReceiverLogDebug write FReceiverLogDebug;
     property ReplyMarkups: TReplyMarkupCollection read FReplyMarkup write SetReplyMarkups;
   end;
 
@@ -212,7 +218,9 @@ type
 
   TDTLongPollingThread = class(TLongPollingThread)
   private
-    FBot: TCustomDTTelegramBot;
+    FDTBot: TCustomDTTelegramBot;
+    FOnDisconnectReceiver: TTelegramBotEvent;
+    procedure CallOnDisconnectReceiver;
   protected
     procedure DoTerminate; override;
   public
@@ -494,7 +502,9 @@ begin
   FReceiver:=TDTLongPollingThread.Create(Self);
   FReceiver.FreeOnTerminate:=False;
   FReceiver.LongpollingTimeout:=LongPollingTime;
-  FReceiver.Bot.LogDebug:=True;
+  FReceiver.Bot.Logger.FileName:=FReceiverLogFilename;   
+  FReceiver.Bot.Logger.Active:=FReceiverLogActive;
+  FReceiver.Bot.LogDebug:=FReceiverLogDebug;
   FReceiver.Bot.Token:=FToken;
   FReceiver.Bot.StartText:=FStartStrings.Text;
   FReceiver.Bot.HelpText:=FHelpStrings.Text;
@@ -502,6 +512,8 @@ begin
   FReceiver.OnReceiveEditedMessage:=FOnReceiveEditedMessage;
   FReceiver.OnReceiveCallack:=FOnReceiveCallback;
   FReceiver.OnReceiveUpdate:=FOnReceiveUpdate;
+  if Assigned(FOnDisconnectReceiver) then
+    FReceiver.FOnDisconnectReceiver:=FOnDisconnectReceiver;
   FReceiver.Start;
 end;
 
@@ -607,17 +619,22 @@ end;
 
 { TDTLongPollingThread }
 
+procedure TDTLongPollingThread.CallOnDisconnectReceiver;
+begin
+  FOnDisconnectReceiver(FDTBot);
+end;
+
 procedure TDTLongPollingThread.DoTerminate;
 begin
   inherited DoTerminate;
-  if Assigned(FBot.FOnDisconnectReceiver) then
-    Synchronize(@FBot.DoDisconnectReceiver);
+  if Assigned(FOnDisconnectReceiver) then
+    Synchronize(@CallOnDisconnectReceiver);
 end;
 
 constructor TDTLongPollingThread.Create(aDTTelegramBot: TCustomDTTelegramBot);
-begin
+begin       
+  FDTBot:=aDTTelegramBot;
   inherited Create;
-  FBot:=aDTTelegramBot;
 end;
 
 end.
