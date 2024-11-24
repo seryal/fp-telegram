@@ -20,8 +20,9 @@ type
     Label1: TLabel;
     Label2: TLabel;
     Memo1: TMemo;
-    procedure BtnStartClick(Sender: TObject);
-    procedure BtnStopClick(Sender: TObject);
+    procedure BtnStartClick({%H-}Sender: TObject);
+    procedure BtnStopClick({%H-}Sender: TObject);
+    procedure DTLongPolBot1DisconnectReceiver({%H-}aSender: TCustomDTTelegramBot);
     procedure DTLongPollBot1ReceiveMessageUpdate(ASender: TObject; AMessage: TTelegramMessageObj);
   private
 
@@ -62,6 +63,10 @@ procedure TForm1.BtnStopClick(Sender: TObject);
 begin
   BtnStop.Enabled:=False;
   DTLongPolBot1.StopReceiver;
+end;
+
+procedure TForm1.DTLongPolBot1DisconnectReceiver(aSender: TCustomDTTelegramBot);
+begin
   BtnStart.Enabled:=True;
 end;
 

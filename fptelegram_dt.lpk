@@ -20,7 +20,7 @@
     </CompilerOptions>
     <Description Value="DesignTime library for telegram bots"/>
     <License Value="MIT"/>
-    <Version Release="1" Build="3"/>
+    <Version Release="2"/>
     <Files>
       <Item>
         <Filename Value="designtime\tgbot_dt.pas"/>

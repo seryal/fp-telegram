@@ -151,6 +151,9 @@ type
     property ReplyMarkups[aIndex: Integer]: TReplyMarkupItem read GetReplyMarkup;
   end;
 
+  TDTLongPollingThread = class;
+
+  TTelegramBotEvent = procedure (aSender: TCustomDTTelegramBot) of object;
 
   { TCustomDTTelegramBot }
 
@@ -164,7 +167,8 @@ type
     FOnReceiveEditedMessage: TMessageEvent;
     FOnReceiveMessageUpdate: TMessageEvent;
     FOnReceiveUpdate: TOnUpdateEvent;
-    FReceiver: TLongPollingThread;
+    FOnDisconnectReceiver: TTelegramBotEvent;
+    FReceiver: TDTLongPollingThread;
     FReplyMarkup: TReplyMarkupCollection;
     FSenderBot: TTelegramSender;
     FStartStrings: TStringList;
@@ -177,6 +181,8 @@ type
     procedure SetReplyMarkups(AValue: TReplyMarkupCollection);
     procedure SetStartText(AValue: TStrings);
     procedure SetActive(AValue: Boolean);
+  protected
+    procedure DoDisconnectReceiver;
   public
     procedure BotgetMe;
     constructor Create(AOwner: TComponent); override;
@@ -191,7 +197,8 @@ type
     property Token: String read FToken write FToken;
     property StartText: TStrings read GetStartText write SetStartText;
     property HelpText: TStrings read GetHelpText write SetHelpText;
-    property LongPollingTime: Integer read FLongPollingTime write FLongPollingTime;
+    property LongPollingTime: Integer read FLongPollingTime write FLongPollingTime; 
+    property OnDisconnectReceiver: TTelegramBotEvent read FOnDisconnectReceiver write FOnDisconnectReceiver;
     property OnReceiveCallback: TCallbackEvent read FOnReceiveCallback write FOnReceiveCallback;
     property OnReceiveMessageUpdate: TMessageEvent read FOnReceiveMessageUpdate write FOnReceiveMessageUpdate; 
     property OnReceiveEditedMessage: TMessageEvent read FOnReceiveEditedMessage write FOnReceiveEditedMessage;
@@ -199,6 +206,17 @@ type
       receiving the update from the telegram server. }
     property OnReceiveUpdate: TOnUpdateEvent read FOnReceiveUpdate write FOnReceiveUpdate;
     property ReplyMarkups: TReplyMarkupCollection read FReplyMarkup write SetReplyMarkups;
+  end;
+
+  { TDTLongPollingThread }
+
+  TDTLongPollingThread = class(TLongPollingThread)
+  private
+    FBot: TCustomDTTelegramBot;
+  protected
+    procedure DoTerminate; override;
+  public
+    constructor Create(aDTTelegramBot: TCustomDTTelegramBot);
   end;
 
   { TDTLongPollBot }
@@ -213,6 +231,7 @@ type
     property OnReceiveMessageUpdate;
     property OnReceiveCallback;
     property OnReceiveUpdate;
+    property OnDisconnectReceiver;
     property ReplyMarkups;
   end;
 
@@ -464,7 +483,6 @@ begin
   inherited Create(aOwner, TReplyMarkupItem);
 end;
 
-
 { TCustomDTTelegramBot }
 
 procedure TCustomDTTelegramBot.StartReceiver;
@@ -473,7 +491,7 @@ begin
     Exit;
   RaiseIfNoToken;
   FActive:=True;
-  FReceiver:=TLongPollingThread.Create;
+  FReceiver:=TDTLongPollingThread.Create(Self);
   FReceiver.FreeOnTerminate:=False;
   FReceiver.LongpollingTimeout:=LongPollingTime;
   FReceiver.Bot.LogDebug:=True;
@@ -544,6 +562,12 @@ begin
     StopReceiver;
 end;
 
+procedure TCustomDTTelegramBot.DoDisconnectReceiver;
+begin
+  if Assigned(FOnDisconnectReceiver) then
+    FOnDisconnectReceiver(Self);
+end;
+
 constructor TCustomDTTelegramBot.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
@@ -579,6 +603,21 @@ begin
   end
   else
     raise EDTTelegramBot.Create('Unsuccessful request!');
+end;
+
+{ TDTLongPollingThread }
+
+procedure TDTLongPollingThread.DoTerminate;
+begin
+  inherited DoTerminate;
+  if Assigned(FBot.FOnDisconnectReceiver) then
+    Synchronize(@FBot.DoDisconnectReceiver);
+end;
+
+constructor TDTLongPollingThread.Create(aDTTelegramBot: TCustomDTTelegramBot);
+begin
+  inherited Create;
+  FBot:=aDTTelegramBot;
 end;
 
 end.
