@@ -276,6 +276,7 @@ type
     FIs_bot: Boolean;
     FLanguage_code: String;
   public
+    function Clone: TTelegramUserObj;
     constructor Create(JSONObject: TJSONObject); override;
     property Is_bot: Boolean read FIs_bot;
     property Language_code: String read FLanguage_code;
@@ -288,7 +289,8 @@ type
     FChatType: TChatType;
     FTitle: String;
     class function StringToChatType(const TypeString: String): TChatType;
-  public
+  public                                                   
+    function Clone: TTelegramChatObj;
     constructor Create(JSONObject: TJSONObject); override;
     property ChatType: TChatType read FChatType;
     property Title: String read FTitle;
@@ -900,10 +902,15 @@ begin
   if TypeString='group' then
     Exit(ctGroup);
   if TypeString='supergroup' then
-    Exit(ctPrivate);
+    Exit(ctSuperGroup);
   if TypeString='channel' then
     Exit(ctChannel);
   Result:=ctUnknown;
+end;
+
+function TTelegramChatObj.Clone: TTelegramChatObj;
+begin
+  Result:=TTelegramChatObj.Create(fJSON);
 end;
 
 constructor TTelegramChatObj.Create(JSONObject: TJSONObject);
@@ -1011,6 +1018,11 @@ begin
 end;
 
 { TTelegramUserObj }
+
+function TTelegramUserObj.Clone: TTelegramUserObj;
+begin
+  Result:=TTelegramUserObj.Create(fJSON);
+end;
 
 constructor TTelegramUserObj.Create(JSONObject: TJSONObject);
 begin
