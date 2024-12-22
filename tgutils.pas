@@ -17,12 +17,17 @@ function CaptionFromChat(aChat: TTelegramChatObj): String;
 function CaptionFromUser(AUser: TTelegramUserObj): String;
 function BuildLink(const aCaption, aLink: String; aMarkup: TParseMode = pmDefault): String;
 
+{ Like a tg://user?id=123456789 }
+function UserLink(aUserID: Int64): String;
+
 implementation
 
 const
   MarkdownSpChars: array[0..3] of AnsiChar = ('\', '_', '*', '`');
   MarkdownSpCharsV2: array[0..17] of AnsiChar = ('_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|',
     '{', '}', '.', '!');
+
+  _tguserLink='tg://user?id=%d';
 
 function MarkdownEscape(const S: String): String;
 var
@@ -82,6 +87,11 @@ begin
   else
     Result:=aLink;
   end;
+end;
+
+function UserLink(aUserID: Int64): String;
+begin
+  Result:=Format(_tguserLink, [aUserID]);
 end;
 
 end.
