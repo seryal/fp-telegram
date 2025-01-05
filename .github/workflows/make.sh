@@ -53,8 +53,8 @@ function priv_lazbuild
                ! (lazbuild --verbose-pkgsearch "${REPLY}") &&
                ! (lazbuild --add-package "${REPLY}"); then
                     wget --quiet --output-document "${TMP[out]}" "${TMP[url]}"
+                    mkdir --parents "${TMP[dir]}"
                     unzip -o "${TMP[out]}" -d "${TMP[dir]}"
-                    mkdir --parent "${TMP[dir]}"
                     rm --verbose "${TMP[out]}"
                     find "${TMP[dir]}" -type 'f' -name '*.lpk' -printf '\033[33m\tadd package link\t%p\033[0m\n' -exec \
                         lazbuild --add-package-link {} + >&2
@@ -67,11 +67,13 @@ function priv_lazbuild
             lazbuild --add-package-link {} + >&2
     fi
     declare -i exitCode=0
-    if [[ -f "${VAR[tst]}" ]]; then
-        export INSTANTFPCOPTIONS=${VAR[opt]}
-        if ! (instantfpc "${VAR[tst]}" --all --format=plain >&2); then
-            ((exitCode+=1))
-        fi
+    if [[ -d "${VAR[tst]}" ]]; then
+        while read -r; do
+            export INSTANTFPCOPTIONS="${VAR[opt]}"
+            if ! (instantfpc "${REPLY%}" --all >&2); then
+                ((exitCode+=1))
+            fi
+        done < <(find "${VAR[tst]}" -type 'f' -name '*.lpr' | grep 'Console')
     fi
     while read -r; do
         declare -A TMP=(
