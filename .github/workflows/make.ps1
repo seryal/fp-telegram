@@ -51,10 +51,14 @@ Function Build-Project {
         ! (& lazbuild --add-package $_.Name)
     } | ForEach-Object -Parallel {
         Invoke-WebRequest -OutFile $_.OutFile -Uri $_.Uri
-        New-Item -Type Directory -Path $_.Path
+        New-Item -Type Directory -Path $_.Path | Out-Null
         Expand-Archive -Path $_.OutFile -DestinationPath $_.Path
         Remove-Item $_.OutFile
-        Return "$([char]27)[33m.... download $($_.Uri)$([char]27)[0m"
+        (Get-ChildItem -Filter '*.lpk' -Recurse -File –Path $_.Path).FullName |
+            ForEach-Object {
+                & lazbuild --add-package-link $_ | Out-Null
+                Return "$([char]27)[33m.... [$($LastExitCode)] add package link $($_)$([char]27)[0m"
+            }
     } | Out-Host
     If (Test-Path -Path $VAR.lib) {
         (Get-ChildItem -Filter '*.lpk' -Recurse -File –Path $VAR.lib).FullName |
@@ -72,7 +76,7 @@ Function Build-Project {
                     $exitCode = Switch ($LastExitCode) {
                         0 {0}
                         Default {
-                            $Result | Out-Host
+                            $Output | Out-Host
                             1
                         }
                     }
@@ -85,15 +89,13 @@ Function Build-Project {
         (Get-ChildItem -Filter '*.lpi' -Recurse -File –Path $Var.app).FullName |
             ForEach-Object {
                 $Output = (& lazbuild --build-all --recursive --no-write-project $_)
-                $Result = @()
+                $Result = @("$([char]27)[32m.... [$($LastExitCode)] build project $($_)$([char]27)[0m")
                 $exitCode = $(Switch ($LastExitCode) {
                     0 {
-                        $Result += @("$([char]27)[32m.... [$($LastExitCode)] build project $($_)$([char]27)[0m")
                         $Result += $Output | Select-String -Pattern 'Linking'
                         0
                     }
                     Default {
-                        $Result += @("$([char]27)[31m.... [$($LastExitCode)] build project $($_)$([char]27)[0m")
                         $Result += $Output | Select-String -Pattern 'Error:', 'Fatal:'
                         1
                     }
