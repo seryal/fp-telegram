@@ -37,7 +37,6 @@ type
   TSuccessfulPaymentEvent = procedure (ASender: TObject;
     ASuccessfulPayment: TTelegramSuccessfulPayment) of object;
 
-
   { TStringHash }
 
   TStringHash = class
@@ -598,7 +597,7 @@ type
       ParseMode: TParseMode = pmDefault; DisableNotification: Boolean = False;
       ReplyToMessageID: Integer = 0; ReplyMarkup: TReplyMarkup = nil): Boolean;
     function sendDocumentByFileName(chat_id: Int64; const AFileName: String;
-      const ACaption: String; ReplyMarkup: TReplyMarkup = nil): Boolean;
+      const ACaption: String; ReplyMarkup: TReplyMarkup = nil; ParseMode: TParseMode = pmDefault): Boolean;
     function sendDocumentStream(chat_id: Int64;  const AFileName: String; ADocStream: TStream;
       const ACaption: String; ReplyMarkup: TReplyMarkup = nil): Boolean;
     function sendInvoice(chat_id: Int64; const Title, Description, Payload, ProviderToken,
@@ -667,7 +666,7 @@ type
       CacheTime: Integer = 300; IsPersonal: Boolean = False; const NextOffset: String = '';
       const SwitchPmText: String = ''; const SwitchPmParameter: String = ''): Boolean;
     function getFile(const FileID: String): Boolean;
-    function banChatMember(chat_id, user_id: Int64; until_date: Int64=0): Boolean; 
+    function banChatMember(chat_id, user_id: Int64; until_date: Int64=0): Boolean;
     function unbanChatMember(chat_id, user_id: Int64; only_if_banned: Boolean = False): Boolean;
     { A special analog function that is not available in the API.
       It can be useful for simplifying and unifying the sending of content }
@@ -3365,8 +3364,8 @@ begin
   end;
 end;
 
-function TTelegramSender.sendDocumentByFileName(chat_id: Int64; const AFileName: String;
-  const ACaption: String; ReplyMarkup: TReplyMarkup): Boolean;
+function TTelegramSender.sendDocumentByFileName(chat_id: Int64; const AFileName: String; const ACaption: String;
+  ReplyMarkup: TReplyMarkup; ParseMode: TParseMode): Boolean;
 var
   sendObj: TStringList;
 begin
@@ -3377,6 +3376,8 @@ begin
     Add(s_ChatId+'='+IntToStr(chat_id));
     if ACaption<>EmptyStr then
       Add(s_Caption+'='+ACaption);
+    if ParseMode<>pmDefault then
+      Add(s_ParseMode+'='+ParseModes[ParseMode]);
     if Assigned(ReplyMarkup) then
       Add(s_ReplyMarkup+'='+ReplyMarkup.AsJSON);
     Result:=SendFile(s_sendDocument, s_Document, AFileName, sendObj);

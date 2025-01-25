@@ -16,6 +16,7 @@ function MarkdownEscapeV2(const S: String): String;
 function CaptionFromChat(aChat: TTelegramChatObj): String;
 function CaptionFromUser(AUser: TTelegramUserObj): String;
 function BuildLink(const aCaption, aLink: String; aMarkup: TParseMode = pmDefault): String;
+function ValidateUTF8(const S: String): String;
 
 { Like a tg://user?id=123456789 }
 function UserLink(aUserID: Int64): String;
@@ -61,7 +62,7 @@ begin
     if Username<>EmptyStr then
       Result+='@'+Username;
   end;
-  Result:=Trim(Result);
+  Result:=ValidateUTF8(Trim(Result));
 end;
 
 function CaptionFromUser(AUser: TTelegramUserObj): String;
@@ -87,6 +88,12 @@ begin
   else
     Result:=aLink;
   end;
+end;
+
+{ Hack function due of problem some utf8 entities }
+function ValidateUTF8(const S: String): String;
+begin
+  Result:=UTF8Encode(UTF8Decode(S));
 end;
 
 function UserLink(aUserID: Int64): String;
