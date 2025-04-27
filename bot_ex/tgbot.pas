@@ -709,27 +709,6 @@ begin
   end;
 end;
 
-//procedure TTelegramBot.TlgrmRate(ASender: TObject; const ACommand: String;
-//  AMessage: TTelegramMessageObj);
-//var
-//  ReplyMarkup: TReplyMarkup;
-//  ATxt: String;
-//begin
-//  ReplyMarkup:=TReplyMarkup.Create;
-//  try
-//    { You must assign BotUsername before Create inline KeyboardRate for forming rate url for your bot
-//      except if FUsername already assinged (getMe or callbackquery before is called, for example) }
-//    ReplyMarkup.InlineKeyBoard:=CreateInlineKeyboardRate;
-//    RequestWhenAnswer:=True;
-//    ATxt:=str_RateText;
-//    if Assigned(FOnRate) then
-//      FOnRate(ATxt, ReplyMarkup);
-//    sendMessage(ATxt, pmMarkdown, True, ReplyMarkup);
-//  finally
-//    ReplyMarkup.Free;
-//  end;
-//end;
-
 procedure TTelegramBot.TlgrmStatHandler(ASender: TObject;
   const ACommand: String; AMessage: TTelegramMessageObj);
 var
