@@ -95,7 +95,7 @@ Function Build-Project {
     	ForEach-Object {
         	$Output = (& lazbuild --build-all --recursive --no-write-project $_)
         	$Result = @("$([char]27)[32m.... [$($LastExitCode)] build project $($_)$([char]27)[0m")
-        	$exitCode = switch ($LastExitCode) {
+        	$exitCode = $(switch ($LastExitCode) {
             	0 {
                 	$Result += $Output | Select-String -Pattern 'Linking'
                 	0
@@ -104,7 +104,7 @@ Function Build-Project {
                 	$Result += $Output | Select-String -Pattern 'Error:', 'Fatal:'
                 	1
             	}
-        	}
+        	})
         	$Result | Out-Host
        		return $exitCode
     	} | Measure-Object -Sum
