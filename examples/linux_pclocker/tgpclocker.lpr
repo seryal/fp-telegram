@@ -6,9 +6,7 @@ uses
   {$IFDEF UNIX}
   cthreads,
   {$ENDIF}
-  Classes, SysUtils, BaseUnix, Unix, CustApp, process, tgsendertypes, tgtypes,
-  xlib, xshm, xutil, x, ipc, Cairo, CairoXlib
-  { you can add units after this };
+  Classes, SysUtils, Unix, CustApp, process, tgsendertypes, tgtypes, xlib, x, Cairo, CairoXlib;
 
 type
 
@@ -33,9 +31,6 @@ const
 { TMyApplication }
 
 procedure TMyApplication.DoRun;
-var
-  ErrorMsg: String;
-  output:String;
 begin
   while not Terminated do begin
     fbot.getUpdatesEx(0,0);
@@ -45,7 +40,6 @@ end;
 procedure TMyApplication.TGLockCmd(ASender: TObject; const ACommand: String;
   AMessage: TTelegramMessageObj);
 var
-  output:String;
   ec: Integer;
 begin
   if AMessage.From.ID = AuthorizedSender then begin
@@ -57,7 +51,6 @@ end;
 procedure TMyApplication.TGUnlockCmd(ASender: TObject; const ACommand: String;
   AMessage: TTelegramMessageObj);
 var
-  output:String;
   ec: Integer;
 begin
   if AMessage.From.ID = AuthorizedSender then begin
