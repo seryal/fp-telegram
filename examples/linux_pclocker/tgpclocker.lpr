@@ -28,7 +28,7 @@ type
 
 const
   API_TOKEN = 'BotToken'; //TODO: fill with your bot API
-  AuthorizedSender = PC owner ID; //TODO: fill with the ID of the user allower do lock/unlock PC remotely 
+  AuthorizedSender = 1234567890; //PC owner ID; TODO: fill with the ID of the user allower do lock/unlock PC remotely
 
 { TMyApplication }
 
