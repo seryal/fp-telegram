@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env pwsh
+#!/usr/bin/env pwsh
 ##############################################################################################################
 
 Function Show-Usage {
@@ -86,23 +86,29 @@ Function Build-Project {
         }
         Default {0}
     }) + (
-        (Get-ChildItem -Filter '*.lpi' -Recurse -File –Path $Var.app).FullName |
-            ForEach-Object {
-                $Output = (& lazbuild --build-all --recursive --no-write-project $_)
-                $Result = @("$([char]27)[32m.... [$($LastExitCode)] build project $($_)$([char]27)[0m")
-                $exitCode = $(Switch ($LastExitCode) {
-                    0 {
-                        $Result += $Output | Select-String -Pattern 'Linking'
-                        0
-                    }
-                    Default {
-                        $Result += $Output | Select-String -Pattern 'Error:', 'Fatal:'
-                        1
-                    }
-                })
-                $Result | Out-Host
-                Return $exitCode
-            } | Measure-Object -Sum
+		$excludeList = @("linux_pclocker")
+
+	(Get-ChildItem -Filter '*.lpi' -Recurse -File –Path $Var.app).FullName |
+    	Where-Object { 
+        	$excludeFound = $excludeList | Where-Object { $_ -and ($_ | ShouldMatchIgnoreCase $_) }
+        	$excludeFound.Count -eq 0
+    	} |
+    	ForEach-Object {
+        	$Output = (& lazbuild --build-all --recursive --no-write-project $_)
+        	$Result = @("$([char]27)[32m.... [$($LastExitCode)] build project $($_)$([char]27)[0m")
+        	$exitCode = switch ($LastExitCode) {
+            	0 {
+                	$Result += $Output | Select-String -Pattern 'Linking'
+                	0
+            	}
+            	default {
+                	$Result += $Output | Select-String -Pattern 'Error:', 'Fatal:'
+                	1
+            	}
+        	}
+        	$Result | Out-Host
+       		return $exitCode
+    	} | Measure-Object -Sum
     ).Sum
 }
 
