@@ -86,12 +86,11 @@ Function Build-Project {
         }
         Default {0}
     }) + (
-		$excludeList = @("linux_pclocker")
-
-	(Get-ChildItem -Filter '*.lpi' -Recurse -File –Path $Var.app).FullName |
-    	Where-Object { 
-        	$excludeFound = $excludeList | Where-Object { $_ -and ($_ | ShouldMatchIgnoreCase $_) }
-        	$excludeFound.Count -eq 0
+        $excludeList = @("linux_pclocker")
+        (Get-ChildItem -Filter '*.lpi' -Recurse -File –Path $Var.app).FullName |
+        Where-Object { 
+            $excludeFound = $excludeList | Where-Object { $_ -and ($_ | ShouldMatchIgnoreCase $_) }
+            $excludeFound.Count -eq 0
     	} |
     	ForEach-Object {
         	$Output = (& lazbuild --build-all --recursive --no-write-project $_)
