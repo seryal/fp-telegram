@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env pwsh
+#!/usr/bin/env pwsh
 ##############################################################################################################
 
 Function Show-Usage {
@@ -87,6 +87,7 @@ Function Build-Project {
         Default {0}
     }) + (
         (Get-ChildItem -Filter '*.lpi' -Recurse -File –Path $Var.app).FullName |
+            Where-Object { $_ -notlike "*tgpclocker*" } |  
             ForEach-Object {
                 $Output = (& lazbuild --build-all --recursive --no-write-project $_)
                 $Result = @("$([char]27)[32m.... [$($LastExitCode)] build project $($_)$([char]27)[0m")
