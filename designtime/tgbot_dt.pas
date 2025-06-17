@@ -378,7 +378,7 @@ var
   aInlineKeyboard: TInlineKeyboard;
   aInlineButtonRow: TInlineKeyboardButtons;
   aReplyButtonRow: TKeyboardButtons;
-  aReplyKeyboard: TKeybordButtonArray;
+  aReplyKeyboard: TKeyboardButtonArray;
 
   procedure AddKeyboardButton(aButton: TInlineButtonItem);
   begin

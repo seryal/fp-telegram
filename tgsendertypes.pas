@@ -18,7 +18,7 @@ type
   TTelegramSender = class;
   TInlineKeyboardButton = class;
   TKeyboardButton = class;
-  TKeybordButtonArray = class;
+  TKeyboardButtonArray = class;
   TInlineKeyboard = class;
 
   TOnUpdateEvent = procedure (ASender: TObject; AnUpdate: TTelegramUpdateObj) of object;
@@ -64,7 +64,7 @@ type
     function GetInputFieldPlaceholder: String;
     function GetOneTimeKeyboard: Boolean;
     function GetRemoveKeyboard: Boolean;
-    function GetReplyKeyboardMarkup: TKeybordButtonArray;
+    function GetReplyKeyboardMarkup: TKeyboardButtonArray;
     function GetResizeKeyboard: Boolean;
     function GetSelective: Boolean;
     procedure SetForceReply(AValue: Boolean);
@@ -72,18 +72,18 @@ type
     procedure SetInputFieldPlaceholder(AValue: String);
     procedure SetOneTimeKeyboard(AValue: Boolean);
     procedure SetRemoveKeyboard(AValue: Boolean);
-    procedure SetReplyKeyboardMarkup(AValue: TKeybordButtonArray);
+    procedure SetReplyKeyboardMarkup(AValue: TKeyboardButtonArray);
     procedure SetResizeKeyboard(AValue: Boolean);
     procedure SetSelective(AValue: Boolean);
   public
     class function CreateFromObject(aObject: TJSONObject): TReplyMarkup;
     class function CreateFromString(const aJSONString: String): TReplyMarkup;
     function CreateInlineKeyBoard: TInlineKeyboard;                          
-    function CreateReplyKeyboard: TKeybordButtonArray;
+    function CreateReplyKeyboard: TKeyboardButtonArray;
     { Only one from InlineKeyboard or ReplyMarkup is must to set }
     property InlineKeyBoard: TInlineKeyboard read GetInlineKeyBoard write SetInlineKeyBoard;
 { ReplyKeyboard properties }
-    property ReplyKeyboardMarkup: TKeybordButtonArray read GetReplyKeyboardMarkup
+    property ReplyKeyboardMarkup: TKeyboardButtonArray read GetReplyKeyboardMarkup
       write SetReplyKeyboardMarkup;
     property RemoveKeyboard: Boolean read GetRemoveKeyboard write SetRemoveKeyboard;
 { Only if ReplyKeyboard is present then optional}
@@ -180,9 +180,9 @@ type
     procedure AddButton(const AButtonText, CallbackData: String; MaxColsinRow: Integer = 0);
   end;
 
-  { TKeybordButtonArray }
+  { TKeyboardButtonArray }
 
-  TKeybordButtonArray = class(TJSONArray)
+  TKeyboardButtonArray = class(TJSONArray)
   public
     function Add(aButtons: TKeyboardButtons): Integer; overload;
     function Add: TKeyboardButtons;
@@ -1087,14 +1087,14 @@ begin
   Add(TBotCommand.Create(aCommand, aDescription));
 end;
 
-{ TKeybordButtonArray }
+{ TKeyboardButtonArray }
 
-function TKeybordButtonArray.Add(aButtons: TKeyboardButtons): Integer;
+function TKeyboardButtonArray.Add(aButtons: TKeyboardButtons): Integer;
 begin
   Result:=Add(aButtons as TJSONArray);
 end;
 
-function TKeybordButtonArray.Add: TKeyboardButtons;
+function TKeyboardButtonArray.Add: TKeyboardButtons;
 begin
   Result:=TKeyboardButtons.Create;
   Add(Result);
@@ -1783,9 +1783,9 @@ begin
   Result:=Get(s_RemoveKeyboard, False);
 end;
 
-function TReplyMarkup.GetReplyKeyboardMarkup: TKeybordButtonArray;
+function TReplyMarkup.GetReplyKeyboardMarkup: TKeyboardButtonArray;
 begin
-  Result:=Arrays[s_Keyboard] as TKeybordButtonArray;
+  Result:=Arrays[s_Keyboard] as TKeyboardButtonArray;
 end;
 
 function TReplyMarkup.GetResizeKeyboard: Boolean;
@@ -1831,7 +1831,7 @@ begin
   Booleans[s_RemoveKeyboard]:=AValue;
 end;
 
-procedure TReplyMarkup.SetReplyKeyboardMarkup(AValue: TKeybordButtonArray);
+procedure TReplyMarkup.SetReplyKeyboardMarkup(AValue: TKeyboardButtonArray);
 begin
   Arrays[s_Keyboard]:=AValue;
 end;
@@ -1883,9 +1883,9 @@ begin
   InlineKeyBoard:=Result;
 end;
 
-function TReplyMarkup.CreateReplyKeyboard: TKeybordButtonArray;
+function TReplyMarkup.CreateReplyKeyboard: TKeyboardButtonArray;
 begin
-  Result:=TKeybordButtonArray.Create;
+  Result:=TKeyboardButtonArray.Create;
   ReplyKeyboardMarkup:=Result;
 end;
 
